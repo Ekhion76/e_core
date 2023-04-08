@@ -42,3 +42,11 @@ end)
 
 If you use eCore features, your script will be portable. 
 It would be even better if there were already a similar initiative to bring the frameworks to a common denominator. For now, this initiative is based on the needs of my own scripts.
+
+## Labor and skill system:
+
+The concept works along the lines of the ArcheAge MMORPG. Completing each job costs labor points, which also increases the character's skill.
+
+For example, if you harvest a vegetable with my collecting script, it costs 5 lab points and it is added to the harvesting skill. This way, you can later receive discounts according to the rank setting, for example: faster harvesting, for fewer work points.
+
+In the crafting system, it can be set that an item can only be produced after acquiring a certain skill and how many labor points it costs to make it.

@@ -1,0 +1,403 @@
+:root {
+    /* LEVEL COLORS */
+    --lvl-1-color: #77b064;
+    --lvl-2-color: #558fd7;
+    --lvl-3-color: #cb72d8;
+    --lvl-4-color: #d78b06;
+    --lvl-5-color: #a35351;
+    --lvl-6-color: #9b564f;
+    --lvl-7-color: #6c3434;
+    --lvl-8-color: #7d3a3e;
+    --lvl-9-color: #8d4245;
+    --lvl-10-color: #9f2c28;
+    --lvl-famed-color: #b45c3f;
+}
+
+* {
+    box-sizing: border-box;
+    padding: 0;
+    margin: 0;
+}
+
+html {
+    font-family: 'Red Hat Display', sans-serif;
+    font-size: 11px;
+    user-select: none;
+    color: white;
+}
+
+.close {
+    background: #ff4141;
+    color: whitesmoke;
+}
+
+.right {
+    float: right;
+    margin-left: auto;
+}
+
+.btn {
+    margin: 0.1rem;
+    padding: 0.3rem 0.6rem;
+    border-radius: 0.4rem;
+    font-size: 1rem;
+}
+
+#container {
+    display: none;
+    position: fixed;
+    top: 20px;
+    left: 0;
+    right: 0;
+    bottom: 20px;
+}
+
+.wrapper {
+    position: relative;
+    width: 80%;
+    height: 100%;
+    background-color: #191919;
+    margin: 0 auto;
+    padding: 1rem 2rem;
+    overflow: auto;
+    min-width: 600px;
+    max-width: 900px;
+}
+
+.stats {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    grid-gap: 1.5rem;
+}
+
+.stats li {
+
+    display: grid;
+    position: relative;
+    grid-template-columns: 5.5rem auto;
+    align-items: center;
+    background: #2a2a2a;
+    border-radius: 0.4rem;
+}
+
+.stats .icon {
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 100%;
+    font-size: 3rem;
+    text-transform: uppercase;
+    color: whitesmoke;
+    border-radius: 0.4rem 0 0 0.4rem;
+    background-position: center;
+    background-size: cover;
+    background-repeat: no-repeat;
+}
+
+.stats .data {
+
+    padding: 0.7rem 0.5rem;
+}
+
+.stats .data span {
+
+    display: block;
+}
+
+.stats .name {
+    color: #7a7d92;
+    text-transform: uppercase;
+    margin-bottom: 0.1rem;
+}
+
+.level:before {
+    display: inline-grid;
+    color: white;
+    padding: 0 0.8rem;
+    border-radius: 0.5rem;
+    margin-right: 0.5rem;
+    justify-content: center;
+    align-items: center;
+    text-shadow: 0 0 0.3rem #000;
+}
+
+.value {
+    color: whitesmoke;
+    margin: 0.3rem 0;
+}
+
+.bar {
+    position: relative;
+    background: white;
+    width: 100%;
+    height: 0.5rem;
+    border-radius: 0.2rem;
+}
+
+.progress {
+    position: absolute;
+    width: 0;
+    height: 0.5rem;
+    background-color: #b0173d;
+    border-radius: 0.2rem;
+}
+
+h1 {
+    color: white;
+    margin: 1rem 0;
+    font-size: 2rem;
+}
+
+h2 {
+    color: antiquewhite;
+    margin: 1.0rem 0;
+    font-size: 1.5rem;
+}
+
+.center {
+    text-align: center;
+}
+
+section {
+    margin: 0 0 3rem 0;
+}
+
+.category_section {
+    display: none;
+}
+
+
+
+
+
+/* POPUP */
+
+#popup_container {
+    position: absolute;
+    top: 10rem;
+    left: 0;
+    right: 0;
+    width: 40rem;
+    height: 45rem;
+    border-radius: 1rem;
+    border-width: 0.4rem;
+    border-style: solid;
+    background: rgba(23, 19, 22, 0.90);
+    text-align: center;
+    margin: 0 auto;
+    padding: 5rem 2rem;
+    text-transform: uppercase;
+    z-index: 100;
+}
+
+.up_level {
+    display: block;
+    margin: 3rem auto;
+    font-size: 8rem;
+    padding: 1.5rem 0;
+    border-radius: 50%;
+    width: 13rem;
+    height: 13rem;
+    text-align: center;
+    text-shadow: 0 0 1.0rem #000;
+}
+
+
+/* LEVELS (STATISTICS PANEL) */
+
+.level:before {
+    display: inline-grid;
+    color: white;
+    padding: 0 0.8rem;
+    border-radius: 0.5rem;
+    margin-right: 0.5rem;
+    justify-content: center;
+    align-items: center;
+    text-shadow: 0 0 0.3rem #000;
+}
+
+/* level colors vars: Edit the colors on top of the page! (:root) */
+/* the colors are also used by javascript */
+
+.lvl_1 {
+    color: var(--lvl-1-color) !important;
+}
+
+.lvl_1:before {
+    content: '1';
+    background-color: var(--lvl-1-color);
+}
+
+.lvl_2 {
+    color: var(--lvl-2-color) !important;
+}
+
+.lvl_2:before {
+
+    content: '2';
+    background-color: var(--lvl-2-color);
+}
+
+.lvl_3 {
+    color: var(--lvl-3-color) !important;
+}
+
+.lvl_3:before {
+
+    content: '3';
+    background-color: var(--lvl-3-color);
+}
+
+.lvl_4 {
+    color: var(--lvl-4-color) !important;
+}
+
+.lvl_4:before {
+
+    content: '4';
+    background-color: var(--lvl-4-color);
+}
+
+.lvl_5 {
+    color: var(--lvl-5-color) !important;
+}
+
+.lvl_5:before {
+
+    content: '5';
+    background-color: var(--lvl-5-color);
+}
+
+.lvl_6 {
+    color: var(--lvl-6-color) !important;
+}
+
+.lvl_6:before {
+
+    content: '6';
+    background-color: var(--lvl-6-color);
+}
+
+.lvl_7 {
+    color: var(--lvl-7-color) !important;
+}
+
+.lvl_7:before {
+
+    content: '7';
+    background-color: var(--lvl-7-color);
+}
+
+.lvl_8 {
+    color: var(--lvl-8-color) !important;
+
+}
+
+.lvl_8:before {
+
+    content: '8';
+    background-color: var(--lvl-8-color);
+}
+
+.lvl_9 {
+    color: var(--lvl-9-color) !important;
+}
+
+.lvl_9:before {
+
+    content: '9';
+    background-color: var(--lvl-9-color);
+}
+
+.lvl_10 {
+    color: var(--lvl-10-color) !important;
+}
+
+.lvl_10:before {
+
+    content: '10';
+    background-color: var(--lvl-10-color);
+}
+
+/* Automatically Famed will be the last rank */
+.lvl_famed {
+    color: var(--lvl-famed-color) !important;
+}
+
+.lvl_famed:before {
+
+    content: '⭐';
+    background-color: var(--lvl-famed-color);
+}
+
+/* HUD */
+#meta_hud {
+    display: none;
+    position: absolute;
+    bottom: 20px;
+    right: 20px;
+    width: 15vw;
+    color: white;
+    min-width: 12rem;
+    max-width: 15rem;
+}
+
+.hud_item {
+    position: relative;
+    padding: 0.4rem 1.5rem 0.9rem 1.5rem;
+    border-radius: 0.4rem;
+    background-color: #424244;
+}
+
+.hud_info {
+    display: grid;
+    position: relative;
+    text-transform: uppercase;
+    grid-template-columns: 1fr 1fr;
+    padding: 0.5rem 0;
+}
+
+.hud_bar {
+    position: relative;
+    background: #676768;
+    width: 100%;
+    height: 0.5rem;
+    border-radius: 0.2rem;
+}
+
+.hud_point {
+    text-align: right;
+}
+
+.hud_progress {
+    position: absolute;
+    width: 0;
+    height: 0.5rem;
+    background-color: #fcb547;
+    border-radius: 0.2rem;
+}
+
+
+/* MENU */
+
+.menu {
+    display: flex;
+    flex-direction: row;
+    justify-content: flex-start;
+    gap: 0 0.5rem;
+    list-style-type: none;
+}
+
+.menu li {
+    display: block;
+    padding: 0.6rem 1rem;
+    background-color: #484848;
+    border-radius: 0.4rem;
+}
+
+.menu li:hover, .selected {
+
+    filter: invert(75%);
+}

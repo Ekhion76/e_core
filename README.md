@@ -50,3 +50,7 @@ The concept works along the lines of the ArcheAge MMORPG. Completing each job co
 For example, if you harvest a vegetable with my collecting script, it costs 5 lab points and it is added to the harvesting skill. This way, you can later receive discounts according to the rank setting, for example: faster harvesting, for fewer work points.
 
 In the crafting system, it can be set that an item can only be produced after acquiring a certain skill and how many labor points it costs to make it.
+
+With the help of exports, you can incorporate this into any of your own scripts. See:
+-- export_examples_server.md
+-- export_examples_client.md

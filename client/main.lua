@@ -176,16 +176,6 @@ RegisterNetEvent('e_core:levelChange', function(data)
     SendNUIMessage({ action = 'POPUP', data = data })
 end)
 
-RegisterCommand('pop', function()
-
-    TriggerEvent('e_core:levelChange', {
-        category = 'harvesting',
-        name = 'gathering',
-        baseLevel = 1,
-        newLevel = 5
-    })
-end)
-
 -- NUI CALLBACKS
 RegisterNUICallback('nuiReady', function(data, cb)
 

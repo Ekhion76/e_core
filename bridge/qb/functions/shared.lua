@@ -11,7 +11,7 @@ function QBCoreSharedFunctions()
         ox_inventory = exports.ox_inventory
     end
 
-    ---@return table {name, image, label, isUnique, isWeapon, weight}
+    ---@return {name: string, label: string, isUnique: boolean, isWeapon: boolean, weight: number, image: string, ammoname: string}
     function self.convertOxItems(items)
 
         if not hf.isPopulatedTable(items) then
@@ -47,7 +47,7 @@ function QBCoreSharedFunctions()
         return temp
     end
 
-    ---@return table {name, image, label, isUnique, isWeapon, weight}
+    ---@return {name: string, label: string, isUnique: boolean, isWeapon: boolean, weight: number, image: string, ammoname: string}
     function self.convertQbItems(items)
 
         if not hf.isPopulatedTable(items) then

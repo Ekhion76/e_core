@@ -12,7 +12,7 @@ function ESXSharedFunctions()
     end
 
     --- It returns the entire registered item list, unified and filtering out unnecessary information
-    ---@return {label: string, isUnique: boolean, isWeapon: boolean, weight: number, image: string}
+    ---@return {name: string, label: string, isUnique: boolean, isWeapon: boolean, weight: number, image: string, ammoname: string}
     function self.getRegisteredItems()
 
         local items = {}
@@ -28,7 +28,7 @@ function ESXSharedFunctions()
         return items
     end
 
-    ---@return table {name, image, label, isUnique, isWeapon, weight}
+    ---@return {name: string, label: string, isUnique: boolean, isWeapon: boolean, weight: number, image: string, ammoname: string}
     function self.convertOxItems(items)
 
         if not hf.isPopulatedTable(items) then

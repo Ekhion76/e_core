@@ -90,37 +90,13 @@ function QBCoreBridge()
         return xPlayer.money[account]
     end
 
-    --- It returns the entire registered item list, unified and filtering out unnecessary information
-    --- @return {label: string, isUnique: boolean, isWeapon: boolean, weight: number, image: string}
-    function self.getRegisteredItems()
-
-        local items = {}
-
-        if OX_INVENTORY then
-
-            items = FUNCTIONS.convertOxItems(ox_inventory:Items())
-        else
-
-            items = FUNCTIONS.convertQbItems(QBCore.Shared.Items)
-        end
-
-        return items
-    end
-
     ------------------------------------------------------------------------
     --- INVENTORY
     ------------------------------------------------------------------------
 
-    function self.getInventoryLimits()
+    function self.getInventoryConfig()
 
-        local maxSlots = QBCore.Config.Player.MaxInvSlots or Config.maxInventorySlots
-        maxSlots = OX_INVENTORY and 50 or maxSlots
-
-        return {
-
-            slots = GetConvarInt('inventory:slots', maxSlots),
-            maxWeight = QBCore.Config.Player.MaxWeight or Config.maxInventoryWeight
-        }
+        return INVENTORY_CONFIG
     end
 
     function self.getInventory(xPlayer)
@@ -135,13 +111,7 @@ function QBCoreBridge()
 
     function self.getInventoryWeight(xPlayer)
 
-        if OX_INVENTORY then
-
-            return FUNCTIONS.getInventoryWeight(xPlayer)
-        else
-
-            return FUNCTIONS.getInventoryWeight(xPlayer, true)
-        end
+        return FUNCTIONS.getInventoryWeight(xPlayer)
     end
 
     function self.addItem(xPlayer, item, count, slot, metadata)
@@ -188,6 +158,31 @@ function QBCoreBridge()
     function self.getPlayer(playerId)
 
         return FUNCTIONS.convertPlayer(QBCore.Functions.GetPlayer(playerId))
+    end
+
+    function self.getRegisteredItems()
+
+        return REGISTERED_ITEMS
+    end
+
+    function self.getAmountOfItems(inventory)
+
+        return FUNCTIONS.getAmountOfItems(inventory)
+    end
+
+    function self.canSwapItems(swappingItems, itemData, playerData)
+
+        return FUNCTIONS.canSwapItems(swappingItems, itemData, playerData)
+    end
+
+    function self.canCarryItem(itemData, playerData)
+
+        return FUNCTIONS.canCarryItem(itemData, playerData)
+    end
+
+    function self.itemBox(playerId, productInfo, event, amount)
+
+        TriggerClientEvent('inventory:client:ItemBox', playerId, productInfo, event, amount)
     end
 
     ------------------------------------------------------------------------

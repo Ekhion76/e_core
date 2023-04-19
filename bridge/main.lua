@@ -1,13 +1,10 @@
 eCore = {}
 
-OX_INVENTORY = GetResourceState('ox_inventory') == 'started'
-
 if GetResourceState('qb-core') == 'started' then
 
     QBCore = exports['qb-core']:GetCoreObject()
     FUNCTIONS = QBCoreFunctions()
     eCore = QBCoreBridge()
-    eCore.functions = createCoreFunctions()
     FRAMEWORK = 'qb'
 
     for i = 1, #QBEvents do
@@ -22,7 +19,6 @@ if GetResourceState('es_extended') == 'started' then
     ESX = exports['es_extended']:getSharedObject()
     FUNCTIONS = ESXFunctions()
     eCore = ESXBridge()
-    eCore.functions = createCoreFunctions()
     FRAMEWORK = 'esx'
 
     for i = 1, #ESXEvents do

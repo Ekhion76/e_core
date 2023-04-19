@@ -1,10 +1,40 @@
 -- Documentation:
 -- readme.md file or https://github.com/Ekhion76/e_core
+
+OX_INVENTORY = GetResourceState('ox_inventory') == 'started'
+
 Config = Config or {}
 Config.locale = 'hu'
 
 Config.maxInventoryWeight = 30000 -- IMPORTANT! Used only above the 1.0.0 qb-inventory version, remember to upgrade to current value e.g:(see qb-inventory/config.lua)
 Config.maxInventorySlots = 41 -- IMPORTANT! Used only above the 1.0.0 qb-inventory version, remember to upgrade to current value e.g:(see qb-inventory/config.lua)
+
+-- Different inventories index the fields differently.
+-- E.g: ox_inventory: count; qb_inventory: amount, grid inventory: quantity
+Config.inventoryIdx = {
+    name = 'name', -- name, item -- raw item name
+    count = 'amount', -- count, amount, quantity
+    slot = 'slot',
+    --meta = 'metadata', -- metadata, info
+    serial = 'serie' -- QBCore metadata weapon serial number
+}
+
+-- Inventory itembox message
+-- This box appears when adding or deleting items
+-- In the case of OX inventory, for example, it appears by default, so it can be disabled here
+Config.itemBox = true
+
+if OX_INVENTORY then
+
+    Config.itemBox = false -- Ox sent by default
+    Config.inventoryIdx = {
+        name = 'name',
+        count = 'count',
+        slot = 'slot',
+        --meta = 'metadata',
+        serial = 'serial' -- metadata.serial
+    }
+end
 
 Config.versionCheck = true
 Config.consoleReport = true -- turn on/of nui loaded, dropped recipes, no configure levels, offline labor message

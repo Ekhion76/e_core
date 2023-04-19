@@ -2,7 +2,13 @@ local hf = hf
 
 function QBCoreFunctions()
 
-    local self = QBCoreSharedFunctions()
+    local self = globalFunctions()
+    local QBCoreShared = QBCoreSharedFunctions()
+
+    for k, v in pairs(QBCoreShared) do
+
+        self[k] = v
+    end
 
     local ox_inventory = false
 
@@ -19,6 +25,7 @@ function QBCoreFunctions()
 
         for item, amount in pairs(items) do
 
+
             if not ox_inventory:RemoveItem(playerId, item, amount) then
 
                 return false, 'unknown_error'
@@ -31,7 +38,8 @@ function QBCoreFunctions()
     function self.removeItems(xPlayer, items)
 
         if not hf.isPopulatedTable(items) then
-            return false, 'there are no items to remove'
+
+            return false, 'no_items_to_remove'
         end
 
         local count
@@ -41,7 +49,7 @@ function QBCoreFunctions()
 
             return false, 'inventory_is_empty'
         end
-        print_r(items)
+
         -- check all item exists:
         for itemToRemove, amountToRemove in pairs(items) do
 
@@ -104,6 +112,18 @@ function QBCoreFunctions()
 
         eCore.setInventory(xPlayer, temp)
         return true, 'ok'
+    end
+
+    function self.getInventoryLimits()
+
+        local maxSlots = QBCore.Config.Player.MaxInvSlots or Config.maxInventorySlots
+        maxSlots = OX_INVENTORY and 50 or maxSlots
+
+        return {
+
+            slots = GetConvarInt('inventory:slots', maxSlots),
+            maxWeight = QBCore.Config.Player.MaxWeight or Config.maxInventoryWeight
+        }
     end
 
     return self

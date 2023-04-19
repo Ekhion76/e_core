@@ -2,7 +2,7 @@ local hf = hf
 
 function QBCoreSharedFunctions()
 
-    local self = {}
+    local self = sharedGlobalFunctions()
 
     local ox_inventory = false
 
@@ -11,34 +11,12 @@ function QBCoreSharedFunctions()
         ox_inventory = exports.ox_inventory
     end
 
-    ---Determines the weight of items in the inventory
-    ---@param playerData table
-    ---@return number total weight
-    function self.getInventoryWeight(playerData, multiply)
-
-        local weight, count = 0
-        local inventory = eCore.getInventory(playerData)
-
-        if not hf.isPopulatedTable(inventory) then
-            return 0
-        end
-
-        for _, item in pairs(inventory) do
-
-            count = 1
-
-            if multiply then
-
-                count = item.amount or item.count
-            end
-
-            weight = weight + item.weight * count
-        end
-
-        return weight
-    end
-
     function self.convertOxItems(items)
+
+        if not hf.isPopulatedTable(items) then
+
+            return items
+        end
 
         local QBItems = QBCore.Shared.Items
         local QBItem, temp = {}, {}
@@ -74,6 +52,11 @@ function QBCoreSharedFunctions()
 
     function self.convertQbItems(items)
 
+        if not hf.isPopulatedTable(items) then
+
+            return items
+        end
+
         for item, data in pairs(items) do
 
             items[item:lower()] = {
@@ -83,6 +66,23 @@ function QBCoreSharedFunctions()
                 weight = data.weight,
                 image = data.image,
             }
+        end
+
+        return items
+    end
+
+    --- It returns the entire registered item list, unified and filtering out unnecessary information
+    --- @return {label: string, isUnique: boolean, isWeapon: boolean, weight: number, image: string}
+    function self.getRegisteredItems()
+
+        local items = {}
+
+        if OX_INVENTORY then
+
+            items = self.convertOxItems(ox_inventory:Items())
+        else
+
+            items = self.convertQbItems(QBCore.Shared.Items)
         end
 
         return items

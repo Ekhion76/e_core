@@ -1,8 +1,3 @@
-ECO = {}
-ECO.meta = {}
-ECO.idsToSync = {}
-ECO.syncRequested = false
-
 RegisterServerEvent('e_core:loadMeta', function()
 
     loadMeta(eCore.getPlayer(source))

@@ -73,5 +73,9 @@ locales['hu'] = {
     not_levels_data = 'Nincsenek szintek(rangok) megadva',
 
     labor_increased = 'Munkapontot kaptál',
-    proficiency_added = 'Jártasságot szereztél'
+    proficiency_added = 'Jártasságot szereztél',
+
+
+    no_items_to_remove = 'Nincs törölhető tárgy',
+    inventory_is_empty = 'A tároló üres'
 }

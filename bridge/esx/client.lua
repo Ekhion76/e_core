@@ -80,41 +80,42 @@ function ESXBridge()
     end
 
     ------------------------------------------------------------------------
-    --- ITEMS
-    ------------------------------------------------------------------------
-
-    --- It returns the entire registered item list, unified and filtering out unnecessary information
-    ---@return {label: string, image: string}
-    function self.getRegisteredItems()
-
-        local items = {}
-
-        if OX_INVENTORY then
-
-            items = FUNCTIONS.convertOxItems(ox_inventory:Items())
-        end
-
-        return items
-    end
-
-    ------------------------------------------------------------------------
     --- INVENTORY
     ------------------------------------------------------------------------
 
+    function self.getInventoryConfig()
+
+        return INVENTORY_CONFIG
+    end
+
     function self.getInventoryWeight(playerData)
 
-        if OX_INVENTORY then
-
-            return playerData.weight
-        else
-
-            return FUNCTIONS.getInventoryWeight(playerData)
-        end
+        return FUNCTIONS.getInventoryWeight(playerData)
     end
 
     function self.getInventory(playerData)
 
         return playerData.inventory
+    end
+
+    function self.getRegisteredItems()
+
+        return REGISTERED_ITEMS
+    end
+
+    function self.getAmountOfItems(inventory)
+
+        return FUNCTIONS.getAmountOfItems(inventory)
+    end
+
+    function self.canSwapItems(swappingItems, itemData, playerData)
+
+        return FUNCTIONS.canSwapItems(swappingItems, itemData, playerData)
+    end
+
+    function self.canCarryItem(itemData, playerData)
+
+        return FUNCTIONS.canCarryItem(itemData, playerData)
     end
 
     ------------------------------------------------------------------------

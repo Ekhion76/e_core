@@ -4,11 +4,13 @@ game 'gta5'
 
 description 'ECO CORE'
 
-version '0.0.1'
+version '0.0.2'
 
 shared_scripts {
     'bridge/config.lua',
     'libs/helper.lua',
+
+    'bridge/global/functions/shared.lua',
     'bridge/esx/functions/shared.lua',
     'bridge/qb/functions/shared.lua',
 
@@ -22,7 +24,8 @@ shared_scripts {
 
 client_scripts {
     -- eCore
-    'bridge/shared/events/client.lua',
+    'bridge/global/events/client.lua',
+    'bridge/global/functions/client.lua',
     'bridge/esx/functions/client.lua',
     'bridge/qb/functions/client.lua',
 
@@ -31,7 +34,7 @@ client_scripts {
 
     'bridge/esx/events/client.lua',
     'bridge/qb/events/client.lua',
-    'bridge/shared/functions/client.lua',
+
     'bridge/main.lua',
 
     'client/main.lua',
@@ -42,7 +45,8 @@ server_scripts {
     '@oxmysql/lib/MySQL.lua',
 
     -- eCore
-    'bridge/shared/events/server.lua',
+    'bridge/global/events/server.lua',
+
     'bridge/esx/functions/server.lua',
     'bridge/qb/functions/server.lua',
 
@@ -52,10 +56,13 @@ server_scripts {
     'bridge/esx/events/server.lua',
     'bridge/qb/events/server.lua',
 
-    'bridge/shared/functions/server.lua',
-    'bridge/main.lua',
-    'bridge/shared/callbacks/server.lua',
+    'bridge/global/functions/server.lua',
 
+    'bridge/main.lua',
+
+    'bridge/global/callbacks/server.lua',
+
+    'server/main.lua',
     'server/meta.lua',
     'server/basemetadata.lua',
     'server/labor.lua',

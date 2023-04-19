@@ -2,7 +2,7 @@ local hf = hf
 
 function ESXSharedFunctions()
 
-    local self = {}
+    local self = sharedGlobalFunctions()
 
     local ox_inventory = false
 
@@ -11,34 +11,29 @@ function ESXSharedFunctions()
         ox_inventory = exports.ox_inventory
     end
 
-    ---Determines the weight of items in the inventory
-    ---@param playerData table
-    ---@return number total weight
-    function self.getInventoryWeight(playerData, multiply)
+    --- It returns the entire registered item list, unified and filtering out unnecessary information
+    ---@return {label: string, isUnique: boolean, isWeapon: boolean, weight: number, image: string}
+    function self.getRegisteredItems()
 
-        local weight, count = 0
-        local inventory = eCore.getInventory(playerData)
+        local items = {}
 
-        if not hf.isPopulatedTable(inventory) then
-            return 0
+        if OX_INVENTORY then
+
+            items = self.convertOxItems(ox_inventory:Items())
+        else
+
+            items = {}
         end
 
-        for _, item in pairs(inventory) do
-
-            count = 1
-
-            if multiply then
-
-                count = item.amount or item.count
-            end
-
-            weight = weight + item.weight * count
-        end
-
-        return weight
+        return items
     end
 
     function self.convertOxItems(items)
+
+        if not hf.isPopulatedTable(items) then
+
+            return items
+        end
 
         for item, data in pairs(items) do
 

@@ -11,6 +11,7 @@ function QBCoreSharedFunctions()
         ox_inventory = exports.ox_inventory
     end
 
+    ---@return table {name, image, label, isUnique, isWeapon, weight}
     function self.convertOxItems(items)
 
         if not hf.isPopulatedTable(items) then
@@ -20,12 +21,12 @@ function QBCoreSharedFunctions()
 
         local QBItems = QBCore.Shared.Items
         local QBItem, temp = {}, {}
-        local image, lowerName
+        local image
 
         for item, data in pairs(items) do
 
-            lowerName = item:lower()
-            QBItem = QBItems[lowerName]
+            local name = item:lower()
+            QBItem = QBItems[name]
 
             if QBItem and QBItem.image then
 
@@ -35,21 +36,18 @@ function QBCoreSharedFunctions()
                 image = item .. '.png'
             end
 
-            temp[lowerName] = {
-                label = data.label,
-                isUnique = data.stack == false,
-                isWeapon = data.weapon == true,
-                weight = data.weight,
-                image = image,
-                durability = data.durability,
-                ammoname = data.ammoname
-            }
+            temp[name] = data
+            temp[name].name = name
+            temp[name].image = image
+            temp[name].isUnique = data.stack == false
+            temp[name].isWeapon = data.weapon == true
         end
 
         QBItem, items = nil, nil
         return temp
     end
 
+    ---@return table {name, image, label, isUnique, isWeapon, weight}
     function self.convertQbItems(items)
 
         if not hf.isPopulatedTable(items) then
@@ -57,18 +55,18 @@ function QBCoreSharedFunctions()
             return items
         end
 
+        local temp = {}
+
         for item, data in pairs(items) do
 
-            items[item:lower()] = {
-                label = data.label:gsub("'", "\\'"),
-                isUnique = data.unique == true,
-                isWeapon = data.type == 'weapon',
-                weight = data.weight,
-                image = data.image,
-            }
+            local name = item:lower()
+            temp[name] = data
+            temp[name].label = data.label:gsub("'", "\\'")
+            temp[name].isUnique = data.unique == true
+            temp[name].isWeapon = data.type == 'weapon'
         end
 
-        return items
+        return temp
     end
 
     --- It returns the entire registered item list, unified and filtering out unnecessary information

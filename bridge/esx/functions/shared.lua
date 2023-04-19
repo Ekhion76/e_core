@@ -28,6 +28,7 @@ function ESXSharedFunctions()
         return items
     end
 
+    ---@return table {name, image, label, isUnique, isWeapon, weight}
     function self.convertOxItems(items)
 
         if not hf.isPopulatedTable(items) then
@@ -35,20 +36,19 @@ function ESXSharedFunctions()
             return items
         end
 
+        local tmp = {}
+
         for item, data in pairs(items) do
 
-            items[item:lower()] = {
-                label = data.label,
-                isUnique = data.stack == false,
-                isWeapon = data.weapon == true,
-                weight = data.weight,
-                image = item .. '.png',
-                durability = data.durability,
-                ammoname = data.ammoname
-            }
+            local name = item:lower()
+            tmp[name] = data
+            tmp[name].name = name
+            tmp[name].isUnique = data.stack == false
+            tmp[name].isWeapon = data.weapon == true
+            tmp[name].image = item .. '.png'
         end
 
-        return items
+        return tmp
     end
 
     function self.convertPlayer(playerData)

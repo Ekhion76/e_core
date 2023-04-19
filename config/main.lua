@@ -11,11 +11,13 @@ Config.maxInventorySlots = 41 -- IMPORTANT! Used only above the 1.0.0 qb-invento
 
 -- Different inventories index the fields differently.
 -- E.g: ox_inventory: count; qb_inventory: amount, grid inventory: quantity
+-- Use: getInventory() result, set the user inventory fields
 Config.inventoryIdx = {
     name = 'name', -- name, item -- raw item name
     count = 'amount', -- count, amount, quantity
     slot = 'slot',
-    --meta = 'metadata', -- metadata, info
+
+    -- metaData fields
     serial = 'serie' -- QBCore metadata weapon serial number
 }
 
@@ -31,7 +33,8 @@ if OX_INVENTORY then
         name = 'name',
         count = 'count',
         slot = 'slot',
-        --meta = 'metadata',
+
+        -- metaData fields
         serial = 'serial' -- metadata.serial
     }
 end

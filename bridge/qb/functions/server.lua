@@ -23,10 +23,9 @@ function QBCoreFunctions()
             return false, 'there are no items to remove'
         end
 
-        for item, amount in pairs(items) do
+        for _, item in pairs(items) do
 
-
-            if not ox_inventory:RemoveItem(playerId, item, amount) then
+            if not ox_inventory:RemoveItem(playerId, item.name, item.amount) then
 
                 return false, 'unknown_error'
             end
@@ -51,20 +50,20 @@ function QBCoreFunctions()
         end
 
         -- check all item exists:
-        for itemToRemove, amountToRemove in pairs(items) do
+        for _, itemToRemove in pairs(items) do
 
             count = 0
 
-            if amountToRemove > 0 then
+            if itemToRemove.amount > 0 then
 
                 for _, item in pairs(inventory) do
 
-                    if item.name:lower() == itemToRemove:lower() then
+                    if item.name:lower() == itemToRemove.name:lower() then
                         count = count + item.amount
                     end
                 end
 
-                if count < amountToRemove then
+                if count < itemToRemove.amount then
                     return false, 'not_enough_items'
                 end
             end
@@ -72,13 +71,15 @@ function QBCoreFunctions()
 
 
         -- item remove
-        for itemToRemove, amountToRemove in pairs(items) do
+        for _, itemToRemove in pairs(items) do
 
-            if amountToRemove > 0  then
+            local amountToRemove = itemToRemove.amount
+
+            if amountToRemove > 0 then
 
                 for _, item in pairs(inventory) do
 
-                    if item.name:lower() == itemToRemove:lower() then
+                    if item.name:lower() == itemToRemove.name:lower() then
 
                         if item.amount >= amountToRemove then
 

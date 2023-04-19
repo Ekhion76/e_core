@@ -23,9 +23,9 @@ function ESXFunctions()
             return false, 'there are no items to remove'
         end
 
-        for item, amount in pairs(items) do
+        for _, item in pairs(items) do
 
-            if not ox_inventory:RemoveItem(playerId, item, amount) then
+            if not ox_inventory:RemoveItem(playerId, item.name, item.amount) then
 
                 return false, 'unknown_error'
             end

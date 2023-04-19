@@ -116,7 +116,7 @@ function sharedGlobalFunctions()
             return false, 'too_heavy'
         end
 
-        if requiredSlot <= freeSlots then
+        if requiredSlot > freeSlots then
 
             return false, 'not_enough_space'
         end

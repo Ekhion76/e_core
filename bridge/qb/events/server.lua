@@ -5,7 +5,7 @@ QBEvents = sharedEvents
 table.insert(QBEvents, {
     name = 'QBCore:Server:PlayerLoaded',
     method = function(xPlayer)
-        xPlayer = FUNCTIONS.convertPlayer(xPlayer)
+        xPlayer = eCore:convertPlayer(xPlayer)
         TriggerEvent('e_core:playerLoaded', xPlayer)
     end
 })

@@ -7,31 +7,32 @@ description 'ECO CORE'
 version '0.0.2'
 
 shared_scripts {
-    'bridge/config.lua',
-    'libs/helper.lua',
-
-    'bridge/global/functions/shared.lua',
-    'bridge/esx/functions/shared.lua',
-    'bridge/qb/functions/shared.lua',
-
+    'bridge/**/config.lua',
     'config/main.lua',
     'config/levels.lua',
+    'standalone/**/config.lua',
 
     'libs/functions.lua',
+    'libs/helper.lua',
+
     'libs/meta.lua',
     'locales/*.lua',
 }
 
 client_scripts {
-    -- eCore
-    'bridge/global/events/client.lua',
-    'bridge/global/functions/client.lua',
-    'bridge/esx/functions/client.lua',
-    'bridge/qb/functions/client.lua',
+    'bridge/global/shared.lua',
+    'bridge/global/client.lua',
+
+    'bridge/esx/shared.lua',
+    'bridge/qb/shared.lua',
 
     'bridge/esx/client.lua',
     'bridge/qb/client.lua',
 
+    'standalone/**/shared.lua',
+    'standalone/**/client.lua',
+
+    'bridge/global/events/client.lua',
     'bridge/esx/events/client.lua',
     'bridge/qb/events/client.lua',
 
@@ -44,19 +45,22 @@ client_scripts {
 server_scripts {
     '@oxmysql/lib/MySQL.lua',
 
-    -- eCore
-    'bridge/global/events/server.lua',
+    'bridge/global/shared.lua',
+    'bridge/global/server.lua',
 
-    'bridge/esx/functions/server.lua',
-    'bridge/qb/functions/server.lua',
+
+    'bridge/esx/shared.lua',
+    'bridge/qb/shared.lua',
 
     'bridge/esx/server.lua',
     'bridge/qb/server.lua',
 
+    'standalone/**/shared.lua',
+    'standalone/**/server.lua',
+
+    'bridge/global/events/server.lua',
     'bridge/esx/events/server.lua',
     'bridge/qb/events/server.lua',
-
-    'bridge/global/functions/server.lua',
 
     'bridge/main.lua',
 

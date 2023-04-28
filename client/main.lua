@@ -2,28 +2,28 @@ ECO = {}
 ECO.meta = {}
 local hf = hf
 
-REGISTERED_ITEMS, INVENTORY_CONFIG = nil, nil
+CORE_READY, REGISTERED_ITEMS = nil, nil
 
 CreateThread(function()
 
+    cLog('CLIENT REGISTERED_ITEMS', 'Loading', 2)
+
     while not hf.isPopulatedTable(REGISTERED_ITEMS) do
 
-        REGISTERED_ITEMS = FUNCTIONS.getRegisteredItems()
+        cLog('CLIENT REGISTERED_ITEMS', 'Wait', 2)
+        REGISTERED_ITEMS = eCore:getRegisteredItems()
         Wait(1000)
     end
+
+    cLog('CLIENT REGISTERED_ITEMS', 'Loaded', 2)
+    cLog('CLIENT CORE', 'READY', 2)
+    CORE_READY = true
 end)
 
 local nuiReady, init
 
 function serverSync()
 
-    eCore.triggerCallback('e_core:serverSync', function(inventoryLimits)
-
-        INVENTORY_CONFIG = {
-            SLOTS = inventoryLimits.slots,
-            MAX_WEIGHT = inventoryLimits.maxWeight
-        }
-    end)
 end
 
 
@@ -100,10 +100,13 @@ end
 
 function nuiInit()
 
+    cLog('NUI INIT', 'Loading', 1)
+
     while not nuiReady do
 
         Wait(1000)
-        print('WAIT for nui loading...')
+
+        cLog('NUI INIT', 'Wait', 1)
     end
 
     -- INIT MESSAGE
@@ -116,7 +119,9 @@ function nuiInit()
                      displayComponent = Config.displayComponent,
                    })
 
-    if eCore.isLoggedIn() then
+    cLog('NUI INIT', 'Loaded...')
+
+    if eCore:isLoggedIn() then
 
         if nuiReady and Config.systemMode.labor and Config.displayComponent.laborHud then
 
@@ -139,7 +144,7 @@ AddEventHandler('onResourceStart', function(resource)
 
     if resource == GetCurrentResourceName() then
 
-        if eCore.isLoggedIn() then
+        if eCore:isLoggedIn() then
 
             TriggerServerEvent('e_core:loadMeta')
             serverSync()
@@ -155,7 +160,7 @@ AddEventHandler('e_core:isPauseMenuActive', function(isPaused)
         SendNUIMessage({ action = 'CLOSE', subject = 'all' })
     else
 
-        if eCore.isLoggedIn() and Config.systemMode.labor and Config.displayComponent.laborHud then
+        if eCore:isLoggedIn() and Config.systemMode.labor and Config.displayComponent.laborHud then
 
             SendNUIMessage({ action = 'OPEN', subject = 'hud' })
         end
@@ -240,7 +245,7 @@ RegisterCommand('openMeta', function()
 
     if not nuiReady then
 
-        print('Waiting for NUI load')
+        cLog('command openMeta', 'Waiting for NUI load')
         return false
     end
 

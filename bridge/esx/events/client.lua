@@ -4,7 +4,8 @@ ESXEvents = sharedEvents
 table.insert(ESXEvents, {
     name = 'esx:playerLoaded',
     method = function(playerData, isNew, skin)
-        playerData = FUNCTIONS.convertPlayer(playerData)
+        ESX.PlayerLoaded = true
+        playerData = eCore:convertPlayer(playerData)
         TriggerEvent('e_core:onPlayerLoaded', playerData, isNew, skin)
     end
 })
@@ -12,6 +13,7 @@ table.insert(ESXEvents, {
 table.insert(ESXEvents, {
     name = 'esx:onPlayerLogout',
     method = function(playerId)
+        ESX.PlayerLoaded = false
         TriggerEvent('e_core:onPlayerUnload', playerId)
     end
 })

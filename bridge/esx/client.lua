@@ -1,35 +1,31 @@
-function ESXBridge()
+if ESX_CORE then
+    -- if you want to rewrite a function, don't do it here!
+    -- copy it to the standalone/ directory and modify it there!
+    -- this way, your changes will not be lost in future e_core updates
 
-    local self = {}
+    local hf = hf
 
-    local ox_inventory = false
-
-    if OX_INVENTORY then
-
-        ox_inventory = exports.ox_inventory
-    end
-
-    function self.triggerCallback(name, callback, ...)
+    function eCore:triggerCallback(name, callback, ...)
 
         ESX.TriggerServerCallback(name, callback, ...)
     end
 
-    function self.sendMessage(message, mType, mSec)
+    function eCore:sendMessage(message, mType, mSec)
 
         exports.esx_notify:Notify(mType, mSec, message)
     end
 
-    function self.drawText(message, position, mType)
+    function eCore:drawText(message, position, mType)
 
         exports.esx_textui:TextUI(message, mType)
     end
 
-    function self.hideText()
+    function eCore:hideText()
 
         exports.esx_textui:HideUI()
     end
 
-    function self.progressbar(params)
+    function eCore:progressbar(params)
 
         if params.animation then
 
@@ -51,30 +47,30 @@ function ESXBridge()
         )
     end
 
-    function self.cancelProgressbar()
+    function eCore:cancelProgressbar()
 
         ExecuteCommand("cancelprog")
     end
 
-    function self.addTargetEntity(obj, options)
+    function eCore:addTargetEntity(obj, options)
 
         -- if you use ox_target, don't change it. ox_target recognizes the qtarget export and converts it!
         exports['qtarget']:AddTargetEntity(obj, options)
     end
 
-    function self.addBoxZone(name, center, length, width, options, targetOptions)
+    function eCore:addBoxZone(name, center, length, width, options, targetOptions)
 
         -- if you use ox_target, don't change it. ox_target recognizes the qtarget export and converts it!
         exports['qtarget']:AddBoxZone(name, center, length, width, options, targetOptions)
     end
 
-    function self.removeZone(name)
+    function eCore:removeZone(name)
 
         -- if you use ox_target, don't change it. ox_target recognizes the qtarget export and converts it!
         exports['qtarget']:RemoveZone(name)
     end
 
-    function self.isLoggedIn()
+    function eCore:isLoggedIn()
 
         return ESX.PlayerLoaded
     end
@@ -83,51 +79,33 @@ function ESXBridge()
     --- INVENTORY
     ------------------------------------------------------------------------
 
-    function self.getInventoryConfig()
-
-        return INVENTORY_CONFIG
-    end
-
-    function self.getInventoryWeight(playerData)
-
-        return FUNCTIONS.getInventoryWeight(playerData)
-    end
-
-    function self.getInventory(playerData)
+    function eCore:getInventory(playerData)
 
         return playerData.inventory
     end
 
-    function self.getRegisteredItems()
+    --- It returns the entire registered item list
+    ---@return {name: string, label: string, isUnique: boolean, isWeapon: boolean, weight: number, image: string, ammoname: string}
+    function eCore:getRegisteredItems()
 
-        return REGISTERED_ITEMS
-    end
+        if REGISTERED_ITEMS then
 
-    function self.getAmountOfItems(inventory)
+            return REGISTERED_ITEMS
+        end
 
-        return FUNCTIONS.getAmountOfItems(inventory)
-    end
-
-    function self.canSwapItems(swappingItems, itemData, playerData)
-
-        return FUNCTIONS.canSwapItems(swappingItems, itemData, playerData)
-    end
-
-    function self.canCarryItem(itemData, playerData)
-
-        return FUNCTIONS.canCarryItem(itemData, playerData)
+        return self:convertItems(ESX.GetPlayerData().inventory)
     end
 
     ------------------------------------------------------------------------
     --- PLAYER
     ------------------------------------------------------------------------
 
-    function self.getPlayer()
+    function eCore:getPlayer()
 
-        return FUNCTIONS.convertPlayer(ESX.GetPlayerData())
+        return self:convertPlayer(ESX.GetPlayerData())
     end
 
-    function self.getAccounts(playerData, account)
+    function eCore:getAccounts(playerData, account)
 
         for i = 1, #(playerData.accounts) do
 
@@ -140,7 +118,7 @@ function ESXBridge()
         return 0
     end
 
-    function self.canInteract(playerData)
+    function eCore:canInteract(playerData)
 
         _PlayerPedId = PlayerPedId()
         -- isLoaded
@@ -156,20 +134,18 @@ function ESXBridge()
             and IsPedOnFoot(_PlayerPedId)
     end
 
-    function self.setVehicleProperties(vehicle, props)
+    function eCore:setVehicleProperties(vehicle, props)
 
         ESX.Game.SetVehicleProperties(vehicle, props)
     end
 
-    function self.deleteVehicle(vehicle)
+    function eCore:deleteVehicle(vehicle)
 
         ESX.Game.DeleteVehicle(vehicle)
     end
 
-    function self.getClosestVehicle(coords)
+    function eCore:getClosestVehicle(coords)
 
         return ESX.Game.GetClosestVehicle(coords)
     end
-
-    return self
 end

@@ -4,7 +4,7 @@ ESXEvents = sharedEvents
 table.insert(ESXEvents, {
     name = 'esx:playerLoaded',
     method = function(playerId, xPlayer, isNew)
-        xPlayer = FUNCTIONS.convertPlayer(xPlayer)
+        xPlayer = eCore:convertPlayer(xPlayer)
         TriggerEvent('e_core:playerLoaded', xPlayer, playerId, isNew)
     end
 })

@@ -8,7 +8,7 @@ local CREATE_META = 'ALTER TABLE `users` ADD COLUMN IF NOT EXISTS `e_core` LONGT
 local UPDATE_META = 'UPDATE `users` SET `e_core` = ? WHERE `identifier` = ?'
 local SELECT_META = 'SELECT `e_core` FROM `users` WHERE `identifier` = ?'
 
-if FRAMEWORK == 'qb' then
+if QB_CORE then
 
     CREATE_META = 'ALTER TABLE `players` ADD COLUMN IF NOT EXISTS `e_core` LONGTEXT NULL DEFAULT NULL'
     UPDATE_META = 'UPDATE `players` SET `e_core` = ? WHERE `citizenid` = ?'
@@ -47,7 +47,7 @@ function saveAllMeta()
 
     for playerId, meta in pairs(ECO.meta) do
 
-        local xPlayer = eCore.getPlayer(playerId)
+        local xPlayer = eCore:getPlayer(playerId)
 
         if xPlayer then
 

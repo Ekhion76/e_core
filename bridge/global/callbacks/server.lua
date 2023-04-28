@@ -5,7 +5,7 @@
 ---
 local hf = hf
 
-eCore.createCallback('e_core:createVehicle', function(source, cb, pos, model, vType)
+eCore:createCallback('e_core:createVehicle', function(source, cb, pos, model, vType)
 
     model = GetHashKey(model)
     local vehicle, netId = false, false

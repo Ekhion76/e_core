@@ -1,36 +1,32 @@
-function QBCoreBridge()
+if QB_CORE then
+    -- if you want to rewrite a function, don't do it here!
+    -- copy it to the standalone/ directory and modify it there!
+    -- this way, your changes will not be lost in future e_core updates
 
-    local self = {}
+    local hf = hf
 
-    local ox_inventory = false
-
-    if OX_INVENTORY then
-
-        ox_inventory = exports.ox_inventory
-    end
-
-    function self.triggerCallback(name, callback, ...)
+    function eCore:triggerCallback(name, callback, ...)
 
         QBCore.Functions.TriggerCallback(name, callback, ...)
     end
 
-    function self.sendMessage(message, mType, mSec, image)
+    function eCore:sendMessage(message, mType, mSec, image)
 
         --TriggerEvent('QBCore:Notify', message, mType, mSec)
         QBCore.Functions.Notify(message, mType, mSec) -- CHANGE ME
     end
 
-    function self.drawText(message, position, mType)
+    function eCore:drawText(message, position, mType)
 
         TriggerEvent('qb-core:client:DrawText', message, position) -- CHANGE ME
     end
 
-    function self.hideText()
+    function eCore:hideText()
 
         TriggerEvent('qb-core:client:HideText') -- CHANGE ME
     end
 
-    function self.progressbar(params)
+    function eCore:progressbar(params)
 
         if params.animation then
 
@@ -66,30 +62,30 @@ function QBCoreBridge()
             end)
     end
 
-    function self.cancelProgressbar()
+    function eCore:cancelProgressbar()
 
         TriggerEvent("progressbar:client:cancel")
     end
 
-    function self.addTargetEntity(obj, options)
+    function eCore:addTargetEntity(obj, options)
 
         -- if you use ox_target, don't change it. ox_target recognizes the qb-target export and converts it!
         exports['qb-target']:AddTargetEntity(obj, options)
     end
 
-    function self.addBoxZone(name, center, length, width, options, targetOptions)
+    function eCore:addBoxZone(name, center, length, width, options, targetOptions)
 
         -- if you use ox_target, don't change it. ox_target recognizes the qb-target export and converts it!
         exports['qb-target']:AddBoxZone(name, center, length, width, options, targetOptions)
     end
 
-    function self.removeZone(name)
+    function eCore:removeZone(name)
 
         -- if you use ox_target, don't change it. ox_target recognizes the qb-target export and converts it!
         exports['qb-target']:RemoveZone(name)
     end
 
-    function self.isLoggedIn()
+    function eCore:isLoggedIn()
 
         return LocalPlayer.state['isLoggedIn']
     end
@@ -98,51 +94,21 @@ function QBCoreBridge()
     --- INVENTORY
     ------------------------------------------------------------------------
 
-    function self.getInventoryConfig()
-
-        return INVENTORY_CONFIG
-    end
-
-    function self.getInventoryWeight(playerData)
-
-        return FUNCTIONS.getInventoryWeight(playerData)
-    end
-
-    function self.getInventory(playerData)
+    function eCore:getInventory(playerData)
 
         return playerData.items
-    end
-
-    function self.getRegisteredItems()
-
-        return REGISTERED_ITEMS
-    end
-
-    function self.getAmountOfItems(inventory)
-
-        return FUNCTIONS.getAmountOfItems(inventory)
-    end
-
-    function self.canSwapItems(swappingItems, itemData, playerData)
-
-        return FUNCTIONS.canSwapItems(swappingItems, itemData, playerData)
-    end
-
-    function self.canCarryItem(itemData, playerData)
-
-        return FUNCTIONS.canCarryItem(itemData, playerData)
     end
 
     ------------------------------------------------------------------------
     --- PLAYER
     ------------------------------------------------------------------------
 
-    function self.getPlayer()
+    function eCore:getPlayer()
 
-        return FUNCTIONS.convertPlayer(QBCore.Functions.GetPlayerData())
+        return eCore:convertPlayer(QBCore.Functions.GetPlayerData())
     end
 
-    function self.getAccounts(playerData, account)
+    function eCore:getAccounts(playerData, account)
 
         local convert = { -- ESX2QB
 
@@ -161,7 +127,7 @@ function QBCoreBridge()
         return playerData.money[account]
     end
 
-    function self.canInteract(playerData)
+    function eCore:canInteract(playerData)
 
         _PlayerPedId = PlayerPedId()
         -- isLoaded
@@ -177,20 +143,19 @@ function QBCoreBridge()
             and IsPedOnFoot(_PlayerPedId)
     end
 
-    function self.setVehicleProperties(vehicle, props)
+    function eCore:setVehicleProperties(vehicle, props)
 
         QBCore.Functions.SetVehicleProperties(vehicle, props)
     end
 
-    function self.deleteVehicle(vehicle)
+    function eCore:deleteVehicle(vehicle)
 
         QBCore.Functions.DeleteVehicle(vehicle)
     end
 
-    function self.getClosestVehicle(coords)
+    function eCore:getClosestVehicle(coords)
 
         return QBCore.Functions.GetClosestVehicle(coords)
     end
 
-    return self
 end

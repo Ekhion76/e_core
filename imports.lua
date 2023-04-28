@@ -1,14 +1,14 @@
 OX_INVENTORY = GetResourceState('ox_inventory') == 'started'
 
-if GetResourceState('qb-core') == 'started' then
+if QB_CORE then
 
     FRAMEWORK = 'qb'
 end
 
-if GetResourceState('es_extended') == 'started' then
+if ESX_CORE then
 
     FRAMEWORK = 'esx'
 end
 
 eCore = exports.e_core:getCore()
-META_CONFIG = exports.e_core:getConfig()
+eCoreConfig = exports.e_core:getConfig()

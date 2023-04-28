@@ -1,6 +1,6 @@
 RegisterServerEvent('e_core:loadMeta', function()
 
-    loadMeta(eCore.getPlayer(source))
+    loadMeta(eCore:getPlayer(source))
 end)
 
 --- @param playerId number (source)
@@ -169,9 +169,13 @@ end)
 
 AddEventHandler('e_core:playerUnload', function(playerId)
 
-    local xPlayer = eCore.getPlayer(playerId)
-    ECO.meta[playerId]['logout'] = os.time()
-    saveMeta(xPlayer, true)
+    local xPlayer = eCore:getPlayer(playerId)
+
+    if xPlayer and ECO.meta[playerId] then
+
+        ECO.meta[playerId]['logout'] = os.time()
+        saveMeta(xPlayer, true)
+    end
 end)
 
 AddEventHandler('onResourceStop', function(resource)

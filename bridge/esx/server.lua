@@ -1,41 +1,36 @@
-function ESXBridge()
+if ESX_CORE then
+    -- if you want to rewrite a function, don't do it here!
+    -- copy it to the standalone/ directory and modify it there!
+    -- this way, your changes will not be lost in future e_core updates
 
-    -- ESX.Items[v.name] = {label = v.label, weight = v.weight, rare = v.rare, canRemove = v.can_remove}
+    local hf = hf
 
-    local self = {}
-    local ox_inventory = false
-
-    if OX_INVENTORY then
-
-        ox_inventory = exports.ox_inventory
-    end
-
-    function self.createCallback(name, callback)
+    function eCore:createCallback(name, callback)
 
         ESX.RegisterServerCallback(name, callback)
     end
 
-    function self.createUsableItem(item, cb)
+    function eCore:createUsableItem(item, cb)
 
         ESX.RegisterUsableItem(item, cb)
     end
 
-    function self.sendMessage(source, message, mType, mSec)
+    function eCore:sendMessage(source, message, mType, mSec)
 
         TriggerClientEvent("ESX:Notify", source, mType, mSec, message)
     end
 
-    function self.drawText(source, message, position, mType)
+    function eCore:drawText(source, message, position, mType)
 
         TriggerClientEvent("ESX:TextUI", source, message, mType)
     end
 
-    function self.hideText()
+    function eCore:hideText(source)
 
         TriggerClientEvent("ESX:HideUI", source)
     end
 
-    function self.addMoney(xPlayer, account, amount, reason)
+    function eCore:addMoney(xPlayer, account, amount, reason)
 
         if type(xPlayer) == 'number' then
 
@@ -51,7 +46,7 @@ function ESXBridge()
         return false
     end
 
-    function self.removeMoney(xPlayer, accountName, amount, reason)
+    function eCore:removeMoney(xPlayer, accountName, amount, reason)
 
         if type(xPlayer) == 'number' then
 
@@ -67,7 +62,7 @@ function ESXBridge()
         return false
     end
 
-    function self.getAccounts(xPlayer, account)
+    function eCore:getAccounts(xPlayer, account)
 
         for i = 1, #(xPlayer.accounts) do
 
@@ -84,111 +79,79 @@ function ESXBridge()
     --- INVENTORY
     ------------------------------------------------------------------------
 
-    function self.getInventoryConfig()
-
-        return INVENTORY_CONFIG
-    end
-
-    function self.getInventory(xPlayer)
+    function eCore:getInventory(xPlayer)
 
         return xPlayer.getInventory()
     end
 
-    function self.setInventory(xPlayer, items)
+    function eCore:getInventoryWeight(xPlayer)
 
-
+        return xPlayer.getWeight()
     end
 
-    function self.getInventoryWeight(xPlayer)
+    function eCore:addItem(xPlayer, item, count, slot, metadata)
 
-        if OX_INVENTORY then
-
-            return xPlayer.weight
-        else
-
-            return FUNCTIONS.getInventoryWeight(xPlayer)
-        end
-    end
-
-    function self.addItem(xPlayer, item, count, slot, metadata)
-
-        if OX_INVENTORY then
-
-            local success, response = ox_inventory:AddItem(xPlayer.source, item, count, metadata)
-
-            if not success then
-
-                return false, response
-            end
-        else
-
-            if not xPlayer.addItem(item, count, metadata, slot) then
-
-                return false, 'inventory_full'
-            end
-        end
-
+        xPlayer.addInventoryItem(item, count)
         return true
     end
 
-    function self.removeItem(xPlayer, item, count, metadata, slot)
+    function eCore:removeItem(xPlayer, item, count, metadata, slot)
 
-        if OX_INVENTORY then
+        cLog('eCore:removeItems', item, 3)
+        cLog('eCore:removeItems', count, 3)
+        xPlayer.removeInventoryItem(item, count, metadata, slot)
+        return true
+    end
 
-            return ox_inventory:RemoveItem(xPlayer.source, item, count)
+    function eCore:removeItems(xPlayer, items)
+
+        if not hf.isPopulatedTable(items) then
+            return false, 'there are no items to remove'
         end
 
-        return xPlayer.removeInventoryItem(item, count, metadata, slot)
-    end
+        cLog('eCore:removeItems', items, 3)
 
-    function self.removeItems(xPlayer, itemList)
+        for _, item in pairs(items) do
 
-        if OX_INVENTORY then
-
-            return FUNCTIONS.removeOxItems(xPlayer.source, itemList)
+            xPlayer.removeInventoryItem(item.name, item.amount)
         end
 
-        return FUNCTIONS.removeItems(xPlayer, itemList)
+        return true, 'ok'
     end
 
-    function self.getPlayer(playerId)
+    --- It returns the entire registered item list, unified and filtering out unnecessary information
+    ---@return {name: string, label: string, isUnique: boolean, isWeapon: boolean, weight: number, image: string, ammoname: string}
+    function eCore:getRegisteredItems()
 
-        return FUNCTIONS.convertPlayer(ESX.GetPlayerFromId(playerId))
+        if hf.isPopulatedTable(REGISTERED_ITEMS) then
+
+            return REGISTERED_ITEMS
+        end
+
+        ESX = exports['es_extended']:getSharedObject()
+        return self:convertItems(ESX.Items)
     end
 
-    function self.getRegisteredItems()
+    function eCore:getPlayer(playerId)
 
-        return REGISTERED_ITEMS
+        return self:convertPlayer(ESX.GetPlayerFromId(playerId))
     end
 
-    function self.getAmountOfItems(inventory)
+    function eCore:itemBox(playerId, productInfo, event, amount)
 
-        return FUNCTIONS.getAmountOfItems(inventory)
-    end
+        if Config.itemBox then
 
-    function self.canSwapItems(swappingItems, itemData, playerData)
-
-        return FUNCTIONS.canSwapItems(swappingItems, itemData, playerData)
-    end
-
-    function self.canCarryItem(itemData, playerData)
-
-        return FUNCTIONS.canCarryItem(itemData, playerData)
-    end
-
-    function self.itemBox(playerId, productInfo, event, amount)
-
-        TriggerClientEvent('inventory:client:ItemBox', playerId, productInfo, event, amount)
+            TriggerClientEvent('inventory:client:ItemBox', playerId, productInfo, event, amount)
+        end
     end
 
     ------------------------------------------------------------------------
     --- COMMANDS
     ------------------------------------------------------------------------
 
-    function self.addCommands(name, help, arguments, argsrequired, callback, permission, ...)
+    function eCore:addCommands(name, help, arguments, argsrequired, callback, permission, ...)
 
         ESX.RegisterCommand(name, permission, callback, false, arguments)
     end
 
-    return self
 end

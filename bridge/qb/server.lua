@@ -1,39 +1,36 @@
-function QBCoreBridge()
+if QB_CORE then
+    -- if you want to rewrite a function, don't do it here!
+    -- copy it to the standalone/ directory and modify it there!
+    -- this way, your changes will not be lost in future e_core updates
 
-    local self = {}
-    local ox_inventory = false
+    local hf = hf
 
-    if OX_INVENTORY then
-
-        ox_inventory = exports.ox_inventory
-    end
-
-    function self.createCallback(name, callback)
+    function eCore:createCallback(name, callback)
 
         QBCore.Functions.CreateCallback(name, callback)
     end
 
-    function self.createUsableItem(item, cb)
+    function eCore:createUsableItem(item, cb)
 
         QBCore.Functions.CreateUseableItem(item, cb)
     end
 
-    function self.sendMessage(source, message, mType, mSec)
+    function eCore:sendMessage(source, message, mType, mSec)
 
         TriggerClientEvent('QBCore:Notify', source, message, mType, mSec) -- CHANGE ME
     end
 
-    function self.drawText(source, message, position, mType)
+    function eCore:drawText(source, message, position, mType)
 
         TriggerClientEvent('qb-core:client:DrawText', source, message, position) -- CHANGE ME
     end
 
-    function self.hideText(source)
+    function eCore:hideText(source)
 
         TriggerClientEvent('qb-core:client:HideText', source) -- CHANGE ME
     end
 
-    function self.addMoney(xPlayer, account, amount, reason)
+    function eCore:addMoney(xPlayer, account, amount, reason)
 
         if type(xPlayer) == 'number' then
 
@@ -52,7 +49,7 @@ function QBCoreBridge()
         return xPlayer.Functions.AddMoney(account, amount, reason)
     end
 
-    function self.removeMoney(xPlayer, account, amount, reason)
+    function eCore:removeMoney(xPlayer, account, amount, reason)
 
         if type(xPlayer) == 'number' then
 
@@ -71,7 +68,7 @@ function QBCoreBridge()
         return xPlayer.Functions.RemoveMoney(account, amount, reason)
     end
 
-    function self.getAccounts(xPlayer, account)
+    function eCore:getAccounts(xPlayer, account)
 
         local convert = { -- ESX2QB
 
@@ -94,105 +91,126 @@ function QBCoreBridge()
     --- INVENTORY
     ------------------------------------------------------------------------
 
-    function self.getInventoryConfig()
-
-        return INVENTORY_CONFIG
-    end
-
-    function self.getInventory(xPlayer)
+    function eCore:getInventory(xPlayer)
 
         return xPlayer.items
     end
 
-    function self.setInventory(xPlayer, items)
+    function eCore:addItem(xPlayer, item, count, slot, metadata)
 
-        xPlayer.Functions.SetInventory(items, true)
-    end
+        if not xPlayer.Functions.AddItem(item, count, slot, metadata) then
 
-    function self.getInventoryWeight(xPlayer)
-
-        return FUNCTIONS.getInventoryWeight(xPlayer)
-    end
-
-    function self.addItem(xPlayer, item, count, slot, metadata)
-
-        if OX_INVENTORY then
-
-            local success, response = ox_inventory:AddItem(xPlayer.source, item, count, metadata)
-
-            if not success then
-
-                return false, response
-            end
-        else
-
-            if not xPlayer.Functions.AddItem(item, count, slot, metadata) then
-
-                return false, 'inventory_full'
-            end
+            return false, 'inventory_full'
         end
 
         return true
     end
 
-    function self.removeItem(xPlayer, item, count, metadata, slot)
-
-        if OX_INVENTORY then
-
-            return ox_inventory:RemoveItem(xPlayer.source, item, count)
-        end
+    function eCore:removeItem(xPlayer, item, count, metadata, slot)
 
         return xPlayer.Functions.RemoveItem(item, count)
     end
 
-    function self.removeItems(xPlayer, itemList)
+    function eCore:removeItems(xPlayer, items)
 
-        if OX_INVENTORY then
+        if not hf.isPopulatedTable(items) then
 
-            return FUNCTIONS.removeOxItems(xPlayer.source, itemList)
+            return false, 'no_items_to_remove'
         end
 
-        return FUNCTIONS.removeItems(xPlayer, itemList)
+        local count
+        local inventory = xPlayer.items
+
+        if hf.isEmpty(inventory) then
+
+            return false, 'inventory_is_empty'
+        end
+
+        -- check all item exists:
+        for _, itemToRemove in pairs(items) do
+
+            count = 0
+
+            if itemToRemove.amount > 0 then
+
+                for _, item in pairs(inventory) do
+
+                    if item.name:lower() == itemToRemove.name:lower() then
+                        count = count + item.amount
+                    end
+                end
+
+                if count < itemToRemove.amount then
+                    return false, 'not_enough_items'
+                end
+            end
+        end
+
+
+        -- item remove
+        for _, itemToRemove in pairs(items) do
+
+            local amountToRemove = itemToRemove.amount
+
+            if amountToRemove > 0 then
+
+                for _, item in pairs(inventory) do
+
+                    if item.name:lower() == itemToRemove.name:lower() then
+
+                        if item.amount >= amountToRemove then
+
+                            item.amount = item.amount - amountToRemove
+                            amountToRemove = 0
+
+                        elseif item.amount < amountToRemove then
+
+                            amountToRemove = amountToRemove - item.amount
+                            item.amount = 0
+                        end
+
+                        if amountToRemove == 0 then
+                            break
+                        end
+                    end
+                end
+            end
+        end
+
+        -- save inventory
+        local temp = {}
+
+        for slot, item in pairs(inventory) do
+
+            if item.amount > 0 then
+
+                temp[slot] = item
+            end
+        end
+
+        xPlayer.Functions.SetInventory(temp, true)
+        return true, 'ok'
     end
 
-    function self.getPlayer(playerId)
+    function eCore:getPlayer(playerId)
 
-        return FUNCTIONS.convertPlayer(QBCore.Functions.GetPlayer(playerId))
+        return eCore:convertPlayer(QBCore.Functions.GetPlayer(playerId))
     end
 
-    function self.getRegisteredItems()
+    function eCore:itemBox(playerId, productInfo, event, amount)
 
-        return REGISTERED_ITEMS
-    end
+        if Config.itemBox then
 
-    function self.getAmountOfItems(inventory)
-
-        return FUNCTIONS.getAmountOfItems(inventory)
-    end
-
-    function self.canSwapItems(swappingItems, itemData, playerData)
-
-        return FUNCTIONS.canSwapItems(swappingItems, itemData, playerData)
-    end
-
-    function self.canCarryItem(itemData, playerData)
-
-        return FUNCTIONS.canCarryItem(itemData, playerData)
-    end
-
-    function self.itemBox(playerId, productInfo, event, amount)
-
-        TriggerClientEvent('inventory:client:ItemBox', playerId, productInfo, event, amount)
+            TriggerClientEvent('inventory:client:ItemBox', playerId, productInfo, event, amount)
+        end
     end
 
     ------------------------------------------------------------------------
     --- COMMANDS
     ------------------------------------------------------------------------
 
-    function self.addCommands(name, help, arguments, argsrequired, callback, permission, ...)
+    function eCore:addCommands(name, help, arguments, argsrequired, callback, permission, ...)
 
         QBCore.Commands.Add(name, help, arguments, argsrequired, callback, permission, ...)
     end
-
-    return self
 end

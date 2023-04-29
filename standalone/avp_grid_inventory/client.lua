@@ -6,8 +6,16 @@ if AVP_GRID_INVENTORY then
 
     function eCore:canSwapItems(swappingItems, itemData, playerData)
 
-        -- only weight check
-        return eCore:canCarryItem(itemData, playerData)
+        -- only canCarry check
+        local p = promise.new()
+
+        eCore:triggerCallback('e_core:getCanSwap', function(result)
+
+            p:resolve(result)
+        end, swappingItems, itemData)
+
+        local result = Citizen.Await(p)
+        return result, (result and '' or 'too_heavy')
     end
 
     ---Returns true or false (and reason) depending if the inventory can carry the specified item
@@ -15,19 +23,14 @@ if AVP_GRID_INVENTORY then
     ---@return boolean, string
     function eCore:canCarryItem(itemData, playerData)
 
-        -- only weight check
-        --local inventory = self:getInventory(playerData)
+        local p = promise.new()
 
-        local capacity = Config.maxInventoryWeight - self:getInventoryWeight(playerData)
-        local itemWeight = self:getItemWeight(itemData.name, itemData.metadata) * itemData.amount
+        eCore:triggerCallback('e_core:getCanCarry', function(result)
 
-        cLog('STANDALONE eCore:canCarryItem', { capacity = capacity, itemWeight = itemWeight }, 3)
+            p:resolve(result)
+        end, itemData)
 
-        if itemWeight > capacity then
-
-            return false, 'too_heavy'
-        end
-
-        return true
+        local result = Citizen.Await(p)
+        return result, (result and '' or 'too_heavy')
     end
 end

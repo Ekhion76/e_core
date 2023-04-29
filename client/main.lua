@@ -22,11 +22,6 @@ end)
 
 local nuiReady, init
 
-function serverSync()
-
-end
-
-
 --- @param category string (optional) category eg.: crafting, reputation, harvesting, special, ...
 --- @param name string (optional) subcategory eg.: weaponry, cooking, handicraft, chemist, etc.
 --- @return number|table proficiency | all category
@@ -100,13 +95,13 @@ end
 
 function nuiInit()
 
-    cLog('NUI INIT', 'Loading', 1)
+    cLog('NUI INIT', 'Loading', 2)
 
     while not nuiReady do
 
         Wait(1000)
 
-        cLog('NUI INIT', 'Wait', 1)
+        cLog('NUI INIT', 'Wait', 2)
     end
 
     -- INIT MESSAGE
@@ -119,7 +114,7 @@ function nuiInit()
                      displayComponent = Config.displayComponent,
                    })
 
-    cLog('NUI INIT', 'Loaded...')
+    cLog('NUI INIT', 'Loaded...', 2)
 
     if eCore:isLoggedIn() then
 
@@ -136,8 +131,6 @@ RegisterNetEvent('e_core:onPlayerLoaded', function()
 
         SendNUIMessage({ action = 'OPEN', subject = 'hud' })
     end
-
-    serverSync()
 end)
 
 AddEventHandler('onResourceStart', function(resource)
@@ -147,7 +140,6 @@ AddEventHandler('onResourceStart', function(resource)
         if eCore:isLoggedIn() then
 
             TriggerServerEvent('e_core:loadMeta')
-            serverSync()
         end
     end
 end)
@@ -245,7 +237,7 @@ RegisterCommand('openMeta', function()
 
     if not nuiReady then
 
-        cLog('command openMeta', 'Waiting for NUI load')
+        cLog('command openMeta', 'Waiting for NUI load', 2)
         return false
     end
 

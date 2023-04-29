@@ -29,7 +29,7 @@ if AVP_GRID_INVENTORY then
             tmp[name].label = data.formatName
             tmp[name].isUnique = not data.isStackable
             tmp[name].isWeapon = data.isWeapon
-            tmp[name].weight = data.weight * 1000
+            tmp[name].weight = data.weight
             tmp[name].image = item .. '.png'
             tmp[name].ammoname = data.weaponAmmoType
         end
@@ -42,7 +42,7 @@ if AVP_GRID_INVENTORY then
     --- @return number total weight in gramm
     function eCore:getInventoryWeight(playerData)
 
-        return exports["avp_grid_inventory"]:GetWeight(playerData.source) * 1000
+        return exports["avp_grid_inventory"]:GetWeight(playerData.source)
     end
 
     --- @return table {name|item: string, amount|count|quantity: number} set field names in eCore:getSettings()

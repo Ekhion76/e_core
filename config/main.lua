@@ -3,7 +3,7 @@
 Config = Config or {}
 Config.locale = 'hu'
 
-Config.debugLevel = 3 -- 0-3, false or 0 = off
+Config.debugLevel = false -- 0-4, false or 0 = off
 
 -- Config.maxInventoryWeight = 30000 -- See the bridge/esx|qb/config.lua or standalone/inventory name/config.lua
 -- Config.maxInventorySlots = 41 -- See the bridge/esx|qb/config.lua or standalone/inventory name/config.lua

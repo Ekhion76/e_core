@@ -207,7 +207,6 @@ function hf.numberFormat(number)
 end
 
 function hf.moneyFormat(amount)
-    -- TODO
 
     if Config.currency.suffix then
 

@@ -6,7 +6,7 @@ if AVP_GRID_INVENTORY then
 
     function eCore:removeItem(xPlayer, item, count, metadata, slot)
 
-        cLog('STANDALONE eCore:removeItem', item, 3)
+        cLog('STANDALONE eCore:removeItem', item, 4)
         return exports["avp_grid_inventory"]:RemoveItemBy(xPlayer.source, count, item)
     end
 
@@ -18,10 +18,9 @@ if AVP_GRID_INVENTORY then
 
         for _, item in pairs(items) do
 
-            cLog('STANDALONE eCore:removeItems', item, 3)
+            cLog('STANDALONE eCore:removeItems', item, 4)
 
             local success, reason = exports["avp_grid_inventory"]:RemoveItemBy(xPlayer.source, item.amount, { name = item.name })
-
             if not success then
 
                 return false, reason
@@ -33,13 +32,14 @@ if AVP_GRID_INVENTORY then
 
     function eCore:addItem(xPlayer, item, count, slot, metadata)
 
-        cLog('STANDALONE eCore:addItem', { item = item, count = count, slot = slot, metadata = metadata }, 3)
+        cLog('STANDALONE eCore:addItem', { item = item, count = count, slot = slot, metadata = metadata }, 4)
         return exports["avp_grid_inventory"]:AddItem(xPlayer.source, item, count, metadata)
     end
 
     function eCore:canSwapItems(swappingItems, itemData, playerData)
 
-        return exports["avp_grid_inventory"]:CanCarryItem(playerData.source, itemData.name, itemData.amount)
+        --not exists canSwap inventory function
+        return exports["avp_grid_inventory"]:CanCarryItem(playerData.source, itemData.name, itemData.amount) == true
     end
 
     ---Returns true or false (and reason) depending if the inventory can carry the specified item
@@ -47,6 +47,16 @@ if AVP_GRID_INVENTORY then
     ---@return boolean, string
     function eCore:canCarryItem(itemData, playerData)
 
-        return exports["avp_grid_inventory"]:CanCarryItem(playerData.source, itemData.name, itemData.amount)
+        return exports["avp_grid_inventory"]:CanCarryItem(playerData.source, itemData.name, itemData.amount) == true
     end
+
+    eCore:createCallback('e_core:getCanSwap', function(source, cb, swappingItems, itemData)
+
+        cb(exports["avp_grid_inventory"]:CanCarryItem(source, itemData.name, itemData.amount) == true)
+    end)
+
+    eCore:createCallback('e_core:getCanCarry', function(source, cb, itemData)
+
+        cb(exports["avp_grid_inventory"]:CanCarryItem(source, itemData.name, itemData.amount) == true)
+    end)
 end

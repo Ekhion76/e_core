@@ -1,24 +1,22 @@
 class View {
 
     _selectedCategory = '';
+    _pageContainer = $('#container');
+    _metaHud = $('#meta_hud');
+    _laborHudPoint = $('#labor_hud_point');
+    _laborHudProgress = $('#labor_hud_progress');
 
     init() {
 
         //locale HTML
         /*
-                $.each($('*[data-translate]'), function () {
+            $.each($('*[data-translate]'), function () {
 
-                    let $this = $(this);
-                    let txt = translate($this.data().translate);
-                    $this.text(txt);
-                });
+                let $this = $(this);
+                let txt = translate($this.data().translate);
+                $this.text(txt);
+            });
         */
-
-        this._pageContainer = $('#container');
-
-        this._metaHud = $('#meta_hud');
-        this._laborHudPoint = $('#labor_hud_point');
-        this._laborHudProgress = $('#labor_hud_progress');
 
         this.createCategoryMenu();
     }

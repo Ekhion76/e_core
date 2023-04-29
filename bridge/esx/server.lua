@@ -17,7 +17,7 @@ if ESX_CORE then
 
     function eCore:sendMessage(source, message, mType, mSec)
 
-        TriggerClientEvent("ESX:Notify", source, mType, mSec, message)
+        TriggerClientEvent("esx:showNotification", source, message, mType, mSec)
     end
 
     function eCore:drawText(source, message, position, mType)
@@ -97,8 +97,7 @@ if ESX_CORE then
 
     function eCore:removeItem(xPlayer, item, count, metadata, slot)
 
-        cLog('eCore:removeItems', item, 3)
-        cLog('eCore:removeItems', count, 3)
+        cLog('eCore:removeItems', {item = item, count = count}, 4)
         xPlayer.removeInventoryItem(item, count, metadata, slot)
         return true
     end
@@ -109,7 +108,7 @@ if ESX_CORE then
             return false, 'there are no items to remove'
         end
 
-        cLog('eCore:removeItems', items, 3)
+        cLog('eCore:removeItems', items, 4)
 
         for _, item in pairs(items) do
 

@@ -12,17 +12,17 @@ if ESX_CORE then
 
     function eCore:sendMessage(message, mType, mSec)
 
-        exports.esx_notify:Notify(mType, mSec, message)
+        ESX.ShowNotification(message, mSec, mType)
     end
 
     function eCore:drawText(message, position, mType)
 
-        exports.esx_textui:TextUI(message, mType)
+        ESX.TextUI(message, mType)
     end
 
     function eCore:hideText()
 
-        exports.esx_textui:HideUI()
+        ESX.HideUI()
     end
 
     function eCore:progressbar(params)
@@ -36,15 +36,11 @@ if ESX_CORE then
             }
         end
 
-        exports.esx_progressbar:Progressbar(
-            params.label,
-            params.duration,
-            {
-                animation = params.animation,
-                onFinish = params.onFinish,
-                onCancel = params.onCancel,
-            }
-        )
+        ESX.Progressbar(params.label, params.duration, {
+            animation = params.animation,
+            onFinish = params.onFinish,
+            onCancel = params.onCancel,
+        })
     end
 
     function eCore:cancelProgressbar()

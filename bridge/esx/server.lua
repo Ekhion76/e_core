@@ -17,7 +17,7 @@ if ESX_CORE then
 
     function eCore:sendMessage(source, message, mType, mSec)
 
-        TriggerClientEvent("ESX:Notify", source, mType, mSec, message)
+        TriggerClientEvent("esx:showNotification", source, message, mType, mSec)
     end
 
     function eCore:drawText(source, message, position, mType)

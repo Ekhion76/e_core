@@ -1,9 +1,5 @@
 --- exports ---
 exports("getAbility", getAbility)
-exports("getCrafting", getCrafting)
-exports("getHarvesting", getHarvesting)
-exports("getReputation", getReputation)
-
 exports("getMeta", getMeta)
 
 --- @return number labor points

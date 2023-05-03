@@ -4,6 +4,12 @@ Experimental project.
 
 It is an adapter for compatibility with ESX and QBCore frameworks and includes skill and lab system and helper functions.
 
+In addition, exports of different inventories and message systems can be inserted, so scripts using e_core can be written completely in standalone mode.
+
+IMPORTANT! Due to the overwriting of later updates, it is advisable to make all changes in the standalone folder!
+The Standalone folder is nothing more than a collection of override functions. All functions in the bridge folder can be copied to the standalone folder and overwritten here.
+
+IMPORTANT! Copy the bridge functions to the standalone folder and overwrite them! (override, of course only if necessary)
 
 Its purpose is to bring the functions of different frameworks to a common denominator.
 

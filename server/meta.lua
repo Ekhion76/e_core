@@ -53,7 +53,7 @@ end
 --- Register metadata if not exists
 --- @param playerId number source
 --- @param category string eg.: crafting, reputation, harvesting, special, ...
---- @param values table key = default value pairs, eg.: {cooking = 0, weaponry = 0}
+--- @param defaultValue table key = default value pairs, eg.: {cooking = 0, weaponry = 0}
 --- @return boolean success
 function registerMeta(playerId, category, defaultValue)
 

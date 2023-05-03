@@ -1,12 +1,11 @@
 -- Documentation:
 -- readme.md file or https://github.com/Ekhion76/e_core
-Config = Config or {}
 Config.locale = 'hu'
 
 Config.debugLevel = false -- 0-4, false or 0 = off
 
--- Config.maxInventoryWeight = 30000 -- See the bridge/esx|qb/config.lua or standalone/inventory name/config.lua
--- Config.maxInventorySlots = 41 -- See the bridge/esx|qb/config.lua or standalone/inventory name/config.lua
+-- Config.maxInventoryWeight = 30000 -- See the bridge/esx|qb/config.lua or standalone/overrides/inventory name/config.lua
+-- Config.maxInventorySlots = 41 -- See the bridge/esx|qb/config.lua or standalone/overrides/inventory name/config.lua
 
 Config.versionCheck = true
 
@@ -17,7 +16,7 @@ Config.systemMode = {
 
 -- Display components in user interface(nui)
 Config.displayComponent = {
-    statisticsPage = { 'crafting', 'harvesting', 'special', 'reputation' }, -- metadata categories
+    statisticsPage = { 'crafting', 'harvesting', 'reputation' }, -- display metadata categories in STATISTICS panel
     icon = false, -- show profession icon in STATISTICS panel. (Add professionName.png to html/img folder e.g weaponry.png, cooking.png)
     laborHud = true
 }
@@ -25,6 +24,17 @@ Config.displayComponent = {
 Config.currency = {
     symbol = '$',
     suffix = false -- false: $10 true: 10$
+}
+
+-- the labor points is registered by default
+-- each script can register its own category using the registerMeta export e.g: exports.e_core:registerMeta(playerId, 'harvesting', {})
+-- add default registered meta fields:
+Config.metaFields = {
+    --crafting = {},
+    --harvesting = {},
+    --reputation = {},
+    --guidebook = {},
+    --achievement = {},
 }
 
 Config.defaultLabor = 1000 -- Default labor for new players

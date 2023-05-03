@@ -1,6 +1,7 @@
 RegisterServerEvent('e_core:loadMeta', function()
 
-    loadMeta(eCore:getPlayer(source))
+    local playerId = source
+    loadMeta(eCore:getPlayer(playerId))
 end)
 
 --- @param playerId number (source)
@@ -54,7 +55,7 @@ end
 --- @param category string eg.: crafting, reputation, harvesting, special, ...
 --- @param values table key = default value pairs, eg.: {cooking = 0, weaponry = 0}
 --- @return boolean success
-function registerMeta(playerId, category, values)
+function registerMeta(playerId, category, defaultValue)
 
     if not tonumber(playerId) or not ECO.meta[playerId] then
 
@@ -66,31 +67,56 @@ function registerMeta(playerId, category, values)
         return false, 'no_valid_meta_name'
     end
 
-    if type(values) ~= 'table' or not next(values) then
+    if ECO.meta[playerId][category] then
 
-        return false, 'no_valid_data'
-    end
+        if hf.isPopulatedTable(defaultValue) then
 
-    ECO.meta[playerId][category] = ECO.meta[playerId][category] or {}
+            ECO.meta[playerId][category] = ECO.meta[playerId][category] or {}
 
-    for key, value in pairs(values) do
+            if hf.isTable(ECO.meta[playerId][category]) then
 
-        if type(key) == 'string' then
+                for key, value in pairs(defaultValue) do
 
-            ECO.meta[playerId][category][key] = ECO.meta[playerId][category][key] or value
+                    if type(key) == 'string' then
+
+                        if not ECO.meta[playerId][category][key] then
+
+                            ECO.meta[playerId][category][key] = value
+                            syncRequest(playerId)
+                        end
+                    end
+                end
+            end
         end
+    else
+
+        ECO.meta[playerId][category] = defaultValue
+        syncRequest(playerId)
     end
 
     return true
 end
 
 --- @param playerId number (source)
---- @param operation string (add | remove | get | set)
+--- @param category string eg.: crafting, reputation, harvesting, special, ...
+--- @param name string eg.: weaponry
+--- @return boolean success and, in case of an error, the reason as well
+function getAbility(playerId, category, name)
+
+    if not checkMetaExists(playerId, category, name) then
+
+        return false, 'not_found_metadata'
+    end
+
+    return ECO.meta[playerId][category][name]
+end
+
+--- @param playerId number (source)
 --- @param category string eg.: crafting, reputation, harvesting, special, ...
 --- @param name string eg.: weaponry
 --- @param value
 --- @return boolean success and, in case of an error, the reason as well
-function ability(playerId, operation, category, name, value)
+function addAbility(playerId, category, name, value)
 
     if not checkMetaExists(playerId, category, name) then
 
@@ -100,32 +126,81 @@ function ability(playerId, operation, category, name, value)
     local metaValue = ECO.meta[playerId][category][name]
     local baseValue = metaValue
 
-    if operation == 'get' then
+    if metaValue >= Config.abilityLimit then
 
-        return metaValue
+        return false, 'has_already_reached_the_limit'
+    end
 
-    elseif operation == 'add' and tonumber(value) then
-
-        if metaValue >= Config.abilityLimit then
-
-            return false, 'has_already_reached_the_limit'
-        end
+    if tonumber(value) then
 
         metaValue = metaValue + value
-
-    elseif operation == 'remove' and tonumber(value) then
-
-        metaValue = metaValue - value
-
-    elseif operation == 'set' then
-
-        metaValue = value
-    else
-
-        return false, 'no_operation'
     end
 
     local newValue = settingLimits(metaValue, Config.abilityLimit)
+
+    if baseValue ~= newValue then
+
+        ECO.meta[playerId][category][name] = newValue
+        messageIfLevelChange(playerId, category, name, baseValue, newValue)
+        syncRequest(playerId)
+    end
+
+    return true
+end
+
+--- @param playerId number (source)
+--- @param category string eg.: crafting, reputation, harvesting, special, ...
+--- @param name string eg.: weaponry
+--- @param value
+--- @return boolean success and, in case of an error, the reason as well
+function removeAbility(playerId, category, name, value)
+
+    if not checkMetaExists(playerId, category, name) then
+
+        return false, 'not_found_metadata'
+    end
+
+    local metaValue = ECO.meta[playerId][category][name]
+    local baseValue = metaValue
+
+    if tonumber(value) then
+
+        metaValue = metaValue - value
+    end
+
+    local newValue = settingLimits(metaValue, Config.abilityLimit)
+
+    if baseValue ~= newValue then
+
+        ECO.meta[playerId][category][name] = newValue
+        messageIfLevelChange(playerId, category, name, baseValue, newValue)
+        syncRequest(playerId)
+    end
+
+    return true
+end
+
+--- @param playerId number (source)
+--- @param category string eg.: crafting, reputation, harvesting, special, ...
+--- @param name string eg.: weaponry
+--- @param value
+--- @return boolean success and, in case of an error, the reason as well
+function setAbility(playerId, category, name, value)
+
+    if not checkMetaExists(playerId, category, name) then
+
+        return false, 'not_found_metadata'
+    end
+
+    local metaValue = ECO.meta[playerId][category][name]
+    local baseValue = metaValue
+
+    local newValue = value
+
+    if tonumber(value) then
+
+        newValue = settingLimits(value, Config.abilityLimit)
+    end
 
     if baseValue ~= newValue then
 
@@ -158,6 +233,30 @@ function syncRequest(playerId)
     end
 end
 
+function prepareMeta(playerId, meta)
+
+    if type(meta) ~= 'table' then
+        meta = {}
+    end
+
+    ECO.meta[playerId] = meta
+    ECO.meta[playerId]['login'] = os.time()
+    ECO.meta[playerId]['logout'] = meta['logout'] or 0
+
+    if Config.systemMode.labor then
+
+        ECO.meta[playerId]['labor'] = meta['labor'] or { val = Config.defaultLabor, time = os.time() }
+    end
+
+    if hf.isPopulatedTable(Config.metaFields) then
+
+        for metaCategory, defaultValue in pairs(Config.metaFields) do
+
+            ECO.meta[playerId][metaCategory] = ECO.meta[playerId][metaCategory] or defaultValue
+        end
+    end
+end
+
 ---
 --- SAVE AND LOAD EVENTS
 ---
@@ -167,15 +266,33 @@ RegisterServerEvent('e_core:playerLoaded', function(xPlayer)
     loadMeta(xPlayer)
 end)
 
-AddEventHandler('e_core:playerUnload', function(playerId)
+function saveRequest(playerId, event)
 
     local xPlayer = eCore:getPlayer(playerId)
 
     if xPlayer and ECO.meta[playerId] then
 
-        ECO.meta[playerId]['logout'] = os.time()
-        saveMeta(xPlayer, true)
+        local time = os.time()
+
+        if time - ECO.lastSave[playerId] > 1 then
+
+            ECO.meta[playerId]['logout'], ECO.lastSave[playerId] = time, time
+            saveMeta(xPlayer, true)
+            cLog(xPlayer.name .. ' ' .. event, 'saving metadata...', 1)
+        end
     end
+end
+
+AddEventHandler('e_core:playerUnload', function(playerId)
+
+    saveRequest(playerId, 'unload')
+end)
+
+AddEventHandler('playerDropped', function(reason)
+
+    local playerId = source
+
+    saveRequest(playerId, 'dropped')
 end)
 
 AddEventHandler('onResourceStop', function(resource)

@@ -1,5 +1,5 @@
 --- exports ---
-exports("ability", ability)
+exports("getAbility", getAbility)
 exports("getCrafting", getCrafting)
 exports("getHarvesting", getHarvesting)
 exports("getReputation", getReputation)

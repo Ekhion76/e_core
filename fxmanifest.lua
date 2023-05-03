@@ -4,13 +4,13 @@ game 'gta5'
 
 description 'ECO CORE'
 
-version '0.0.2'
+version '0.0.3'
 
 shared_scripts {
     'bridge/**/config.lua',
-    'config/main.lua',
-    'config/levels.lua',
-    'standalone/**/config.lua',
+    'standalone/config/main.lua',
+    'standalone/config/levels.lua',
+    'standalone/overrides/**/config.lua',
 
     'libs/functions.lua',
     'libs/helper.lua',
@@ -29,8 +29,8 @@ client_scripts {
     'bridge/esx/client.lua',
     'bridge/qb/client.lua',
 
-    'standalone/**/shared.lua',
-    'standalone/**/client.lua',
+    'standalone/overrides/**/shared.lua',
+    'standalone/overrides/**/client.lua',
 
     'bridge/global/events/client.lua',
     'bridge/esx/events/client.lua',
@@ -48,15 +48,14 @@ server_scripts {
     'bridge/global/shared.lua',
     'bridge/global/server.lua',
 
-
     'bridge/esx/shared.lua',
     'bridge/qb/shared.lua',
 
     'bridge/esx/server.lua',
     'bridge/qb/server.lua',
 
-    'standalone/**/shared.lua',
-    'standalone/**/server.lua',
+    'standalone/overrides/**/shared.lua',
+    'standalone/overrides/**/server.lua',
 
     'bridge/global/events/server.lua',
     'bridge/esx/events/server.lua',
@@ -68,7 +67,6 @@ server_scripts {
 
     'server/main.lua',
     'server/meta.lua',
-    'server/basemetadata.lua',
     'server/labor.lua',
     'server/db.lua',
     'server/exports.lua',

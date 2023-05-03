@@ -37,6 +37,7 @@ function saveMeta(xPlayer, dropMeta)
 
                 ECO.meta[playerId] = nil
             end
+            cLog(xPlayer.name .. ' metadata', 'saved', 1)
         end)
     end
 end
@@ -58,6 +59,7 @@ function saveAllMeta()
     if #parameters > 0 then
 
         MySQL.prepare(UPDATE_META, parameters)
+        cLog('all metadata', 'saved', 1)
     end
 end
 
@@ -71,6 +73,7 @@ function loadMeta(xPlayer)
 
         prepareMeta(playerId, meta)
         addOfflineLabor(playerId)
+        ECO.lastSave[playerId] = os.time()
 
         TriggerClientEvent('e_core:sync', playerId, ECO.meta[playerId])
     end)

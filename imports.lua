@@ -1,5 +1,3 @@
-OX_INVENTORY = GetResourceState('ox_inventory') == 'started'
-
 if QB_CORE then
 
     FRAMEWORK = 'qb'

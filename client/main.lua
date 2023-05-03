@@ -22,10 +22,14 @@ end)
 
 local nuiReady, init
 
---- @param category string (optional) category eg.: crafting, reputation, harvesting, special, ...
+------------
+--- META ---
+------------
+
+--- @param category string category eg.: crafting, reputation, harvesting, special, ...
 --- @param name string (optional) subcategory eg.: weaponry, cooking, handicraft, chemist, etc.
 --- @return number|table proficiency | all category
-function ability(category, name)
+function getAbility(category, name)
 
     if not ECO.meta[category] then
 
@@ -39,43 +43,6 @@ function ability(category, name)
 
     return ECO.meta[category]
 end
-
-----------------
---- CRAFTING ---
-----------------
-
---- @param name string (optional) subcategory eg.: weaponry, cooking, handicraft, chemist, etc.
---- @return number|table proficiency | all category
-function getCrafting(name)
-
-    return ability('crafting', name)
-end
-
-------------------
---- HARVESTING ---
-------------------
-
---- @param name string (optional) subcategory eg.: husbandry, farming, fishing, logging, gathering, mining, etc.
---- @return number|table proficiency | all category
-function getHarvesting(name)
-
-    return ability('harvesting', name)
-end
-
-------------------
---- REPUTATION ---
-------------------
-
---- @param name string (optional) subcategory eg.: thief, safe_cracker, money_launderer, life_saver etc.
---- @return number|table proficiency | all category
-function getReputation(name)
-
-    return ability('reputation', name)
-end
-
-------------
---- META ---
-------------
 
 --- @return table all metadata
 function getMeta()

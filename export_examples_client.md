@@ -26,31 +26,6 @@ exports.e_core:getAbility(category, metaName)
 local result, reason = exports.e_core:getAbility('crafting', 'weaponry')
 ```
 
-
-## getCrafting, getHarvesting, getReputation
-This is a sugar that makes using getAbility easier.
-Query the proficiency within the Crafting category.
-If no metaName is specified, the entire category is returned
-
-**@return**: table or number
-
-```lua
-exports.e_core:getCrafting(metaName)
-exports.e_core:getHarvesting(metaName)
-exports.e_core:getReputation(metaName)
-```
-Crafting: **metaName**: string (optional) *weaponry, cooking, handicraft, chemist, etc. or none*
-
-Harvesting: **metaName**: string (optional) *husbandry, farming, fishing, logging, gathering, mining, etc. or none*
-
-Reputation: **metaName**: string (optional) *thief, safe_cracker, money_launderer, life_saver etc. or none*
-
-```lua
-exports.e_core:getCrafting('weaponry')
-exports.e_core:getHarvesting('fishing')
-exports.e_core:getReputation('life_saver')
-```
-
 ## getLabor
 Returns the player's labor points
 

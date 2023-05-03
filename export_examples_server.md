@@ -52,11 +52,11 @@ If the meta key already exists, it will not overwrite or delete existing meta ke
 
 **category**: string *eg.: crafting, reputation, harvesting, special, ...*
 
-**values**: table *key => value pairs, eg.: {cooking = 0, weaponry = 0}*
+**defaultValue**: table *key => value pairs, eg.: {cooking = 0, weaponry = 0}*
 
 **@return**: boolean success and, in case of an error, the reason as well
 ```lua
-exports.e_core:registerMeta(playerId, category, amount)
+exports.e_core:registerMeta(playerId, category, defaultValue)
 ```
 
 ## getMeta
@@ -125,55 +125,20 @@ It only works with already existing metadata, the category and the meta name are
 
 **playerId**: number (required) (source)
 
-**operation**: string (required) *(add | remove | get | set)*
-
 **category**: string (required) *eg.: crafting, reputation, harvesting, special, ...*
 
 **name**: string (required) *eg.: weaponry*
 
-**value**: any value  (required)
+**value**: any value (required)
 
 **@return**: boolean success and, in case of an error, the reason as well
 
 ```lua
-exports.e_core:ability(playerId, operation, category, name, value)
+exports.e_core:getAbility(playerId, category, name)
+exports.e_core:setAbility(playerId, category, name, value)
+exports.e_core:addAbility(playerId, category, name, value)
+exports.e_core:removeAbility(playerId, category, name, value)
 ```
-
-The additional exports are wrappers for the ability, for ease of use
-
-Here is an example of wrapping:
-```
-exports.e_core("getCrafting", function(playerId, name)
-    return ability(playerId, 'get', 'crafting', name)
-end)
-```
-**ability wrappers for crafting**
-
-```lua
-exports.e_core:getCrafting(playerId, name)
-exports.e_core:addCrafting(playerId, name, value)
-exports.e_core:removeCrafting(playerId, name, value)
-exports.e_core:setCrafting(playerId, name, value)
-```
-
-**ability wrappers for harvesting**
-
-```lua
-exports.e_core:getHarvesting(playerId, name)
-exports.e_core:addHarvesting(playerId, name, value)
-exports.e_core:removeHarvesting(playerId, name, value)
-exports.e_core:setHarvesting(playerId, name, value)
-```
-
-**ability wrappers for reputation**
-
-```lua
-exports.e_core:getReputation(playerId, name)
-exports.e_core:addReputation(playerId, name, value)
-exports.e_core:removeReputation(playerId, name, value)
-exports.e_core:setReputation(playerId, name, value)
-```
-
 
 ## getConfig
 Returns the e_core config file

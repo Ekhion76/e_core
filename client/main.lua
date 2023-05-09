@@ -44,8 +44,14 @@ function getAbility(category, name)
     return ECO.meta[category]
 end
 
+--- @param meta string (optional)
 --- @return table all metadata
-function getMeta()
+function getMeta(meta)
+
+    if meta then
+
+        return ECO.meta[meta]
+    end
 
     return ECO.meta
 end

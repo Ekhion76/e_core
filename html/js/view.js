@@ -53,7 +53,7 @@ class View {
                     $("<li/>", {
                         "text": translate(categoryName),
                         "id": `${categoryName}_menu_item`,
-                        "class": "category_menu_item",
+                        "class": "category_menu_item block_bg_2",
                         "click": function () {
                             view._selectedCategory = categoryName;
                             view.applySelectedCategory();
@@ -125,6 +125,7 @@ class View {
             }
 
             $("<li/>", {
+                "class": 'block_bg_1',
                 "html": `<span 
                     style="background-color: ${colors[colorIdx]};${ bgImage }" 
                     class="icon">${ firstLetter }</span>

@@ -72,6 +72,7 @@ locales['hu'] = {
     the_system_is_turned_off = 'A rendszer ki van kapcsolva',
     not_levels_data = 'Nincsenek szintek(rangok) megadva',
 
+    --labor_added = 'Du hast einen Arbeitspunkt erhalten',
     labor_increased = 'Munkapontot kaptál',
     proficiency_added = 'Jártasságot szereztél',
 

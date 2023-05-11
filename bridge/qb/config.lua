@@ -7,8 +7,8 @@ if QB_CORE then
     eCore = {}
     Config = {}
 
-    Config.maxInventoryWeight = GetConvarInt('inventory:weight', 24000)
-    Config.maxInventorySlots = GetConvarInt('inventory:slots', 41)
+    Config.maxInventoryWeight = GetConvarInt('inventory:weight', 120000) -- These settings are overridden in the STANDALONE folder!
+    Config.maxInventorySlots = GetConvarInt('inventory:slots', 41) -- These settings are overridden in the STANDALONE folder!
 
     -- See qb-core\shared\items.lua --> ['image'] = 'example.png' or ['image'] = 'images/example.png',
     -- imagePath = "https://cfx-nui-qb-inventory/html/images/"

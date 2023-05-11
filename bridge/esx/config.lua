@@ -7,8 +7,8 @@ if ESX_CORE then
     eCore = {}
     Config = {}
 
-    Config.maxInventoryWeight = GetConvarInt('inventory:weight', ESX.GetConfig().MaxWeight * 1000)
-    Config.maxInventorySlots = GetConvarInt('inventory:slots', 50)
+    Config.maxInventoryWeight = GetConvarInt('inventory:weight', ESX.GetConfig().MaxWeight * 1000) -- These settings are overridden in the STANDALONE folder!
+    Config.maxInventorySlots = GetConvarInt('inventory:slots', 50) -- These settings are overridden in the STANDALONE folder!
 
     Config.imagePath = '/'
 

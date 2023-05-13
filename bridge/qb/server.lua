@@ -106,6 +106,11 @@ if QB_CORE then
         return true
     end
 
+    function eCore:getPlayerMaxWeight(xPlayer)
+
+        return Config.maxInventoryWeight
+    end
+
     function eCore:removeItem(xPlayer, item, count, metadata, slot)
 
         return xPlayer.Functions.RemoveItem(item, count)

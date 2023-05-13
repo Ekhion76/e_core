@@ -80,6 +80,11 @@ if ESX_CORE then
         return playerData.inventory
     end
 
+    function eCore:getPlayerMaxWeight(playerData)
+
+        return Config.maxInventoryWeight
+    end
+
     --- It returns the entire registered item list
     ---@return {name: string, label: string, isUnique: boolean, isWeapon: boolean, weight: number, image: string, ammoname: string}
     function eCore:getRegisteredItems()

@@ -39,10 +39,11 @@ end
 ---@return boolean, string
 function eCore:canSwapItems(swappingItems, itemData, playerData)
 
+    local maxInventoryWeight = self:getPlayerMaxWeight(playerData)
     local inventory = self:getInventory(playerData)
     local freeSlots = self:countFreeSlots(inventory)
     local requiredSlot = 0
-    local capacity = Config.maxInventoryWeight - self:getInventoryWeight(playerData)
+    local capacity = maxInventoryWeight - self:getInventoryWeight(playerData)
     local itemWeight = self:getItemWeight(itemData.name, itemData.metadata) * itemData.amount
 
     if REGISTERED_ITEMS[itemData.name:lower()].isUnique then
@@ -124,10 +125,11 @@ end
 ---@return boolean, string
 function eCore:canCarryItem(itemData, playerData)
 
+    local maxInventoryWeight = self:getPlayerMaxWeight(playerData)
     local inventory = self:getInventory(playerData)
     local requiredSlot = 0
 
-    local capacity = Config.maxInventoryWeight - self:getInventoryWeight(playerData)
+    local capacity = maxInventoryWeight - self:getInventoryWeight(playerData)
     local itemWeight = self:getItemWeight(itemData.name, itemData.metadata) * itemData.amount
 
     if itemWeight > capacity then

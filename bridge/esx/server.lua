@@ -89,6 +89,11 @@ if ESX_CORE then
         return xPlayer.getWeight()
     end
 
+    function eCore:getPlayerMaxWeight(xPlayer)
+
+        return Config.maxInventoryWeight
+    end
+
     function eCore:addItem(xPlayer, item, count, slot, metadata)
 
         xPlayer.addInventoryItem(item, count)

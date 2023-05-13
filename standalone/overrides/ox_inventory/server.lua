@@ -38,4 +38,12 @@ if OX_INVENTORY then
 
         return true
     end
+
+    function eCore:getPlayerMaxWeight(xPlayer)
+
+        return Config.maxInventoryWeight
+
+        --local inventory = ox_inventory:GetInventory(xPlayer.source, false)
+        --return inventory.maxWeight
+    end
 end

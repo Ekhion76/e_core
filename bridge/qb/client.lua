@@ -99,6 +99,11 @@ if QB_CORE then
         return playerData.items
     end
 
+    function eCore:getPlayerMaxWeight(playerData)
+
+        return Config.maxInventoryWeight
+    end
+
     ------------------------------------------------------------------------
     --- PLAYER
     ------------------------------------------------------------------------

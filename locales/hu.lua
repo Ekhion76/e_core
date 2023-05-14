@@ -1,4 +1,3 @@
-locales = locales or {}
 locales['hu'] = {
     --Crafting:
     chemist = 'Vegyész',

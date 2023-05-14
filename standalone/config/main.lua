@@ -47,12 +47,11 @@ Config.laborIncrease = 10 -- Every increaseTime minutes grow so much
 Config.laborIncreaseOffline = 10 -- Every increaseTime minutes grow so much, if 0 then turn off automatic OFFLINE labor
 
 Config.keyBind = { -- Default RegisterKeyMapping (if useTarget = false)
-    openStat = 'i', -- Open Skill page
+    openStat = 'o', -- Open Skill page
 }
 
 -- ECO LOGGER
 Config.discordBotName = 'ECOBOT'
 Config.discordWebHook = {
     -- labor = 'https://discord.com/api/webhooks/...', -- Bigger increase or labor_enhancer item
-    --labor = 'https://discord.com/api/webhooks/...',
 }

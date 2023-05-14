@@ -7,6 +7,7 @@ description 'ECO CORE'
 version '0.0.3'
 
 shared_scripts {
+    'imports/locale.lua',
     'bridge/**/config.lua',
     'standalone/config/main.lua',
     'standalone/config/levels.lua',
@@ -44,6 +45,7 @@ client_scripts {
 
 server_scripts {
     '@oxmysql/lib/MySQL.lua',
+    'imports/log.lua',
 
     'bridge/global/shared.lua',
     'bridge/global/server.lua',
@@ -76,7 +78,7 @@ server_scripts {
 ui_page 'html/ui.html'
 
 files {
-    'imports.lua',
+    'imports/core.lua',
     'html/ui.html',
     'html/main.css',
     'html/js/*.js',

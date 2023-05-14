@@ -1,6 +1,6 @@
 local hf = eCore.helper
 
-function createLog(webhook, botName)
+function createDiscordLog(webhook, botName)
 
     if type(webhook) ~= 'string' or hf.trim(webhook) == '' then return false end
 

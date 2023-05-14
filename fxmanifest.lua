@@ -45,7 +45,7 @@ client_scripts {
 
 server_scripts {
     '@oxmysql/lib/MySQL.lua',
-    'imports/log.lua',
+    'imports/discordlog.lua',
 
     'bridge/global/shared.lua',
     'bridge/global/server.lua',

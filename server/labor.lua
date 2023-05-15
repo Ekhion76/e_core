@@ -35,7 +35,7 @@ function setLabor(playerId, amount)
         return false, 'not_valid_amount'
     end
 
-    ECO.meta[playerId].labor.val = settingLimits(amount, Config.laborLimit)
+    ECO.meta[playerId].labor.val = hf.rangeLimit(amount, Config.laborLimit)
     ECO.meta[playerId].labor.time = os.time()
 
     syncRequest(playerId)
@@ -68,7 +68,7 @@ function removeLabor(playerId, amount)
         return false, 'has_already_reached_the_limit'
     end
 
-    ECO.meta[playerId].labor.val = settingLimits(ECO.meta[playerId].labor.val - amount, Config.laborLimit)
+    ECO.meta[playerId].labor.val = hf.rangeLimit(ECO.meta[playerId].labor.val - amount, Config.laborLimit)
     ECO.meta[playerId].labor.time = os.time()
 
     syncRequest(playerId)
@@ -101,7 +101,7 @@ function addLabor(playerId, amount)
         return false, 'has_already_reached_the_limit'
     end
 
-    ECO.meta[playerId].labor.val = settingLimits(ECO.meta[playerId].labor.val + amount, Config.laborLimit)
+    ECO.meta[playerId].labor.val = hf.rangeLimit(ECO.meta[playerId].labor.val + amount, Config.laborLimit)
     ECO.meta[playerId].labor.time = os.time()
 
     syncRequest(playerId)
@@ -125,7 +125,7 @@ function laborIncrease()
 
             if (meta.labor and meta.labor.val < Config.laborLimit) then
 
-                meta.labor.val = settingLimits(
+                meta.labor.val = hf.rangeLimit(
                     meta.labor.val + Config.laborIncrease,
                     Config.laborLimit
                 )
@@ -174,5 +174,5 @@ function addOfflineLabor(playerId)
     local multiplier = math.floor(elapsedTime / increaseTime)
     local offlineLabor = Config.laborIncreaseOffline * multiplier
 
-    ECO.meta[playerId].labor.val = settingLimits(ECO.meta[playerId].labor.val + offlineLabor, Config.laborLimit)
+    ECO.meta[playerId].labor.val = hf.rangeLimit(ECO.meta[playerId].labor.val + offlineLabor, Config.laborLimit)
 end

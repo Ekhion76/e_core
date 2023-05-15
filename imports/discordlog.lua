@@ -74,7 +74,7 @@ function createDiscordLog(webhook, botName)
 
                 if statusCode < 200 or statusCode > 299 then
 
-                    print(statusCode .. ': E_CORE: Discord failed request...')
+                    print(statusCode .. ': Discord failed request...')
                 end
         end, 'POST', json.encode(self._message), { ['Content-Type'] = 'application/json' })
     end

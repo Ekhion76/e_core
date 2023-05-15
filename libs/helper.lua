@@ -236,6 +236,11 @@ function hf.copy(t)
     return temp
 end
 
+function hf.rangeLimit(v, max)
+
+    return v < 0 and 0 or v > max and max or v
+end
+
 function hf.draw(chance)
 
     chance = tonumber(chance)

@@ -15,11 +15,6 @@ if ESX_CORE then
     end
 end
 
---for k, v in pairs(eCore:getSettings()) do
---    -- inventory fields, itembox, imagePath, etc..
---    Config[k] = v
---end
-
 eCore.helper = hf
 
 exports("getCore", function()

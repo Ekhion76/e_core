@@ -8,12 +8,13 @@ version '0.0.3'
 
 shared_scripts {
     'imports/locale.lua',
+
     'bridge/**/config.lua',
     'standalone/config/main.lua',
     'standalone/config/levels.lua',
     'standalone/overrides/**/config.lua',
 
-    'libs/functions.lua',
+    'imports/utils.lua',
     'libs/helper.lua',
 
     'libs/meta.lua',
@@ -72,7 +73,7 @@ server_scripts {
     'server/labor.lua',
     'server/db.lua',
     'server/exports.lua',
-    'server/usableitem.lua',
+    'standalone/usableitem.lua',
 }
 
 ui_page 'html/ui.html'

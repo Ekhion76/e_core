@@ -136,7 +136,7 @@ function addAbility(playerId, category, name, value)
         metaValue = metaValue + value
     end
 
-    local newValue = settingLimits(metaValue, Config.abilityLimit)
+    local newValue = hf.rangeLimit(metaValue, Config.abilityLimit)
 
     if baseValue ~= newValue then
 
@@ -168,7 +168,7 @@ function removeAbility(playerId, category, name, value)
         metaValue = metaValue - value
     end
 
-    local newValue = settingLimits(metaValue, Config.abilityLimit)
+    local newValue = hf.rangeLimit(metaValue, Config.abilityLimit)
 
     if baseValue ~= newValue then
 
@@ -199,7 +199,7 @@ function setAbility(playerId, category, name, value)
 
     if tonumber(value) then
 
-        newValue = settingLimits(value, Config.abilityLimit)
+        newValue = hf.rangeLimit(value, Config.abilityLimit)
     end
 
     if baseValue ~= newValue then

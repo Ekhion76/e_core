@@ -34,9 +34,9 @@ class View {
 
     createCategoryMenu() {
 
-        let menuContainer = $('#meta_categories');
+        let $menuContainer = $('#meta_categories');
 
-        if (!$.trim(menuContainer.html())) {
+        if (!$.trim($menuContainer.html())) {
 
             let categories = model.displayComponent.statisticsPage;
             let metadata = model.metadata;
@@ -44,7 +44,7 @@ class View {
             let parent = $("<ul/>", {
                 "class": "menu",
                 "id": "meta_categories_menu"
-            }).appendTo(menuContainer);
+            }).appendTo($menuContainer);
 
             categories.forEach(function (categoryName) {
 

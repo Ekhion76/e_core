@@ -23,10 +23,10 @@ locales["de"] = {
     mining = 'Bergbau',
 
     -- category
-    crafting = 'Kézművesség',
-    harvesting = 'Betakarítás',
-    special = 'Speciális',
-    reputation = 'Hírnév',
+    crafting = 'Basteln',
+    harvesting = 'Ernte',
+    special = 'Special',
+    reputation = 'Reputation',
 
     level_up = 'Aufleveln!',
 

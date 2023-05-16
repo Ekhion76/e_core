@@ -23,10 +23,10 @@ locales["en"] = {
     mining = 'Mining',
 
     -- category
-    crafting = 'Kézművesség',
-    harvesting = 'Betakarítás',
-    special = 'Speciális',
-    reputation = 'Hírnév',
+    crafting = 'Crafting',
+    harvesting = 'Harvesting',
+    special = 'Special',
+    reputation = 'Reputation',
 
     level_up = 'Level up',
 

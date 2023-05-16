@@ -5,7 +5,6 @@
 -- function eCore:createCallback(name, callback)
 -- function eCore:createUsableItem(item, cb)
 
-
 -- messages
 -- function eCore:hideText(source) end
 -- function eCore:drawText(source, message, position, mType) end

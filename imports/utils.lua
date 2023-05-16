@@ -29,8 +29,39 @@ function print_r(t)
     sub_print_r(t, "  ")
 end
 
-function cLog(k, v, level) -- console log for debug
+function createBlip(coords, sprite, color, scale, name)
 
+    local blip = AddBlipForCoord(coords.x, coords.y, coords.z)
+    SetBlipSprite(blip, sprite)
+    SetBlipScale(blip, scale)
+    SetBlipColour(blip, color)
+    SetBlipAsShortRange(blip, true)
+
+    BeginTextCommandSetBlipName("STRING")
+    AddTextComponentString(name)
+    EndTextCommandSetBlipName(blip)
+
+    return blip
+end
+
+function modelLoader(model)
+
+    RequestModel(model)
+    while not HasModelLoaded(model) do
+        Wait(10)
+    end
+end
+
+function fxLoader(dict)
+
+    RequestNamedPtfxAsset(dict)
+    while not HasNamedPtfxAssetLoaded(dict) do
+        Wait(10)
+    end
+end
+
+function cLog(k, v, level)
+    -- console log for debug
     if not Config.debugLevel or Config.debugLevel < 1 then
         return
     end
@@ -39,16 +70,16 @@ function cLog(k, v, level) -- console log for debug
         return
     end
 
-    local v_type = type(v)
+    local vType = type(v)
 
-    if v_type == 'table' or v_type == 'function' then
+    if vType == 'table' or vType == 'function' then
 
         print('^3DEBUG', k, '^4')
         print_r(v)
         print('^7')
     else
 
-        if v_type == 'boolean' then
+        if vType == 'boolean' then
 
             v = v and 'true' or 'false'
         end

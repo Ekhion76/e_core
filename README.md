@@ -1,54 +1,58 @@
 # e_core
 
-Experimental project.
+#### What is e_core for?
+The e_core is an adapter that provides support for compatibility with ESX and QBCore, QBox frameworks.
 
-It is an adapter for compatibility with ESX and QBCore frameworks and includes skill and lab system and helper functions.
+##### Its goal:
+- to ensure framework-independent operation for eco_crafting and future scripts
+- to provide users with customization
 
-In addition, exports of different inventories and message systems can be inserted, so scripts using e_core can be written completely in standalone mode.
+##### It provides a connecting surface:
+- to insert your own inventory functions/exports (addItem, removeItem, etc..)
+- for inserting message systems (sendNotify, drawText, hideText, progressbar)
+- in addition, various core functions can be adapted using the examples shown in the script
 
-IMPORTANT! Due to the overwriting of later updates, it is advisable to make all changes in the standalone folder!
-The Standalone folder is nothing more than a collection of override functions. All functions in the bridge folder can be copied to the standalone folder and overwritten here.
+##### Contain:
+- a skill (xp) and labor system that uses a built-in metadata repository.
+- lua helper functions
+- fiveM utility functions
 
-IMPORTANT! Copy the bridge functions to the standalone folder and overwrite them! (override, of course only if necessary)
+If you have a basic server, no changes are necessary.
+If you use ox_inventory, no changes are needed.
 
-Its purpose is to bring the functions of different frameworks to a common denominator.
+**IMPORTANT!** Due to the overwriting of later updates, it is advisable to make all changes in the 'standalone' folder!
+The 'standalone' folder is nothing more than a collection of override functions. All functions in the bridge folder can be copied to the 'standalone' folder and overwritten there.
+**IMPORTANT!** Copy the bridge functions to the 'standalone' folder and overwrite them! (of course only if necessary)
 
-import into fxmanifest.lua file:
-
-```lua
-shared_scripts {
-     '@e_core/imports.lua'
-}
-```
-
-imports.lua loads the current framework.
-You don't need the es_extended import.lua file!
-
-The user manual is not ready even because I am constantly modifying the functions, which may affect the structure.
-
-I will describe two examples to show the intention:
+Example of customization:
 
 ```lua
-local hf = eCore.helper
+    function eCore:sendMessage(message, mType, mSec) -- bridge/esx/client.lua
 
-eCore.isLoggedIn()
+        ESX.ShowNotification(message, mSec, mType)
+    end
 
-eCore.createUsableItem("portable_chemist", function(source, item)
+    --- OVERRIDE a standalone mappában:
+    
+    function eCore:sendMessage(message, mType, mSec) -- standalone/overrides/core/client.lua
 
-end)
-
-
-eCore.triggerCallback('eco_crafting:serverSync', function(portableWorkstations, aceAllowed, inventoryLimits)
-end)
-
-eCore.createCallback('eco_crafting:serverSync', function(source, cb)
-
-end)
+        PELDA.SajatUzenom(message, mSec, mType)
+    end
 ```
+Example of overriding an inventory function:
+```lua
+    function eCore:removeItem(xPlayer, item, count, metadata, slot) -- bridge/esx/server.lua
+    
+        xPlayer.removeInventoryItem(item, count, metadata, slot)
+    end
 
-If you use eCore features, your script will be portable. 
-It would be even better if there were already a similar initiative to bring the frameworks to a common denominator. For now, this initiative is based on the needs of my own scripts.
-
+    --- OVERRIDE a standalone mappában:
+    
+    function eCore:removeItem(xPlayer, item, count, metadata, slot) -- standalone/overrides/avp_grid_inventory/server.lua
+    
+        return exports["avp_grid_inventory"]:RemoveItemBy(xPlayer.source, count, item)
+    end
+```
 ## Labor and skill system:
 
 The concept works along the lines of the ArcheAge MMORPG. Completing each job costs labor points, which also increases the character's skill.

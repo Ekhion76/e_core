@@ -46,6 +46,13 @@ function eCore:canSwapItems(swappingItems, itemData, playerData)
     local capacity = maxInventoryWeight - self:getInventoryWeight(playerData)
     local itemWeight = self:getItemWeight(itemData.name, itemData.metadata) * itemData.amount
 
+    cLog('canSwapItems', {
+        maxInventoryWeight = maxInventoryWeight,
+        freeSlots = freeSlots,
+        capacity = capacity,
+        itemWeight = itemWeight
+    },4)
+
     if REGISTERED_ITEMS[itemData.name:lower()].isUnique then
 
         requiredSlot = itemData.amount
@@ -92,15 +99,8 @@ function eCore:canSwapItems(swappingItems, itemData, playerData)
                         item[countIdx] = 0
                     end
 
-                    if item[countIdx] < 1 then
-
-                        freeSlots = freeSlots + 1
-                    end
-
-                    if amountToRemove == 0 then
-
-                        break
-                    end
+                    if item[countIdx] < 1 then freeSlots = freeSlots + 1 end
+                    if amountToRemove == 0 then break end
                 end
             end
         end

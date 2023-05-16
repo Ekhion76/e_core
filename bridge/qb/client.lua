@@ -116,7 +116,6 @@ if QB_CORE then
     function eCore:getAccounts(playerData, account)
 
         local convert = { -- ESX2QB
-
             money = 'cash',
             bank = 'bank',
             black_money = 'crypto'

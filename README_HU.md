@@ -20,6 +20,17 @@ Az e_core egy adapter, mely az ESX és QBCore, QBox keretrendszerekkel való kom
 Ha alap szervered van, nincs szükség módosításokra.
 Ha ox_inventoryt használsz, nincs szükség módosításokra.
 
+Konfig fájlok:
+- standalone/config/ - globális beállítások
+- standalone/overrides/custom_inventory/config.lua - Inventory specifikus beállítások
+
+**FONTOS!** Az e_core-t az eco scriptek előtt szükséges indítani a server.cfg fájlban!
+
+```
+    # ECO SCRIPTS
+    ensure e_core
+    ensure eco_crafting
+```
 **FONTOS!** A későbbi frissítések felülírása miatt minden változtatást a 'standalone' mappában célszerű elvégezni!
 A 'standalone' mappa nem más, mint felülírási funkciók gyűjteménye. A bridge mappában lévő összes funkció átmásolható a 'standalone' mappába, és ott felülírható.
 
@@ -33,7 +44,7 @@ Példa a testreszabásra:
         ESX.ShowNotification(message, mSec, mType)
     end
 
-    --- OVERRIDE a standalone mappában:
+    --- OVERRIDE a 'standalone/overrides/...' mappában:
     
     function eCore:sendMessage(message, mType, mSec) -- standalone/overrides/core/client.lua
 
@@ -47,7 +58,7 @@ Példa egy inventory funkció felülírásra:
         xPlayer.removeInventoryItem(item, count, metadata, slot)
     end
 
-    --- OVERRIDE a standalone mappában:
+    --- OVERRIDE a 'standalone/overrides/...' mappában:
     
     function eCore:removeItem(xPlayer, item, count, metadata, slot) -- standalone/overrides/avp_grid_inventory/server.lua
     

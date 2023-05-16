@@ -20,6 +20,17 @@ The e_core is an adapter that provides support for compatibility with ESX and QB
 If you have a basic server, no changes are necessary.
 If you use ox_inventory, no changes are needed.
 
+Config files:
+- standalone/config/ - global settings
+- standalone/overrides/custom_inventory/config.lua - Inventory specific settings
+
+**IMPORTANT!** It is necessary to start e_core before the eco scripts in the server.cfg file!
+
+```
+    # ECO SCRIPTS
+    ensure e_core
+    ensure eco_crafting
+```
 **IMPORTANT!** Due to the overwriting of later updates, it is advisable to make all changes in the 'standalone' folder!
 The 'standalone' folder is nothing more than a collection of override functions. All functions in the bridge folder can be copied to the 'standalone' folder and overwritten there.
 **IMPORTANT!** Copy the bridge functions to the 'standalone' folder and overwrite them! (of course only if necessary)
@@ -32,11 +43,11 @@ Example of customization:
         ESX.ShowNotification(message, mSec, mType)
     end
 
-    --- OVERRIDE a standalone mappában:
+    --- OVERRIDE in the 'standalone/overrides/core' folder:
     
     function eCore:sendMessage(message, mType, mSec) -- standalone/overrides/core/client.lua
 
-        PELDA.SajatUzenom(message, mSec, mType)
+        EXAMPLE.MyOwnNotify(message, mSec, mType)
     end
 ```
 Example of overriding an inventory function:
@@ -46,7 +57,7 @@ Example of overriding an inventory function:
         xPlayer.removeInventoryItem(item, count, metadata, slot)
     end
 
-    --- OVERRIDE a standalone mappában:
+    --- OVERRIDE in the 'standalone' folder:
     
     function eCore:removeItem(xPlayer, item, count, metadata, slot) -- standalone/overrides/avp_grid_inventory/server.lua
     
@@ -63,6 +74,7 @@ In the crafting system, it can be set that an item can only be produced after ac
 
 With the help of exports, you can incorporate this into any of your own scripts. See:
 
--- export_examples_server.md
+- export_examples_server.md
+- export_examples_client.md
 
--- export_examples_client.md
+The e_core uses both ESX and QBCore script details.

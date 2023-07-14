@@ -67,10 +67,27 @@ if QB_CORE then
         TriggerEvent("progressbar:client:cancel")
     end
 
+    function eCore:addTargetModel(models, options)
+
+        exports['qb-target']:AddTargetModel(models, options)
+    end
+
+    function eCore:removeTargetModel(obj, labels)
+
+        -- if you use ox_target, don't change it. ox_target recognizes the qb-target export and converts it!
+        exports['qb-target']:RemoveTargetModel(obj, labels)
+    end
+
     function eCore:addTargetEntity(obj, options)
 
         -- if you use ox_target, don't change it. ox_target recognizes the qb-target export and converts it!
         exports['qb-target']:AddTargetEntity(obj, options)
+    end
+
+    function eCore:removeTargetEntity(obj, labels)
+
+        -- if you use ox_target, don't change it. ox_target recognizes the qb-target export and converts it!
+        exports['qb-target']:RemoveTargetEntity(obj, labels)
     end
 
     function eCore:addBoxZone(name, center, length, width, options, targetOptions)

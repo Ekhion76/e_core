@@ -24,13 +24,7 @@ eCore:createCallback('e_core:createVehicle', function(source, cb, pos, model, vT
         vehicle = Citizen.InvokeNative(createAutomobile, model, pos.xyz, pos.w, true, true)
     end
 
-    Wait(500) -- DoesEntityExist always 1!
-
-    if DoesEntityExist(vehicle) then
-
-        netId = NetworkGetNetworkIdFromEntity(vehicle)
-        while not netId do Wait(100) end
-    end
-
+    netId = NetworkGetNetworkIdFromEntity(vehicle)
+    while not netId do Wait(100) end
     cb(netId)
 end)

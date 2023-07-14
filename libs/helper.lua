@@ -274,3 +274,12 @@ function hf.draw(chance)
 
     return box[math.random(#box)]
 end
+
+function hf.stringSplit(input, sep)
+    sep = sep or "%s"
+    local t = {}
+    for str in input:gmatch("([^"..sep.."]+)") do
+        t[#t+1] = str
+    end
+    return t
+end

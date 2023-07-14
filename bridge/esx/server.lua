@@ -102,7 +102,7 @@ if ESX_CORE then
 
     function eCore:removeItem(xPlayer, item, count, metadata, slot)
 
-        cLog('eCore:removeItems', {item = item, count = count}, 4)
+        cLog('eCore:removeItem', {item = item, count = count}, 4)
         xPlayer.removeInventoryItem(item, count, metadata, slot)
         return true
     end

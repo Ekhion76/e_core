@@ -98,7 +98,7 @@ function getDiscounts(value)
 
     if value < levels[1].limit then
 
-        discount = hf.copy(levels[1])
+        discount = table.clone(levels[1])
         discount.level = 0
         discount.progress = value > 0 and math.floor(value / levels[1].limit * 100) or 0
 
@@ -127,7 +127,7 @@ function getDiscounts(value)
         end
     end
 
-    discount = hf.copy(levels[numberOfLevels])
+    discount = table.clone(levels[numberOfLevels])
     discount.level = numberOfLevels - 1
     discount.progress = 100
 

@@ -28,7 +28,6 @@ if ESX_CORE then
     function eCore:progressbar(params)
 
         if params.animation then
-
             params.animation = {
                 dict = params.animation.dict,
                 lib = params.animation.anim,
@@ -118,9 +117,9 @@ if ESX_CORE then
     --- PLAYER
     ------------------------------------------------------------------------
 
-    function eCore:getPlayer()
+    function eCore:getPlayer(newJob)
 
-        return self:convertPlayer(ESX.GetPlayerData())
+        return self:convertPlayer(ESX.GetPlayerData(), newJob)
     end
 
     function eCore:getAccounts(playerData, account)
@@ -144,17 +143,22 @@ if ESX_CORE then
         -- currentWeapon
 
         return not IsPedCuffed(_PlayerPedId)
-            and not IsPauseMenuActive()
-            and not IsPedFatallyInjured(_PlayerPedId) -- ??
-            and not IsEntityDead(_PlayerPedId) -- ??
-            and not IsPedInAnyVehicle(_PlayerPedId, true)
-            and not IsPedSwimming(_PlayerPedId)
-            and IsPedOnFoot(_PlayerPedId)
+                and not IsPauseMenuActive()
+                and not IsPedFatallyInjured(_PlayerPedId) -- ??
+                and not IsEntityDead(_PlayerPedId) -- ??
+                and not IsPedInAnyVehicle(_PlayerPedId, true)
+                and not IsPedSwimming(_PlayerPedId)
+                and IsPedOnFoot(_PlayerPedId)
     end
 
     function eCore:setVehicleProperties(vehicle, props)
 
         ESX.Game.SetVehicleProperties(vehicle, props)
+    end
+
+    function eCore:setVehiclePropertiesFromNetId(vehicle, props)
+
+        ESX.Game.SetVehicleProperties(NetToVeh(vehicle), props)
     end
 
     function eCore:deleteVehicle(vehicle)

@@ -5,9 +5,11 @@ if ESX_CORE then
 
     local hf = hf
 
-    function eCore:convertPlayer(playerData)
+    function eCore:convertPlayer(playerData, newJob)
 
         if playerData then
+
+            playerData.job = newJob or playerData.job
 
             if playerData.firstName then
 

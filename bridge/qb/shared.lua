@@ -34,7 +34,7 @@ if QB_CORE then
         return self:convertItems(QBCore.Shared.Items)
     end
 
-    function eCore:convertPlayer(playerData)
+    function eCore:convertPlayer(playerData, newJob, newGang)
 
         if playerData then
 
@@ -46,8 +46,8 @@ if QB_CORE then
                 playerData = playerData.PlayerData
             end
 
-            local job = playerData.job
-            local gang = playerData.gang
+            local job = newJob or playerData.job
+            local gang = newGang or playerData.gang
 
             job.grade_name = job.grade.name
             job.grade_label = job.grade.name

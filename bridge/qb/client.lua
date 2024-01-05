@@ -125,9 +125,9 @@ if QB_CORE then
     --- PLAYER
     ------------------------------------------------------------------------
 
-    function eCore:getPlayer()
+    function eCore:getPlayer(newJob, newGang)
 
-        return eCore:convertPlayer(QBCore.Functions.GetPlayerData())
+        return eCore:convertPlayer(QBCore.Functions.GetPlayerData(), newJob, newGang)
     end
 
     function eCore:getAccounts(playerData, account)
@@ -167,6 +167,11 @@ if QB_CORE then
     function eCore:setVehicleProperties(vehicle, props)
 
         QBCore.Functions.SetVehicleProperties(vehicle, props)
+    end
+
+    function eCore:setVehiclePropertiesFromNetId(vehicle, props)
+
+        QBCore.Functions.SetVehicleProperties(NetToVeh(vehicle), props)
     end
 
     function eCore:deleteVehicle(vehicle)

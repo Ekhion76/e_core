@@ -4,7 +4,7 @@ game 'gta5'
 
 description 'ECO CORE'
 
-version '0.0.3'
+version '0.0.4'
 
 shared_scripts {
     'imports/locale.lua',

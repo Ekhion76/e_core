@@ -19,7 +19,7 @@ if QB_CORE then
 
             local name = item:lower()
             temp[name] = data
-            temp[name].label = data.label:gsub("'", "\\'")
+            temp[name].label = data.label and data.label:gsub("'", "\\'") or ''
             temp[name].isUnique = data.unique == true
             temp[name].isWeapon = data.type == 'weapon'
         end

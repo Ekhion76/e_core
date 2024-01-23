@@ -1,6 +1,6 @@
 0.0.5
 - [e_core/server/labor.lua] (addOfflineLabor) Add offline labor timestamp. When logging in, the player receives the lab points collected during the offline time, with the current time stamp attached.
-- [e_core/bridge/qb/shared.lua] (convertItems) Ignore non-existent labels
+- [e_core/bridge/qb/shared.lua] (convertItems) Ignore non valid items and non-existent labels
 
 0.0.4
 - The getPlayer() function has been extended. It is given two optional parameters.

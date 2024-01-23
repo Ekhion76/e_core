@@ -18,7 +18,7 @@ Config.systemMode = {
 Config.displayComponent = {
     statisticsPage = { 'crafting', 'harvesting', 'reputation' }, -- display metadata categories in STATISTICS panel
     icon = false, -- show profession icon in STATISTICS panel. (Add professionName.png to html/img folder e.g weaponry.png, cooking.png)
-    laborHud = true
+    laborHud = false
 }
 
 Config.currency = {

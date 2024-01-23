@@ -7,23 +7,24 @@ if QB_CORE then
 
     ---@return {name: string, label: string, isUnique: boolean, isWeapon: boolean, weight: number, image: string, ammoname: string}
     function eCore:convertItems(items)
-
         if not hf.isPopulatedTable(items) then
-
             return items
         end
 
         local temp = {}
 
         for item, data in pairs(items) do
-
-            local name = item:lower()
-            temp[name] = data
-            temp[name].label = data.label and data.label:gsub("'", "\\'") or ''
-            temp[name].isUnique = data.unique == true
-            temp[name].isWeapon = data.type == 'weapon'
+            if hf.isPopulatedTable(data) then
+                local name = item:lower()
+                temp[name] = data
+                temp[name].label = data.label and data.label:gsub("'", "\\'") or ''
+                temp[name].isUnique = data.unique == true
+                temp[name].isWeapon = data.type == 'weapon'
+            else
+                print("^3* Not valid item: *", item)
+                print_r(data)
+            end
         end
-
         return temp
     end
 

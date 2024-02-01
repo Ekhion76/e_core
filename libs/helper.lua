@@ -27,7 +27,6 @@ function hf.randomInt(length)
 end
 
 function hf.getSerialNumber()
-
     return tostring(
         hf.randomInt(2) ..
             hf.randomStr(3) ..
@@ -42,14 +41,11 @@ end
 ---@param t2 table
 ---@return boolean
 function hf.findingFirstMatch(t1, t2)
-
     if not t1 or not t2 then
-
         return false
     end
 
     if hf.isEmpty(t1) or hf.isEmpty(t2) then
-
         return false
     end
 
@@ -57,11 +53,8 @@ function hf.findingFirstMatch(t1, t2)
     t2 = hf.strToTable(t2)
 
     for _, v1 in pairs(t1) do
-
         for _, v2 in pairs(t2) do
-
             if v1 == v2 then
-
                 return true
             end
         end
@@ -74,9 +67,7 @@ end
 ---@param v string
 ---@return table
 function hf.strToTable(v)
-
     if type(v) == 'table' then
-
         return v
     end
 
@@ -87,9 +78,7 @@ end
 ---@param v table
 ---@return string
 function hf.tableToStr(v)
-
     if type(v) ~= 'table' then
-
         return v
     end
 
@@ -97,19 +86,15 @@ function hf.tableToStr(v)
 end
 
 function hf.isTable(t)
-
     return type(t) == 'table'
 end
 
 function hf.isPopulatedTable(t)
-
     return type(t) == 'table' and (next(t)) ~= nil
 end
 
 function hf.isPopulatedString(s)
-
     if type(s) ~= 'string' then
-
         return false
     end
 
@@ -117,7 +102,6 @@ function hf.isPopulatedString(s)
 end
 
 function hf.isEmpty(v)
-
     if v == nil then
         return true
     end
@@ -125,17 +109,14 @@ function hf.isEmpty(v)
     local tType = type(v)
 
     if tType == 'boolean' or tType == 'function' or tType == 'number' then
-
         return false
     end
 
     if tType == 'table' then
-
         return (next(v)) == nil
     end
 
     if tType == 'string' then
-
         return string.gsub(v, '^%s*(.-)%s*$', '%1') == ''
     end
 
@@ -143,11 +124,8 @@ function hf.isEmpty(v)
 end
 
 function hf.inTable(needs, t)
-
     if needs ~= nil and type(t) == 'table' and next(t) then
-
         for _, v in pairs(t) do
-
             if v == needs then
                 return true
             end
@@ -158,7 +136,6 @@ function hf.inTable(needs, t)
 end
 
 function hf.trim(v)
-
     return type(v) == 'string' and (string.gsub(v, '^%s*(.-)%s*$', '%1')) or v
 end
 
@@ -171,9 +148,7 @@ function hf.round(num, numDecimalPlaces)
 end
 
 function hf.tableToVector(t)
-
     if type(t) ~= 'table' then
-
         return t
     end
 
@@ -183,7 +158,6 @@ function hf.tableToVector(t)
     local w = tonumber(t.w)
 
     if not x or not y or not z then
-
         return false
     end
 
@@ -191,12 +165,10 @@ function hf.tableToVector(t)
 end
 
 function hf.removePrefix(str, prefix)
-
     return (str:sub(0, #prefix) == prefix) and str:sub(#prefix + 1) or str
 end
 
 function hf.numberFormat(number)
-
     if not tonumber(number) then
         return number
     end
@@ -207,29 +179,23 @@ function hf.numberFormat(number)
 end
 
 function hf.moneyFormat(amount)
-
     if Config.currency.suffix then
-
         return ('%s%s'):format(hf.numberFormat(amount), Config.currency.symbol)
     else
-
         return ('%s%s'):format(Config.currency.symbol, hf.numberFormat(amount))
     end
 end
 
 function hf.copy(t)
-
     local temp
 
     if type(t) == 'table' then
-
         temp = {}
 
         for k, v in pairs(t) do
             temp[k] = v
         end
     else
-
         temp = t
     end
 
@@ -237,21 +203,17 @@ function hf.copy(t)
 end
 
 function hf.rangeLimit(v, max)
-
     return v < 0 and 0 or v > max and max or v
 end
 
 function hf.draw(chance)
-
     chance = tonumber(chance)
 
     if not chance or chance > 99 then
-
         return true
     end
 
     if chance < 1 then
-
         chance = 1
     end
 

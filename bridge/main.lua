@@ -17,6 +17,11 @@ end
 
 eCore.helper = hf
 
+exports("getFrameWork", function()
+
+    return FRAMEWORK
+end)
+
 exports("getCore", function()
 
     return eCore

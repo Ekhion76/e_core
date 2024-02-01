@@ -1,3 +1,11 @@
+0.0.6
+- Error: SEND_NUI_MESSAGE: invalid JSON passed in frame (rapidjson error code 3)
+- The initial labor value could have been NaN, so the Nui interface did not open, only the cursor was visible.
+  The change affects the:
+- [lib/config_check.lua] -- added
+- [fxmanifest.lua]
+- [server/meta.lua] (prepareMeta)
+
 0.0.5
 - [e_core/server/labor.lua] (addOfflineLabor) Add offline labor timestamp. When logging in, the player receives the lab points collected during the offline time, with the current time stamp attached.
 - [e_core/bridge/qb/shared.lua] (convertItems) Ignore non valid items and non-existent labels

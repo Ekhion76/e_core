@@ -2,7 +2,7 @@ ESX_CORE = GetResourceState('es_extended') == 'started'
 
 if ESX_CORE then
     -- These settings / functions can be overrides in the standalone/ folder!!!
-
+    FRAMEWORK = 'esx'
     ESX = exports['es_extended']:getSharedObject()
     eCore = {}
     Config = {}

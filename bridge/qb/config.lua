@@ -2,7 +2,7 @@ QB_CORE = GetResourceState('qb-core') == 'started'
 
 if QB_CORE then
     -- These settings / functions can be overrides in the standalone/ folder!!!
-
+    FRAMEWORK = 'qb'
     QBCore = exports['qb-core']:GetCoreObject()
     eCore = {}
     Config = {}

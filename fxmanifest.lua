@@ -1,7 +1,7 @@
 fx_version 'cerulean'
 game 'gta5'
 description 'ECO CORE'
-version '0.0.5'
+version '0.0.6'
 
 shared_scripts {
     'imports/locale.lua',
@@ -16,6 +16,7 @@ shared_scripts {
 
     'libs/meta.lua',
     'locales/*.lua',
+    'libs/config_check.lua'
 }
 
 client_scripts {

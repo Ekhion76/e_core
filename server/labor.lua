@@ -134,7 +134,8 @@ function addOfflineLabor(playerId)
     local laborIncreaseOffline = tonumber(Config.laborIncreaseOffline)
     local laborIncreaseTime = tonumber(Config.laborIncreaseTime)
 
-    if not laborIncreaseTime or not laborIncreaseOffline or laborIncreaseOffline < 1 then
+    if not laborIncreaseTime or laborIncreaseTime < 1 or
+            not laborIncreaseOffline or laborIncreaseOffline < 1 then
         return false
     end
 

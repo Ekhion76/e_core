@@ -1,8 +1,6 @@
 local hf = hf
 
 function eCore:createVehicle(pos, model, vType, props)
-
-    print('e_core:createVehicle', pos, model, vType)
     model = joaat(model)
     local owner = -1
     local plate = ''
@@ -10,10 +8,8 @@ function eCore:createVehicle(pos, model, vType, props)
     props = props or {}
 
     if CreateVehicleServerSetter and hf.isPopulatedString(vType) then
-
         vehicle = CreateVehicleServerSetter(model, vType, pos.x, pos.y, pos.z, pos.w)
     else
-
         local createAutomobile = GetHashKey('CREATE_AUTOMOBILE')
         vehicle = Citizen.InvokeNative(createAutomobile, model, pos.xyz, pos.w, true, true)
     end
@@ -23,7 +19,6 @@ function eCore:createVehicle(pos, model, vType, props)
     local try = 1
     repeat
         plate = GetVehicleNumberPlateText(vehicle)
-        print(try, 'GETPLATE', plate)
         try = try + 1
         Wait(0)
     until plate ~= '' or try > 200
@@ -35,7 +30,6 @@ function eCore:createVehicle(pos, model, vType, props)
     try = 1
     repeat
         owner = NetworkGetEntityOwner(vehicle)
-        print(try, 'GETOWNER', owner)
         try = try + 1
         Wait(0)
     until owner ~= -1 or try > 200

@@ -1,0 +1,1 @@
+HUD17 = GetResourceState('17mov_Hud') == 'started'

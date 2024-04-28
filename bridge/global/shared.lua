@@ -124,7 +124,6 @@ end
 ---@param itemData table {name: string, amount: number, metadata: table}
 ---@return boolean, string
 function eCore:canCarryItem(itemData, playerData)
-
     local maxInventoryWeight = self:getPlayerMaxWeight(playerData)
     local inventory = self:getInventory(playerData)
     local requiredSlot = 0
@@ -133,25 +132,20 @@ function eCore:canCarryItem(itemData, playerData)
     local itemWeight = self:getItemWeight(itemData.name, itemData.metadata) * itemData.amount
 
     if itemWeight > capacity then
-
         return false, 'too_heavy'
     end
 
     if REGISTERED_ITEMS[itemData.name:lower()].isUnique then
-
         requiredSlot = itemData.amount
     else
-
         requiredSlot = self:getFirstSlotByItem(inventory, itemData.name) and 0 or 1
     end
 
     if requiredSlot == 0 then
-
         return true
     end
 
     if requiredSlot > self:countFreeSlots(inventory) then
-
         return false, 'not_enough_space'
     end
 

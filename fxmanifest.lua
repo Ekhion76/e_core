@@ -4,6 +4,7 @@ description 'ECO CORE'
 version '0.0.6'
 
 shared_scripts {
+    '@ox_lib/init.lua',
     'imports/locale.lua',
 
     'bridge/**/config.lua',

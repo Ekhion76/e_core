@@ -23,3 +23,31 @@
 -- function eCore:setVehicleProperties(vehicle, props)
 -- function eCore:deleteVehicle(vehicle)
 -- function eCore:getClosestVehicle(coords)
+
+--function eCore:progressbar(params)
+--    if params.animation then
+--        params.animation = {
+--            dict = params.animation.dict,
+--            clip = params.animation.anim,
+--        }
+--    end
+--
+--    if lib.progressBar({
+--        label = params.label,
+--        duration = params.duration,
+--        position = 'bottom',
+--        useWhileDead = params.useWhileDead,
+--        canCancel = params.canCancel,
+--        disable = { car = true, move = true },
+--        anim = params.animation,
+--        prop = params.prop,
+--    }) then
+--        params.onFinish()
+--    else
+--        params.onCancel()
+--    end
+--end
+--
+--function eCore:cancelProgressbar()
+--    lib.cancelProgress()
+--end

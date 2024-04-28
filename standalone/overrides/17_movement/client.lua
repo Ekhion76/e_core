@@ -47,7 +47,7 @@ if HUD17 then
     end
 
     function eCore:drawText(message, position, mType)
-        TriggerEvent("17mov_Hud:ShowHelpNotification", message)
+		TriggerEvent("17mov_Hud:ShowHelpNotification", message)
     end
 
     function eCore:hideText()

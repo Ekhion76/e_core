@@ -10,8 +10,9 @@ function eCore:createVehicle(pos, model, vType, props)
     if CreateVehicleServerSetter and hf.isPopulatedString(vType) then
         vehicle = CreateVehicleServerSetter(model, vType, pos.x, pos.y, pos.z, pos.w)
     else
-        local createAutomobile = GetHashKey('CREATE_AUTOMOBILE')
-        vehicle = Citizen.InvokeNative(createAutomobile, model, pos.xyz, pos.w, true, true)
+        --local createAutomobile = GetHashKey('CREATE_AUTOMOBILE')
+        --vehicle = Citizen.InvokeNative(createAutomobile, model, pos.xyz, pos.w, true, true)
+        vehicle = CreateVehicle(model, pos.x, pos.y, pos.z, pos.w, true, true)
     end
 
     Wait(500)

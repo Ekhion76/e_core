@@ -28,12 +28,12 @@ end
 
 function hf.getSerialNumber()
     return tostring(
-        hf.randomInt(2) ..
-            hf.randomStr(3) ..
-            hf.randomInt(1) ..
-            hf.randomStr(2) ..
-            hf.randomInt(3) ..
-            hf.randomStr(4))
+            hf.randomInt(2) ..
+                    hf.randomStr(3) ..
+                    hf.randomInt(1) ..
+                    hf.randomStr(2) ..
+                    hf.randomInt(3) ..
+                    hf.randomStr(4))
 end
 
 ---searches for the first match between the values of two tables
@@ -124,7 +124,7 @@ function hf.isEmpty(v)
 end
 
 function hf.inTable(needs, t)
-    if needs ~= nil and type(t) == 'table' and next(t) then
+    if needs and type(t) == 'table' and next(t) then
         for _, v in pairs(t) do
             if v == needs then
                 return true
@@ -240,8 +240,35 @@ end
 function hf.stringSplit(input, sep)
     sep = sep or "%s"
     local t = {}
-    for str in input:gmatch("([^"..sep.."]+)") do
-        t[#t+1] = str
+    for str in input:gmatch("([^" .. sep .. "]+)") do
+        t[#t + 1] = str
+    end
+    return t
+end
+
+function hf.getKeys(t)
+    local keys = {}
+    for key, _ in pairs(t) do
+        keys[#keys + 1] = key
+    end
+    return keys
+end
+
+function hf.removeNonAlphaNumeric(inputString)
+    if type(inputString) ~= "string" or inputString == nil then
+        return nil
+    end
+    return inputString:gsub("[^%w]", "")
+end
+
+function hf.shuffle(t)
+    if type(t) ~= 'table' or not next(t) then
+        return false
+    end
+
+    for i = #t, 2, -1 do
+        local j = math.random(i)
+        t[i], t[j] = t[j], t[i]
     end
     return t
 end

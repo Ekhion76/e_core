@@ -148,7 +148,21 @@ RegisterNUICallback('exit', function(_, cb)
     cb('ok')
 end)
 
-RegisterKeyMapping('openMeta', 'View Skills', 'keyboard', Config.keyBind.openStat)
+if Config.enableStatMenu then
+    RegisterKeyMapping('openMeta', 'View Skills', 'keyboard', Config.keyBind.openStat)
+
+    RegisterCommand('openMeta', function()
+        if not nuiReady then
+            cLog('command openMeta', 'Waiting for NUI load', 2)
+            return false
+        end
+
+        if not IsNuiFocused() then
+            SetNuiFocus(true, true)
+            SendNUIMessage({ action = 'OPEN', subject = 'page', metadata = ECO.meta })
+        end
+    end)
+end
 
 CreateThread(function()
     local isPaused, _IsPauseMenuActive
@@ -164,17 +178,5 @@ CreateThread(function()
             TriggerEvent('e_core:isPauseMenuActive', isPaused)
         end
         Wait(1000)
-    end
-end)
-
-RegisterCommand('openMeta', function()
-    if not nuiReady then
-        cLog('command openMeta', 'Waiting for NUI load', 2)
-        return false
-    end
-
-    if not IsNuiFocused() then
-        SetNuiFocus(true, true)
-        SendNUIMessage({ action = 'OPEN', subject = 'page', metadata = ECO.meta })
     end
 end)

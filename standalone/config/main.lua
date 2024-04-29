@@ -46,6 +46,7 @@ Config.laborIncreaseTime = 5 -- Default 5 (min), if 0 then turn off automatic la
 Config.laborIncrease = 10 -- Every increaseTime minutes grow so much
 Config.laborIncreaseOffline = 10 -- Every increaseTime minutes grow so much, if 0 then turn off automatic OFFLINE labor
 
+Config.enableStatMenu = false -- enable skill page keyBind(openStat)
 Config.keyBind = { -- Default RegisterKeyMapping (if useTarget = false)
     openStat = 'o', -- Open Skill page
 }

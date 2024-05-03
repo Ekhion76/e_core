@@ -1,3 +1,6 @@
+0.0.7
+- extends qb-core item remove function
+- small bugfix
 0.0.6
 - Error: SEND_NUI_MESSAGE: invalid JSON passed in frame (rapidjson error code 3)
 - The initial labor value could have been NaN, so the Nui interface did not open, only the cursor was visible.

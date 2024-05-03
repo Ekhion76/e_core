@@ -37,7 +37,7 @@ if QB_CORE then
                 label = params.label,
                 useWhileDead = params.useWhileDead,
                 canCancel = params.canCancel,
-                controlDisables = params.controlDisables,
+                controlDisables = params.controlDisables or {},
                 animation = params.animation,
                 prop = params.prop,
                 propTwo = params.propTwo,

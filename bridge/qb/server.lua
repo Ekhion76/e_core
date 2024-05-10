@@ -14,10 +14,12 @@ if QB_CORE then
     end
 
     function eCore:sendMessage(source, message, mType, mSec)
+        if mType == 'info' then mType = 'primary' end
         TriggerClientEvent('QBCore:Notify', source, message, mType, mSec) -- CHANGE ME
     end
 
     function eCore:drawText(source, message, position, mType)
+        if mType == 'info' then mType = 'primary' end
         TriggerClientEvent('qb-core:client:DrawText', source, message, position) -- CHANGE ME
     end
 

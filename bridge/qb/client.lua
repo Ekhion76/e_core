@@ -10,10 +10,12 @@ if QB_CORE then
 
     function eCore:sendMessage(message, mType, mSec, image)
         --TriggerEvent('QBCore:Notify', message, mType, mSec)
+        if mType == 'info' then mType = 'primary' end
         QBCore.Functions.Notify(message, mType, mSec) -- CHANGE ME
     end
 
     function eCore:drawText(message, position, mType)
+        if mType == 'info' then mType = 'primary' end
         TriggerEvent('qb-core:client:DrawText', message, position) -- CHANGE ME
     end
 

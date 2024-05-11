@@ -248,7 +248,7 @@ end
 
 function hf.getKeys(t)
     local keys = {}
-    for key, _ in pairs(t) do
+    for key in pairs(t) do
         keys[#keys + 1] = key
     end
     return keys

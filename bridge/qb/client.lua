@@ -183,10 +183,6 @@ if QB_CORE then
 
                     QBCore.Functions.SetVehicleProperties(vehicle, props)
 
-                    if props.addVehicleKey == true then
-                        eCore:vehicleKeys(GetVehicleNumberPlateText(vehicle), vehicle)
-                    end
-
                     if props.fuelLevel ~= nil then
                         eCore:setFuelLevel(vehicle, props.fuelLevel)
                     end

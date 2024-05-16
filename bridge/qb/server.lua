@@ -34,13 +34,10 @@ if QB_CORE then
 
         local convert = { -- ESX2QB
             money = 'cash',
-            bank = 'bank',
             black_money = 'crypto',
-            cash = 'cash',
-            crypto = 'crypto'
         }
 
-        account = convert[account] or 'cash'
+        account = convert[account] and convert[account] or account
         return xPlayer.Functions.AddMoney(account, amount, reason)
     end
 
@@ -51,30 +48,20 @@ if QB_CORE then
 
         local convert = { -- ESX2QB
             money = 'cash',
-            bank = 'bank',
             black_money = 'crypto',
-            cash = 'cash',
-            crypto = 'crypto'
         }
 
-        account = convert[account] or 'cash'
+        account = convert[account] and convert[account] or account
         return xPlayer.Functions.RemoveMoney(account, amount, reason)
     end
 
     function eCore:getAccounts(xPlayer, account)
         local convert = { -- ESX2QB
             money = 'cash',
-            bank = 'bank',
             black_money = 'crypto',
-            cash = 'cash',
-            crypto = 'crypto'
         }
 
-        account = convert[account]
-        if not account then
-            return 0
-        end
-
+        account = convert[account] and convert[account] or account
         return xPlayer.money[account]
     end
 

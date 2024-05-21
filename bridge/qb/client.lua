@@ -144,6 +144,7 @@ if QB_CORE then
             return false
         end
         -- exports['LegacyFuel']:SetFuel(vehicle, amount + 0.0)
+        exports['qb-fuel']:SetFuel(vehicle, amount + 0.0)
     end
 
     function eCore:vehicleKeys(rawPlate, vehicle)

@@ -27,7 +27,7 @@ if OX_INVENTORY then
             end
 
             if data.client and data.client.image then
-                image = string.match(data.client.image, ".+/([^/]+)$")
+                image = string.match(data.client.image, "([^/]+%.[%w]+)")
             end
 
             local name = item:lower()

@@ -10,6 +10,7 @@ This means the module responsible for converting options and other parameters ha
 e_core/bridge/global/client.lua: Adds ox exports.
 
 e_core/bridge/esx/client.lua: Removal of qtarget-related functions
+
 e_core/bridge/qb/client.lua: Removal of qb-target-related functions
 
 0.0.7

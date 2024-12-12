@@ -1,3 +1,17 @@
+0.0.8
+- Transition to exclusive support for ox_target. If you use a target system, ox_target must be installed.
+
+#### Why is this happening?
+Ox_target has discontinued compatibility with qb_target. This currently only affects qb_core and ox_target users.
+
+This means the module responsible for converting options and other parameters has been removed from ox_target. I decided not to integrate this into e_core because the qb_target system is outdated. Moving forward, I have chosen to support the modern ox_target natively.
+
+#### What has changed:
+e_core/bridge/global/client.lua: Adds ox exports.
+
+e_core/bridge/esx/client.lua: Removal of qtarget-related functions
+e_core/bridge/qb/client.lua: Removal of qb-target-related functions
+
 0.0.7
 - extends qb-core item remove function
 - small bugfix

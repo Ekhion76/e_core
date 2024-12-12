@@ -6,16 +6,12 @@ if ESX_CORE then
     local hf = hf
 
     function eCore:convertPlayer(playerData, newJob)
-
         if playerData then
-
             playerData.job = newJob or playerData.job
 
             if playerData.firstName then
-
                 playerData.charName = ('%s %s'):format(playerData.firstName, playerData.lastName)
             else
-
                 playerData.charName = playerData.name
             end
 
@@ -27,16 +23,13 @@ if ESX_CORE then
 
     ---@return {name: string, label: string, isUnique: boolean, isWeapon: boolean, weight: number, image: string, ammoname: string}
     function eCore:convertItems(items)
-
         if not hf.isPopulatedTable(items) then
-
             return items
         end
 
         local tmp = {}
 
         for item, data in pairs(items) do
-
             item = type(item) == 'string' and item or data.name
             local name = item:lower()
             tmp[name] = data

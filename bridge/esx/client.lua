@@ -40,35 +40,6 @@ if ESX_CORE then
         ExecuteCommand("cancelprog")
     end
 
-    function eCore:addTargetModel(models, options)
-        exports['qtarget']:AddTargetModel(models, options)
-    end
-
-    function eCore:removeTargetModel(obj, labels)
-        -- if you use ox_target, don't change it. ox_target recognizes the qtarget export and converts it!
-        exports['qtarget']:RemoveTargetModel(obj, labels)
-    end
-
-    function eCore:addTargetEntity(obj, options)
-        -- if you use ox_target, don't change it. ox_target recognizes the qtarget export and converts it!
-        exports['qtarget']:AddTargetEntity(obj, options)
-    end
-
-    function eCore:removeTargetEntity(obj, labels)
-        -- if you use ox_target, don't change it. ox_target recognizes the qtarget export and converts it!
-        exports['qtarget']:RemoveTargetEntity(obj, labels)
-    end
-
-    function eCore:addBoxZone(name, center, length, width, options, targetOptions)
-        -- if you use ox_target, don't change it. ox_target recognizes the qtarget export and converts it!
-        exports['qtarget']:AddBoxZone(name, center, length, width, options, targetOptions)
-    end
-
-    function eCore:removeZone(name)
-        -- if you use ox_target, don't change it. ox_target recognizes the qtarget export and converts it!
-        exports['qtarget']:RemoveZone(name)
-    end
-
     function eCore:isLoggedIn()
         return ESX.PlayerLoaded
     end

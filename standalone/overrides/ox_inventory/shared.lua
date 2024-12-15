@@ -42,7 +42,7 @@ if OX_INVENTORY then
     end
 
     function eCore:getQBImage(name)
-        if QBCore and QBCore.Shared.Items[name] then
+        if QBCore and QBCore.Shared.Items and QBCore.Shared.Items[name] then
             return QBCore.Shared.Items[name].image
         end
 

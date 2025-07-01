@@ -1,3 +1,10 @@
+0.0.9
+- Quick patch for incorrectly registered item images caused by QBox (QBCore.Shared.Items may contain image = '.png' with missing filenames).
+- The translate script received additional validations to handle invalid input values more safely.
+- Refactored helper functions.
+- Added progress bar handling to scripts_ui.
+
+
 0.0.8
 - Transition to exclusive support for ox_target. If you use a target system, ox_target must be installed.
 

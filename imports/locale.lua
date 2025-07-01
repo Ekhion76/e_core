@@ -1,15 +1,31 @@
 locales = {}
 
 function translate(str, ...)
-
-    if locales[Config.locale] then
-
-        return locales[Config.locale][str] and string.format(locales[Config.locale][str], ...) or str
+    local locale = locales[Config.locale]
+    if not locale then
+        return 'locale [' .. Config.locale .. '] does not exist'
     end
 
-    return 'locale [' .. Config.locale .. '] does not exist'
+    local translation = locale[str]
+    if not translation then
+        return str
+    end
+
+    local args = { ... }
+
+    if translation:find("%%") and #args > 0 then
+        local ok, formatted = pcall(string.format, translation, table.unpack(args))
+        if ok then
+            return formatted
+        else
+            return translation .. ' (format error)'
+        end
+    else
+        return translation
+    end
 end
 
 function translateU(str, ...)
-    return _(str, ...):gsub("^%l", string.upper)
+    local translated = translate(str, ...)
+    return translated:gsub("^%l", string.upper)
 end

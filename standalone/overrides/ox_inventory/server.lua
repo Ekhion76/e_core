@@ -24,8 +24,7 @@ if OX_INVENTORY then
     end
 
     function eCore:addItem(xPlayer, item, count, slot, metadata)
-        local success, response = ox_inventory:AddItem(xPlayer.source, item, count, metadata)
-
+        local success, response = ox_inventory:AddItem(xPlayer.source, item, count, metadata, slot)
         if not success then
             return false, response
         end

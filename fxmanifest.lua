@@ -1,7 +1,7 @@
 fx_version 'cerulean'
 game 'gta5'
 description 'ECO CORE'
-version '0.0.8'
+version '0.0.9'
 
 shared_scripts {
     '@ox_lib/init.lua',

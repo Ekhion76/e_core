@@ -42,8 +42,11 @@ if OX_INVENTORY then
     end
 
     function eCore:getQBImage(name)
-        if QBCore and QBCore.Shared.Items and QBCore.Shared.Items[name] then
-            return QBCore.Shared.Items[name].image
+        if QBCore and QBCore.Shared and QBCore.Shared.Items and QBCore.Shared.Items[name] then
+            local image = QBCore.Shared.Items[name].image
+            if image and image:match('^.+%.%w+$') then
+                return image
+            end
         end
 
         return name .. '.png'

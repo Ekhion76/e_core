@@ -1,0 +1,1 @@
+INSIDE_SCRIPTS_UI = GetResourceState('is_ui') == 'started'

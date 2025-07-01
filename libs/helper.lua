@@ -13,27 +13,29 @@ for i = 97, 122 do
 end
 
 function hf.randomStr(length)
-    if length <= 0 then
-        return ''
+    local result = {}
+    for i = 1, length do
+        result[i] = hf.stringCharset[math.random(#hf.stringCharset)]
     end
-    return hf.randomStr(length - 1) .. hf.stringCharset[math.random(1, #hf.stringCharset)]
+    return table.concat(result)
 end
 
 function hf.randomInt(length)
-    if length <= 0 then
-        return ''
+    local result = {}
+    for i = 1, length do
+        result[i] = hf.numberCharset[math.random(#hf.numberCharset)]
     end
-    return hf.randomInt(length - 1) .. hf.numberCharset[math.random(1, #hf.numberCharset)]
+    return table.concat(result)
 end
 
 function hf.getSerialNumber()
     return tostring(
-            hf.randomInt(2) ..
-                    hf.randomStr(3) ..
-                    hf.randomInt(1) ..
-                    hf.randomStr(2) ..
-                    hf.randomInt(3) ..
-                    hf.randomStr(4))
+        hf.randomInt(2) ..
+        hf.randomStr(3) ..
+        hf.randomInt(1) ..
+        hf.randomStr(2) ..
+        hf.randomInt(3) ..
+        hf.randomStr(4))
 end
 
 ---searches for the first match between the values of two tables
@@ -202,39 +204,37 @@ function hf.copy(t)
     return temp
 end
 
+function hf.deepCopy(orig, copies)
+    copies = copies or {}
+
+    if type(orig) ~= 'table' then
+        return orig
+    elseif copies[orig] then
+        return copies[orig] -- körkörös hivatkozás esetén visszatérés
+    end
+
+    local copy = {}
+    copies[orig] = copy
+
+    for k, v in next, orig, nil do
+        copy[hf.deepCopy(k, copies)] = hf.deepCopy(v, copies)
+    end
+
+    setmetatable(copy, hf.deepCopy(getmetatable(orig), copies))
+
+    return copy
+end
+
+
 function hf.rangeLimit(v, max)
     return v < 0 and 0 or v > max and max or v
 end
 
 function hf.draw(chance)
-    chance = tonumber(chance)
-
-    if not chance or chance > 99 then
-        return true
-    end
-
-    if chance < 1 then
-        chance = 1
-    end
-
-    math.randomseed(math.floor(os.clock() * 100000 * math.random(10000)))
-    math.random();
-    math.random();
-    math.random();
-
-    local box = {}
-
-    for i = 1, 100 do
-        box[i] = chance > 0
-        chance = chance - 1
-    end
-
-    for i = #box, 2, -1 do
-        local j = math.random(i)
-        box[i], box[j] = box[j], box[i]
-    end
-
-    return box[math.random(#box)]
+    chance = tonumber(chance) or 100
+    if chance < 1 then return false end
+    if chance >= 100 then return true end
+    return math.random(100) <= chance
 end
 
 function hf.stringSplit(input, sep)

@@ -1,5 +1,14 @@
 local hf = hf
 
+--- Sekély másolat (Lua 5.4 `table.clone` helyett – luacheck / környezetfüggetlen).
+local function shallow_copy(t)
+    local out = {}
+    for k, v in pairs(t) do
+        out[k] = v
+    end
+    return out
+end
+
 function checkMetaExists(playerId, category, name)
 
     if not tonumber(playerId) or type(ECO.meta[playerId]) ~= 'table' then
@@ -98,7 +107,7 @@ function getDiscounts(value)
 
     if value < levels[1].limit then
 
-        discount = table.clone(levels[1])
+        discount = shallow_copy(levels[1])
         discount.level = 0
         discount.progress = value > 0 and math.floor(value / levels[1].limit * 100) or 0
 
@@ -127,7 +136,7 @@ function getDiscounts(value)
         end
     end
 
-    discount = table.clone(levels[numberOfLevels])
+    discount = shallow_copy(levels[numberOfLevels])
     discount.level = numberOfLevels - 1
     discount.progress = 100
 

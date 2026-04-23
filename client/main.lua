@@ -7,16 +7,12 @@ CORE_READY, REGISTERED_ITEMS = nil, nil
 CreateThread(function()
     cLog('CLIENT REGISTERED_ITEMS', 'Loading', 2)
 
-    while not hf.isPopulatedTable(REGISTERED_ITEMS) do
-
-        cLog('CLIENT REGISTERED_ITEMS', 'Wait', 2)
-        REGISTERED_ITEMS = eCore:getRegisteredItems()
-        Wait(1000)
+    if hf.awaitItemRegistryReady('CLIENT REGISTERED_ITEMS') then
+        cLog('CLIENT REGISTERED_ITEMS', 'Loaded', 2)
+        cLog('CLIENT CORE', 'READY', 2)
     end
 
-    cLog('CLIENT REGISTERED_ITEMS', 'Loaded', 2)
-    cLog('CLIENT CORE', 'READY', 2)
-    CORE_READY = true
+    hf.logEcoreStartupSummary('client')
 end)
 
 local nuiReady, init
@@ -30,11 +26,11 @@ local nuiReady, init
 --- @return number|table proficiency | all category
 function getAbility(category, name)
     if not ECO.meta[category] then
-        return false, 'category_does_not_exist'
+        return false, eCoreErr.category_does_not_exist
     end
 
     if name then
-        return ECO.meta[category][name] and ECO.meta[category][name] or false, 'meta_does_not_exist'
+        return ECO.meta[category][name] and ECO.meta[category][name] or false, eCoreErr.meta_does_not_exist
     end
     return ECO.meta[category]
 end
@@ -50,7 +46,10 @@ end
 
 function getLabor()
     if not Config.systemMode.labor then
-        return false, 'the_system_is_turned_off'
+        return false, eCoreErr.the_system_is_turned_off
+    end
+    if not ECO.meta or not ECO.meta.labor then
+        return false, eCoreErr.not_found_metadata
     end
     return ECO.meta.labor.val
 end
@@ -82,7 +81,7 @@ function nuiInit()
     end
 end
 
-RegisterNetEvent('e_core:onPlayerLoaded', function()
+AddEventHandler('e_core:onPlayerLoaded', function()
     if nuiReady and Config.systemMode.labor and Config.displayComponent.laborHud then
         SendNUIMessage({ action = 'OPEN', subject = 'hud' })
     end
@@ -108,7 +107,7 @@ AddEventHandler('e_core:isPauseMenuActive', function(isPaused)
     end
 end)
 
-RegisterNetEvent('e_core:onPlayerUnload', function()
+AddEventHandler('e_core:onPlayerUnload', function()
     ECO.meta = {}
 
     init = false

@@ -1,0 +1,1500 @@
+================================================================================
+e_core – AI és támogatás referencia (magyar)
+================================================================================
+Verzió (resource): fxmanifest.lua → version mező. Publikus export táblázat:
+  docs/PUBLIC_API_HU.md (változáskor szinkron).
+Utolsó szerkesztés: changelog / commit; exportlista változáskor frissítsd ezt a fájlt is.
+
+Fázis 2 – AI_SUPPORT záró audit (2026-04): `exports.e_core:*` névlista egyeztetve
+  `client/exports.lua`, `server/exports.lua`, `bridge/main.lua` szerint; GYIK
+  kitöltve; `bridge/global/events` + jármű út leírása összhangban a G net audit
+  doksival (`docs/NET_EVENTS_AUDIT_HU.md`).
+
+Cél
+-----
+- Cursor AI (és más asszisztens) egy fájlból kapja a **struktúrát**, az
+  **exports.e_core** hívásokat és az **eCore** facade fő pontjait magyarul.
+- Fejlesztés közben **együtt bővül** a kóddal; új export / szemantika = ugyanabban
+  a PR-ban frissítsd a **2. szekciót** + `PUBLIC_API_HU.md`-t (lásd
+  MODERNIZACIOS_ES_MEGBIZHATOSAGI_TERV_HU.md, 3B / Fázis 2).
+
+Mérvadó szabály (doksi készítés)
+--------------------------------
+Ebben a repóban a **technikai / AI célú** dokumentumok (legalább ez a fájl és
+bármely `docs/*_HU.txt` / API kiegészítő) **követik** az alábbi **0.0**, **0.**,
+**0.1** és **0.2** szekciókat: fájlméret / bontás / külső AI tisztázás (0.0);
+API-blokk forma, mezők (0.); ritka inventory GYIK-sablon (0.1); központi
+ügyfél-link / tudásbázis helye és szerkezete (0.2). Ettől eltérni csak rövid
+indoklással (pl. túl szűk speciális eset).
+
+Kapcsolódó fájlok a repóban
+----------------------------
+- docs/PUBLIC_API_HU.md           – exports.e_core + eCore névsor, eCoreErr tábla, deprec (v0.3)
+- docs/SUPPORTED_STACK_MATRIX_HU.md – Tier 0–2 stack, override checklist
+- docs/PROJECT_STRUCTURE.txt      – könyvtárfa
+- docs/AI_EGYUTTMUKODES_CHECKLIST_HU.md
+- .cursor/rules/e_core-context.mdc
+- export_examples_client.md, export_examples_server.md (gyökér) – **exports.e_core**
+  példahívások (angol); kiegészítik a szekció **2** összefoglalóját. Mérvadó
+  névlista: `client/exports.lua`, `server/exports.lua`, `bridge/main.lua`
+  `exports(` sorok.
+- docs/SZERVER_OPERATOR_CHECKLIST_HU.md – ensure, ConVarok, indulási kockázatok (Fázis 0)
+- docs/NET_EVENTS_AUDIT_HU.md – szerver net / callback audit (G) + bridge regisztrált események + kliens `e_core:*` (`methodCaller`, `sync`, labor HUD aliasok)
+- docs/DB_MIGRATIONS_HU.md – DB migrációk, `e_core_migrations`, új lépés sablon (Fázis 3)
+- docs/LUA_LS_AND_CI_HU.md – LuaLS (`.luarc.json`, `types/`), luacheck, GitHub Actions (Fázis 4)
+- docs/LABOR_KEZELES_MUNKAFIL_HU.md – **labor + meta sync** mély merülés
+  (forgalom, kanonikus költség, „miért teljes tömb”, eco_crafting / eco_fishing
+  minták). Az **AI_SUPPORT_REFERENCE** szekció **1.4** alatt tömör összefoglaló
+  + erre a fájlra mutató hivatkozás; részletes narratíva a munkafájlban marad.
+- imports/locale.lua               – translate / translateU (shared)
+- imports/utils.lua                – print_r, blip, loader, cLog (shared)
+- imports/discordlog.lua           – createDiscordLog (server; eCore.helper)
+- imports/core.lua                 – consumer belépési minta (files; más
+  resource-ból @e_core/… include)
+- libs/helper.lua                  – hf tábla (általános segédek); eCore.helper
+- libs/errors.lua                  – eCoreErr ok stringek; eCore.Err (bridge/main.lua)
+- libs/meta.lua                    – szint / kedvezmény, checkMetaExists, levelChange
+- libs/config_check.lua            – Config alapértékek normalizálása induláskor
+- standalone/config/main.lua, standalone/config/levels.lua – globális Config + szintek
+- standalone/overrides/<név>/     – inventory / progress / egyéb eCore felülírások
+- standalone/usableitem.lua        – szerver: példa usable item (labor_enhancer)
+- bridge/framework_config.lua + bridge/esx/config_defaults.lua +
+  bridge/qb/config_defaults.lua – keretrendszer választás, FRAMEWORK, ESX_CORE /
+  QB_CORE, eCore / Config alap
+- bridge/esx/ (config_defaults, shared, client, server, events/) – ESX eCore;
+  részletek: „ESX bridge” szekció lent
+- bridge/qb/ (config_defaults, shared, client, server, events/) – QB eCore;
+  részletek: „QB bridge” szekció lent
+- bridge/global/ (shared, client, server, events/, callbacks/) – keretrendszer-
+  független eCore részek; részletek: „Global bridge” szekció lent
+- client/ (main.lua, exports.lua) – kliens indulás, REGISTERED_ITEMS, NUI, meta/
+  labor exportok; részletek: „Client resource” szekció lent
+- html/ui.html, html/main.css, html/js/*.js, html/img/*.png – NUI felület;
+  részletek: **1.5 NUI (html/)**
+- server/main.lua, server/meta.lua, server/labor.lua, server/db.lua,
+  server/exports.lua – szerver ECO, meta sync/mentés, labor, MySQL; részletek:
+  „Server resource (server/)” szekció **1.4**
+
+================================================================================
+Keretrendszer-felismerés (FRAMEWORK, ESX_CORE, QB_CORE)
+================================================================================
+
+Mérvadó forrásfájlok
+  bridge/esx/config_defaults.lua   – e_core_apply_esx_config()
+  bridge/qb/config_defaults.lua     – e_core_apply_qb_config()
+  bridge/framework_config.lua       – választás, ESX_CORE / QB_CORE, hívja az
+                                      apply függvényeket
+  fxmanifest.lua → shared_scripts → a fenti három fájl ebben a sorrendben
+
+Logika (rövid)
+  Lokálisan: esx_started = GetResourceState('es_extended') == 'started',
+  qb_started ugyanígy a 'qb-core'-ra. ConVar: e_core:framework = auto | esx | qb
+  (alap: auto).
+
+  Egy core + auto → az a keretrendszer; apply + FRAMEWORK / ESX vagy QBCore /
+  eCore / Config alapértékek.
+
+  Két core + auto → error (állítsd a ConVart esx vagy qb-ra).
+
+  Két core + esx|qb kényszer → apply a választott ág + figyelmeztető log; a másik
+  core resource akkor is futhat, de ESX_CORE / QB_CORE **csak a választott ág**
+  szerint true (a nem választott bridge guardjai nem futnak).
+
+  Semmi core induláskor → figyelmeztető log, FRAMEWORK = nil, eCore = {},
+  Config = {}, ESX_CORE = false, QB_CORE = false.
+
+  A bridge/esx/*.lua és bridge/qb/*.lua (shared, client, server, events) nagy
+  része if ESX_CORE / if QB_CORE guarddal fut. A globális FRAMEWORK string a
+  bridge/main.lua exportján megy ki:
+    exports("getFrameWork", function() return FRAMEWORK end)
+
+Consumer
+  imports/core.lua: FRAMEWORK = exports.e_core:getFrameWork()
+  (Az e_core resource-nak a consumer előtt kell elindulnia; lásd README ensure
+  sorrend.)
+
+Kettős core egy szerveren
+  **Támogatott modell:** egy FiveM szerveren **egy** legacy keretrendszer fut –
+  **ESX vagy QB**, nem mindkettő párhuzamosan.
+
+  **Ha mégis mindkét core `started`:** `e_core:framework=auto` → indulás
+  **megáll** (Lua error üzenettel). Kényszerített esx|qb esetén egy aktív bridge
+  ág; operátori feladat a felesleges core eltávolítása. Részletek:
+  docs/FRAMEWORK_CONFIG_REFACTOR_TERVEZES_HU.md (6. szakasz: ConVar).
+
+QBox / README vs. kód
+  A README említhet QBox-ot. Az e_core Lua felismerése **`qb-core`** resource
+  névre és erre az exportra épül: `exports['qb-core']:GetCoreObject()` → globális
+  **`QBCore`** (`bridge/qb/config_defaults.lua` → `e_core_apply_qb_config`).
+
+  **QBox legacy módban** a kompatibilitási réteg továbbra is a **`qb-core`**
+  resource nevet használja (nem külön `qbx_core` néven fut a detektált core), és
+  a mag objektum neve **`QBCore`** marad – ezért a fenti `GetResourceState(
+  'qb-core')` és `GetCoreObject()` hívás tipikusan **működik** legacy QBox
+  szerveren is.
+
+  Ha a szerver **nem** legacy (más resource név / más export), a bridge nem
+  ismeri fel automatikusan; ensure név és export **szerverenként** egyeztetendő a
+  kóddal vagy külön fork-illesztéssel.
+
+Nem ez választ keretrendszer között
+  Az ox_inventory, qs-inventory, avp_grid_inventory stb. GetResourceState
+  flagjei a standalone/overrides/<név>/config.lua fájlokban vannak; ezek
+  kiegészítő integrációt jelölnek, nem ESX helyett QB-t.
+
+================================================================================
+ESX bridge (bridge/esx)
+================================================================================
+
+Előfeltétel
+  ESX_CORE == true (lásd „Keretrendszer-felismerés”). Ha false, az alábbi
+  fájlokban lévő eCore: metódusok nem töltődnek be.
+
+Mérvadó forrásfájlok (fxmanifest sorrend)
+  bridge/esx/config_defaults.lua – shared; e_core_apply_esx_config (lásd fent)
+  bridge/esx/shared.lua           – shared + client + server (kétszer fut a
+                                    manifest miatt); convertPlayer,
+                                    convertItems
+  bridge/esx/client.lua           – client; UI, progress, játékos, inventory
+                                    olvasás kliensen
+  bridge/esx/server.lua           – server; xPlayer, pénz, inventory írás,
+                                    callbacks, parancsok
+  bridge/esx/events/client.lua    – ESXEvents tábla: sharedEvents + ESX
+                                    események → e_core:* kliens oldali
+                                    továbbítás
+  bridge/esx/events/server.lua    – ESXEvents tábla szerveren
+  bridge/main.lua                 – if ESX_CORE: RegisterNetEvent minden
+                                    ESXEvents[] elemre
+
+Szerep röviden
+  config_defaults.lua (apply függvény)
+    Inicializálás + Config.maxInventoryWeight / slots, Config.fields (ESX
+    mezőnevek: count, stb.), Config.itemBox, Config.imagePath, stb.
+
+  shared.lua
+    eCore:convertPlayer(playerData, newJob) – job, charName, position/coords
+    normalizálás consumer formához.
+    eCore:convertItems(items) – item kulcs lower, image, isUnique/isWeapon
+    alapértékek; REGISTERED_ITEMS nélküli item lista egységesítéséhez használt.
+
+  client.lua (ESX API-kra támaszkodik)
+    triggerCallback → ESX.TriggerServerCallback
+    sendMessage → ESX.ShowNotification
+    drawText / hideText → ESX.TextUI / ESX.HideUI
+    progressbar → ESX.Progressbar (animation.dict / anim átalakítás); cancel
+    → ExecuteCommand("cancelprog")
+    isLoggedIn → ESX.PlayerLoaded
+    getInventory(playerData) → playerData.inventory
+    getRegisteredItems() → REGISTERED_ITEMS ha van, különben convertItems(
+      ESX.GetPlayerData().inventory)
+    getPlayer(newJob) → convertPlayer(ESX.GetPlayerData(), …)
+    getAccounts, canInteract, jármű: setFuelLevel (LegacyFuel komment), vehicleKeys
+    (komment), setVehicleProperties, setVehiclePropertiesFromNetId (hurok +
+    SetBoatAnchor), deleteVehicle, getClosestVehicle
+
+  server.lua
+    createCallback → ESX.RegisterServerCallback
+    createUsableItem → ESX.RegisterUsableItem
+    sendMessage / drawText / hideText → esx:showNotification, ESX:TextUI,
+    ESX:HideUI kliens események
+    addMoney / removeMoney / getAccounts – xPlayer vagy source szám →
+    GetPlayerFromId
+    getInventory / getInventoryWeight / getPlayerMaxWeight – xPlayer
+    addItem – xPlayer.addInventoryItem(item, count) – slot/metadata nélkül
+    removeItem – xPlayer.removeInventoryItem(…, metadata, slot)
+    removeItems – tábla iteráció, item.amount mező
+    getRegisteredItems – REGISTERED_ITEMS ha van, különben convertItems(
+      ESX.Items); függvényen belül újra ESX = exports['es_extended']:
+      getSharedObject()
+    getPlayer(playerId) – convertPlayer(ESX.GetPlayerFromId)
+    itemBox – TriggerClientEvent('inventory:client:ItemBox', …) ha
+      Config.itemBox
+    addCommands → ESX.RegisterCommand
+
+Esemény-bridge (ESX → e_core)
+  Kliens (bridge/esx/events/client.lua), ESXEvents a bridge/global/events/
+  client.lua sharedEvents tömbjére épül, majd bővül:
+    esx:playerLoaded      → ESX.PlayerLoaded = true; convertPlayer;
+                            TriggerEvent('e_core:onPlayerLoaded', …)
+    esx:onPlayerLogout   → ESX.PlayerLoaded = false;
+                            TriggerEvent('e_core:onPlayerUnload', playerId)
+    esx:setJob            → TriggerEvent('e_core:onJobUpdate', job)
+  Szerver (bridge/esx/events/server.lua):
+    esx:playerLoaded      → convertPlayer(xPlayer);
+                            TriggerEvent('e_core:playerLoaded', xPlayer,
+                            playerId, isNew)
+    esx:playerDropped     → TriggerEvent('e_core:playerUnload', playerId)
+
+Felülírás (README szerződés)
+  A fájlok tetején komment: módosítás helye standalone/overrides/…, ne közvetlen
+  bridge/esx szerkesztése frissítésbiztos testreszabáshoz.
+
+Fontos megjegyzések (hibakeresés / portolás)
+  Az ESX build (legacy vs. új notify/TextUI/Progressbar) eltérhet – ha üres
+  vagy hibás UI, ellenőrizd az es_extended verziót és az ESX hívásokat ezekben
+  a függvényekben.
+  Kliens getRegisteredItems alapértelmezésben játékos inventoryból dolgozik;
+  szerveren ESX.Items – ox_inventory vagy override esetén a globális
+  REGISTERED_ITEMS és a standalone override réteg a mérvadó (lásd server
+  loop; súly/slot közös logika: „Global bridge” szekció).
+  A jármű / kulcs / üzemanyag részek részben kikommentelt példák; éles
+  integrációhoz override kellhet.
+
+================================================================================
+QB bridge (bridge/qb)
+================================================================================
+
+Előfeltétel
+  QB_CORE == true (lásd „Keretrendszer-felismerés”). Resource név: 'qb-core'.
+
+Mérvadó forrásfájlok (fxmanifest sorrend)
+  bridge/qb/config_defaults.lua – shared; e_core_apply_qb_config, Config alap
+  bridge/qb/shared.lua           – shared + client + server; convertItems,
+                                   getRegisteredItems (QBCore.Shared.Items),
+                                   convertPlayer (PlayerData, job/gang, ESX2QB
+                                   mezők)
+  bridge/qb/client.lua           – client; UI, progressbar export, játékos
+  bridge/qb/server.lua           – server; Player object, pénz, inventory
+                                    (AddItem / manuális remove + SetInventory)
+  bridge/qb/events/client.lua    – QBEvents = sharedEvents + QBCore kliens
+                                    események → e_core:*
+  bridge/qb/events/server.lua    – QBEvents szerveren
+  bridge/main.lua                – if QB_CORE: RegisterNetEvent minden
+                                    QBEvents[] elemre
+
+Szerep röviden
+  config_defaults.lua (apply függvény)
+    QB Config.fields (count mező: 'amount'), Config.itemBox = true alapból,
+    Config.imagePath qb-inventory NUI példa URL.
+
+  shared.lua
+    eCore:convertItems(items) – QBCore item tábla; unique/type → isUnique/
+    isWeapon; hibás kulcsnál print.
+    eCore:getRegisteredItems() – mindig convertItems(QBCore.Shared.Items)
+    (nincs REGISTERED_ITEMS ág, ellentétben az ESX szerverrel).
+    eCore:convertPlayer(playerData, newJob, newGang) – PlayerData / Functions
+    kibontás; job és gang grade mezők ESX-szerű aliasokra; citizenid →
+    identifier; charinfo → charName.
+
+  client.lua
+    triggerCallback → QBCore.Functions.TriggerCallback
+    sendMessage → QBCore.Functions.Notify; mType 'info' → 'primary' (CHANGE ME
+    kommentek notify/drawText körül)
+    drawText / hideText → qb-core:client:DrawText / HideText események
+    progressbar → exports['progressbar']:Progress (függőség: progressbar
+    resource); onFinish / onCancel a callbackből
+    cancelProgressbar → progressbar:client:cancel
+    isLoggedIn → LocalPlayer.state['isLoggedIn']
+    getInventory(playerData) → playerData.items
+    getPlayerMaxWeight → Config.maxInventoryWeight
+    getPlayer(newJob, newGang) → convertPlayer(GetPlayerData(), …)
+    getAccounts – ESX2QB tábla: money→cash, black_money→crypto, egyébként
+    playerData.money[account]
+    canInteract – metadata inlaststand / isdead + ped feltételek
+    setFuelLevel → qb-fuel:SetFuel (aktív hívás, nem komment)
+    vehicleKeys → vehiclekeys:client:SetOwner
+    jármű: SetVehicleProperties, netId + fuelLevel opció, DeleteVehicle,
+    GetClosestVehicle
+
+  server.lua
+    createCallback → QBCore.Functions.CreateCallback
+    createUsableItem → CreateUseableItem (QB helyesírás)
+    sendMessage / drawText / hideText → QBCore:Notify, qb-core:client:DrawText/
+    HideText (CHANGE ME)
+    addMoney / removeMoney / getAccounts – ESX2QB account map (money→cash,
+    black_money→crypto); Functions.AddMoney / RemoveMoney
+    getInventory → xPlayer.items
+    addItem → Functions.AddItem; false → false, 'inventory_full'
+    getPlayerMaxWeight → Config.maxInventoryWeight
+    removeItem – saját slotonkénti logika, majd Functions.SetInventory(temp,
+    true); hibakódok: no_items_to_remove, inventory_is_empty, not_enough_items
+    removeItems – előfeltétel ellenőrzés, majd ugyanilyen SetInventory mentés
+    getPlayer(playerId) – convertPlayer(GetPlayer(playerId))
+    itemBox – mint ESX, Config.itemBox
+    addCommands → QBCore.Commands.Add
+
+Esemény-bridge (QBCore → e_core)
+  Kliens (bridge/qb/events/client.lua):
+    QBCore:Client:OnPlayerLoaded   → TriggerEvent('e_core:onPlayerLoaded')
+    QBCore:Client:OnPlayerUnload   → TriggerEvent('e_core:onPlayerUnload')
+    QBCore:Client:OnJobUpdate        → TriggerEvent('e_core:onJobUpdate', job)
+    QBCore:Client:OnGangUpdate       → TriggerEvent('e_core:onGangUpdate', gang)
+  Szerver (bridge/qb/events/server.lua):
+    QBCore:Server:PlayerLoaded       → convertPlayer(xPlayer);
+                                     TriggerEvent('e_core:playerLoaded', xPlayer)
+    QBCore:Server:OnPlayerUnload     → TriggerEvent('e_core:playerUnload',
+                                     playerId)
+
+Megjegyzés (ESX vs QB eseménynevek)
+  Az e_core:playerLoaded szerver esemény QB-nél **nem** kapja meg a playerId /
+  isNew harmadik paramétert (az ESX bridge igen); consumer-eknek érdemes
+  defenzíven kezelni.
+
+Felülírás
+  Ugyanaz a bridge komment mint ESX-nél: standalone/overrides/…
+
+Fontos megjegyzések (hibakeresés / portolás)
+  A „CHANGE ME” részek (Notify, DrawText) szerveren és kliensen forkonként
+  eltérnek; QBox / egyedi qb-core fork esetén esemény- és export nevek
+  ellenőrizendők.
+  A progressbar resource kötelező a kliens progress útvonalhoz; ox_progressbar
+  vagy más stackhez override szükséges lehet.
+  ESX2QB black_money → crypto megfeleltetés **nem** univerzális; saját economy
+  szerint felülírás vagy convert tábla revízió.
+  removeItem / removeItems QB-nél nem a natív RemoveItem hívást használja
+  minden ágon – inventory szinkron és edge case-ek override / tesztelés
+  témák.
+
+================================================================================
+Global bridge (bridge/global)
+================================================================================
+
+Szerep röviden
+  Keretrendszer-független **eCore** metódusok és közös **NetEvent** alapok.
+  **Nincs** if ESX_CORE / if QB_CORE guard: a fájlok mindig betöltődnek
+  (shared + client vagy server oldal szerint a manifest szerint).
+
+Mérvadó forrásfájlok (fxmanifest sorrend, összefoglalva)
+  bridge/global/shared.lua         – shared, majd client + server is;
+                                      inventory súly / slot / egyeztetés
+  bridge/global/client.lua         – client; ox_target export wrapper
+  bridge/global/server.lua         – server; eCore:createVehicle
+  bridge/global/events/client.lua  – sharedEvents tömb kezdete +
+                                      e_core:methodCaller
+  bridge/global/events/server.lua  – sharedEvents kezdet (**nem** tartalmaz
+                                      `e_core:createVehicle` NetEventet – G audit)
+  bridge/global/callbacks/server.lua – `e_core:createVehicle` **csak** szerver
+                                      callback (`createCallback` + forrás ellenőrzés)
+  bridge/main.lua                  – csak ESXEvents / QBEvents regisztráció;
+                                      a global sharedEvents elemei **uganarra
+                                      a táblára** kerülnek rá (lásd lent)
+
+shared.lua (eCore metódusok, Config.fields és REGISTERED_ITEMS)
+  **Cél:** keretrendszer-független **súly / slot / „befér-e”** logika a
+  `playerData` + `getInventory(playerData)` alapján. A QB alap inventory
+  slotonként tárol; a **több stackből adódó összesített mennyiség** recept /
+  anyagellenőrzéshez a **`getAmountOfItems(inventory)`** használata javasolt
+  (itemnév → összegzett `amount` minden nem üres slotban). Közvetlenül csak
+  egy slotot nézni **alábecsülheti** a készletet (pl. két×5 víz → 5).
+
+  getInventoryWeight(playerData) – ha van playerData.weight, azt adja;
+    különben getInventory + Config.fields.count/weight + Config.
+    totalStackWeight szerinti összegzés.
+  canSwapItems(swappingItems, itemData, playerData) – súly + szabad slot +
+    unique item logika; a `swappingItems` levonását **végigjárja** az
+    inventory sorait (több stack esetén is); REGISTERED_ITEMS[…] olvasás;
+    false okok: too_heavy, not_enough_space.
+  canCarryItem(itemData, playerData) – kapacitás + slot igény (unique vs.
+    meglévő stack); **nem** helyettesíti a teljes recept-lista ellenőrzést –
+    összetett „van-e minden alapanyag” esetén `getAmountOfItems` + saját
+    összehasonlítás vagy `canSwapItems` receptút.
+  countFreeSlots(inventory) – Config.maxInventorySlots minus occupied.
+  getItemWeight(itemName, metadata) – REGISTERED_ITEMS + ammo / components /
+    metadata súly kiegészítés.
+  getFirstSlotByItem(inventory, itemName) – első nem üres slot indexe az
+    adott névhez (nem összegzett mennyiség).
+  getAmountOfItems(inventory) – **vissza:** tábla `{ [itemName] = összDarab }`
+    minden slot `Config.fields.name` / `count` szerint összeadva; recepthez /
+    „van elég X” kérdéshez **ez** a megfelelő primitív.
+  getRegisteredItem(name), isReady() → `CORE_READY` globális; értékét a
+    `hf.awaitItemRegistryReady` állítja a client/server `main.lua` induló szálában
+    (siker / timeout után).
+
+  **QB + ox_inventory:** a fenti súly/slot számítás a **bridge által adott**
+  inventory táblára és `Config.maxInventoryWeight` / `REGISTERED_ITEMS`
+  súlyokra épül. Ox alatt a valós kapacitás és slot szabályok gyakran **ox
+  exportokon** mennek át. Érdemes a **`standalone/overrides/ox_inventory`**
+  (vagy a használt stack szerinti override) alatt **`eCore:canSwapItems`** és
+  **`eCore:canCarryItem`** (és szükség szerint kapcsolódó metódusokat)
+  **felülírni**, hogy az ox legyen a forrásigazság – a global `shared.lua`
+  maradhat fallback / nem-ox szerverekre. A repó ox override mappája **jelenleg**
+  főleg `getRegisteredItems` / `convertItems`-et tartalmaz; a capacity-függő
+  függvények ox-hoz kötése **ugyanide** másolható a bridge komment szerinti
+  mintában. Példa más override-ban: `standalone/overrides/avp_grid_inventory/`
+  (`canSwapItems`, `canCarryItem`).
+
+  **Függőség:** canSwapItems / canCarryItem / getItemWeight feltételezi, hogy
+  a REGISTERED_ITEMS tábla **kulcsonként** elő van készítve (kisbetűs név,
+  isUnique mező). Üres vagy hiányzó item → runtime hiba lehet. Előállítás:
+  client/main.lua és server/main.lua ciklus eCore:getRegisteredItems()-ig
+  (framework-specifikus implementáció az ESX/QB bridge-ben + override).
+
+client.lua (ox_target)
+  Minden függvény közvetlenül továbbít az exports.ox_target:* hívásokra
+  (disableTargeting, addGlobalOption, removeGlobalOption, zónák, model,
+  entity, ped, player, vehicle, stb.). **Függőség:** ox_target resource;
+  hiányában hiba induláskor.
+
+server.lua
+  eCore:createVehicle(pos, model, vType, props) – jármű létrehozás szerveren
+    (CreateVehicleServerSetter ha van + vType string, különben CreateVehicle),
+    rendszám / network owner várakozás, netId, majd TriggerClientEvent(
+    'e_core:methodCaller', owner, 'setVehiclePropertiesFromNetId', netId,
+    props). Visszaadás: netId, vehicle entitás.
+
+callbacks/server.lua
+  eCore:createCallback('e_core:createVehicle', …) – cb(netId, serverId);
+    a createCallback implementáció ESX/QB bridge-ben van (RegisterServerCallback
+    / QBCore callback).
+
+Események és sharedEvents összefűzése
+  bridge/global/events/client.lua: **sharedEvents = {}**, majd
+    e_core:methodCaller → **whitelist** (`methodCallerAllowed`), csak engedélyezett
+    `method` esetén `eCore[method](eCore, …)`; elutasításkor `print` + `cLog`.
+  bridge/esx/events/client.lua (ha ESX_CORE): **ESXEvents = sharedEvents**
+    (ugyanaz a tábla referencia), majd további insertek.
+  bridge/qb/events/client.lua (ha QB_CORE): **QBEvents = sharedEvents**
+    (ugyanaz a tábla referencia QB-nél is).
+  bridge/main.lua: a kiválasztott keretrendszer ESXEvents vagy QBEvents
+    elemeire RegisterNetEvent – így a **methodCaller** és a framework saját
+    eseményei **egy** táblában vannak, betöltési sorrend: global → esx → qb
+    (manifest szerint).
+
+  Szerveren: bridge/global/events/server.lua ugyanígy **sharedEvents** kezdet;
+    ESX/QB server events ugyanerre a táblára épülnek. (`e_core:createVehicle`
+    kliens hívása: **callback**, lásd callbacks/server.lua + NET_EVENTS doksi.)
+
+Megjegyzés (e_core:createVehicle – csak callback)
+  A `e_core:createVehicle` **nem** `RegisterNetEvent` a sharedEvents táblában
+  (eltávolítva G audit miatt). Jármű: **`e_core:createCallback('e_core:createVehicle', …)`**
+  (`bridge/global/callbacks/server.lua`) + `hf.isValidPlayerSource(source)`.
+
+Felülírás
+  Ugyanaz a bridge komment a shared.lua tetején: **standalone/overrides/**.
+
+Fontos megjegyzések
+  A global shared **erősen támaszkodik** REGISTERED_ITEMS-re és Config.fields-
+  re; inventory override vagy más mezőnév esetén a bridge config + override
+  együtt érvényes.
+  ox_target és oxmysql/ox_lib mellett a global client **további** kemény
+  függőség az ox_target felé.
+
+================================================================================
+Client resource (client/)
+================================================================================
+
+Mappa és fájlok
+  client/main.lua      – globális ECO / meta olvasók, REGISTERED_ITEMS töltés,
+                         NUI életciklus, framework e_core események
+  client/exports.lua   – exports.e_core kötések a main.lua-ban definiált és a
+                         shared libs/meta.lua globálisaira
+
+Betöltési sorrend (fxmanifest)
+  client/main.lua → client/exports.lua (a main előbb fut, hogy a getAbility,
+  getMeta, getLabor globális függvények létezzenek az exports.lua számára).
+
+main.lua – indulás és REGISTERED_ITEMS
+  ECO = {}, ECO.meta = {} lokális állapot a kliensen.
+  CORE_READY és REGISTERED_ITEMS kezdetben nil; egy CreateThread meghívja
+  `hf.awaitItemRegistryReady('CLIENT REGISTERED_ITEMS')` – ugyanaz a timeout /
+  poll ConVar logika, mint a szerveren (`e_core:items_ready_*`), majd
+  `hf.logEcoreStartupSummary('client')`. A `CORE_READY` értékét a helper állítja
+  (true siker, false timeout); töltés alatt `eCore:isReady()` lehet nil.
+
+main.lua – meta / labor segédfüggvények (globálisok, exportnak)
+  getAbility(category, name?) – ECO.meta-ból; hibák: category_does_not_exist,
+    meta_does_not_exist.
+  getMeta(meta?) – teljes vagy egy kulcs meta.
+  getLabor() – Config.systemMode.labor kikapcsolva esetén false,
+    'the_system_is_turned_off'; egyébként ECO.meta.labor.val.
+
+main.lua – NUI (html/ui)
+  Részletes **üzenet-szerződés** és frontfájlok: szekció **1.5 NUI (html/)**.
+  nuiReady flag; nuiInit() megvárja a nuiReady callbacket, majd SendNUIMessage
+    action INIT (metadata, levels, locale, laborLimit, abilityLimit,
+    displayComponent). Ha eCore:isLoggedIn() és labor HUD engedélyezve:
+    OPEN hud.
+  RegisterNUICallback('nuiReady'), ('exit') – focus kezelés.
+  e_core:onPlayerLoaded (AddEventHandler; bridge TriggerEvent) – labor HUD OPEN
+    feltételekkel.
+  onResourceStart (saját resource): ha már be van jelentkezve játékos,
+    TriggerServerEvent('e_core:loadMeta').
+  e_core:isPauseMenuActive (AddEventHandler) – szünetmenü: NUI close all;
+    vissza: opcionális HUD open.
+  e_core:onPlayerUnload (AddEventHandler; bridge TriggerEvent) – ECO.meta ürítés,
+    init false, NUI close all.
+  e_core:sync – ECO.meta = meta; első alkalommal init + nuiInit(); később
+    UPDATE page vagy hud (IsNuiFocused alapján).
+  e_core:levelChange – SendNUIMessage POPUP.
+  Config.enableStatMenu: RegisterKeyMapping + openMeta parancs – SetNuiFocus,
+    OPEN page; nuiReady nélkül return.
+  Külön szál: másodpercenként IsPauseMenuActive → TriggerEvent(
+    'e_core:isPauseMenuActive', …).
+
+exports.lua
+  exports('getAbility', getAbility)
+  exports('getMeta', getMeta)
+  exports('getLabor', getLabor)
+  exports('getLevel', getLevel)        -- definíció: libs/meta.lua (shared)
+  exports('getDiscounts', getDiscounts) -- definíció: libs/meta.lua (shared)
+  exports('getConfig', function() return Config end)
+  exports('isReady', function() return eCore:isReady() == true end)
+
+Összefüggés más részekkel
+  REGISTERED_ITEMS feltöltése framework bridge getRegisteredItems-szel történik
+  (lásd ESX / QB bridge + override). CORE_READY és eCore:isReady() a global
+  shared.lua-ból; consumer-ek használhatják indulás után.
+
+================================================================================
+0. Mit és milyen formában tartalmazzon? (mérvadó szerkezet)
+================================================================================
+
+Cél: az AI **ne találjon ki** nem létező exportot, és **lépésről lépésre** tudja
+követni, melyik fájl melyik szerződést valósítja meg (különösen ritka
+inventory-nál).
+
+--- A) Formátum (egy API / egy funkció blokk) ---
+
+Minden **publikus** felületnél (exports.e_core + fontosabb eCore: metódusok)
+érdemes ugyanazt a mintát használni (soronként vagy rövid táblázat):
+
+  Név:              pl. eCore:addItem  vagy  exports.e_core:getLabor
+  Oldal:            client | server | mindkettő
+  Keretrendszer:    ESX | QB | közös / global (ha eltér, két blokk)
+  Szerep (1–3 mondat): mit csinál a consumer szempontjából; mikor hívjam.
+  Paraméterek:      név, típus (lua), kötelező?, magyarázat
+  Visszatérés:      típus / tábla mezők; multi-return (ok, err) felsorolása
+  Hibák:            string konstansok (pl. not_found_metadata), mikor jönnek
+  Megjegyzés:       async, source, xPlayer vs playerData forma
+  Forrás:          fájl: sor régió vagy fájlnév (grep-barát)
+
+A **név + oldal + keretrendszer** hármas elengedhetetlen, mert ESX/QB-nél az
+eCore ugyanazon metódus neve mögött más típusú játékos/objektum lehet.
+
+--- B) Mit tartalmazzon a fájl nagyobb blokkokban ---
+
+1) **Architektúra** – könyvtárak szerepe + „hol ne nyúlj” (bridge vs overrides).
+   ESX: „ESX bridge”; QB: „QB bridge”; közös logika: „Global bridge”; kliens
+   resource: „Client resource” szekció ugyanebben a fájlban.
+2) **Indulási szerződés** – ensure sorrend, REGISTERED_ITEMS / ready, tipikus
+   nil / végtelen várakozás okok (röviden, linkekkel a forrásra). Keretrendszer-
+   felismerés: ugyanebben a fájlban a „Keretrendszer-felismerés” szekció.
+3) **Export API** – csak a ténylegesen exportált függvények; copy-paste név.
+4) **eCore API** – táblázatos vagy ABC rend; ahol ugyanaz a név, ott altípus
+   (ESX server vs QB server).
+5) **Adapter / inventory** – külön fejezet: lentebb (0.1) + szekció 4.
+6) **GYIK** – valós kérdés → rövid válasz + fájlhivatkozás.
+
+--- C) Mi legyen később külön fájlban (opcionális) ---
+
+Ha a .txt túl hosszú lesz: **docs/PUBLIC_API.md** (csak táblázat + link a
+részletes magyarázatra), vagy **inventory mátrix** (Tier1/2) – a .txt-ben elég
+a link + 10 sor összefoglaló.
+
+================================================================================
+0.1 Ritka „XY inventory” integráció – mitől tud válaszolni az AI?
+================================================================================
+
+Az AI akkor tud **konkrét** integrációs választ adni, ha a dokumentumból (és a
+repó mintájából) összeáll ez a **hármas**:
+
+(1) **Szerződés (contract)** – mit vár az e_core az inventory felől?
+    - Milyen **adatstruktúra** a „játékos inventory” a bridge-ben (slot, count,
+      metadata mezők neve)?
+    - Mely **eCore** hívások érintik: getInventory, addItem, removeItem,
+      removeItems, getPlayerMaxWeight, getRegisteredItems, getRegisteredItem,
+      shared: canCarryItem, getItemWeight, stb.
+    - A **hibamodel**: mit ad vissza „tele van” / „nincs item” (string vagy nil)?
+
+(2) **Illesztési pontok (hook lista)** – mit kell megírni / másolni?
+    - Új mappa: standalone/overrides/<xy_inventory>/
+      config.lua, shared.lua, client.lua, server.lua – mit exportál az XY
+      resource (FiveM exports / események)?
+    - Hol hívódik az override: fxmanifest **standalone/overrides/** glob.
+    - **Mintapár**: melyik létező override a legközelebbi (ox_inventory,
+      qs_inventory, example_custom_inventory) – a doksi nevezi meg.
+
+(3) **Környezeti tények** – a felhasználó kérdéséből vagy fixen a GYIK-ből:
+    - Keretrendszer: ESX vagy QB.
+    - Az XY resource **hivatalos neve** (ensure név) és **export API** 2–3
+      mondatban (ha nincs a doksidban, az AI csak általános irányt ad – ezt
+      írd le a GYIK-ben is).
+
+**Gyakorlati sablon** egy új inventory GYIK bejegyzéshez (másold be kitöltve):
+
+  Inventory resource neve (ensure): …
+  Dokumentáció / exportok (URL vagy felsorolás): …
+  Legközelebbi e_core minta override: …
+  ESX/QB: …
+  Különleges viselkedés (stack, fegyver, metadata): …
+  Ismert bukkanók (pl. async addItem): …
+
+Ha ez megvan a GYIK-ben vagy egy külön **docs/inventory_xy.txt**-ben, az AI a
+kérdésre: „tudom-e integrálni az XY-t?” → **igen/nem + lépések + fájlnevek**,
+nem pedig általános blabla.
+
+================================================================================
+0.2 Központi ügyfél-link (AI tudásbázis) – hová és milyen szerkezetben
+================================================================================
+
+Cél: az ügyfél **egy URL-t** kapjon; onnan **szkriptenként**, azon belül
+**területenként** (API, telepítés, inventory, hibakeresés…) lehessen ugrani.
+Az AI (és az ember) **másolható linkkel** hivatkozzon egy konkrét oldalra.
+
+Forrás vs. publikáció (mérvadó elv)
+  - **Igazság forrása:** a Git repó `docs/` + a resource saját README / *.md /
+    `*_HU.txt` (verziókövetés, PR review).
+  - **Ügyfélnek adott központi index:** legyen **külön**, böngészőből elérhető
+    (lásd opciók lent). Ne csak „nyers GitHub mappa”, ha lehet: **egy index
+    oldal** (tartalomjegyzék), rövid magyarázattal, mit hova tettünk.
+
+Hol hostoljuk? (választás – egyet válassz stratégiának)
+  A) **GitHub Pages** egy **publikus** `docs-*` vagy `eco-wiki` repóból
+     (MkDocs / Docusaurus / sima HTML index). Előny: ingyenes, linkelhető,
+     verziózott build. Hátrány: ami publikus, az **látható** (ne legyen benne
+     escrow / titkos logika).
+  B) **GitBook, ReadMe.com, Notion** stb. – szép nav, jogosultság, gyors
+     szerkesztés. Hátrány: költség / zárolt export / kevésbé „git-native”.
+  C) **Saját domain** (`docs.például.hu`) – statikus site ugyanabból a
+     publikálható markdownból (CI: push → deploy). Előny: márka, egy helyen
+     minden eco termék.
+  D) **Tebex / Keymaster leírás** – csak **rövid** + link a fenti A/B/C-re;
+     a hosszú technikai anyag ne a termékoldalba legyen zsúfolva.
+
+Javasolt **URL-szerkezet** (minta – a domain mindegy):
+
+  https://docs.example.com/                    → főindex (minden resource)
+  https://docs.example.com/e_core/             → e_core áttekintés + verzió
+  https://docs.example.com/e_core/install/   → telepítés, ensure sorrend
+  https://docs.example.com/e_core/api/       → exportok, eCore, hibák
+  https://docs.example.com/e_core/inventory/ → override, ritka integrációk
+  https://docs.example.com/eco_crafting/     → másik szkript, ugyanígy bontva
+
+A **főindex** legyen egyetlen „linkgyűjtemény”: táblázat: Oszlopok =
+**Resource** | **Rövid leírás** | **Telepítés** | **API / AI referencia** |
+**GYIK / integráció**.
+
+Szinkron szabály
+  - Repóban lévő `AI_SUPPORT_*` / mérvadó szövegek **build input**; ügyfél oldal
+    **deploy** (manuális másolás vagy CI). Verzió a resource `fxmanifest`
+    `version` mezőjével egyezzen az indexen (vagy changelog link).
+
+================================================================================
+1. Kódstruktúra (rövid)
+================================================================================
+
+bridge/
+  esx/, qb/          Keretrendszer-specifikus eCore metódusok + események.
+  global/            Közös shared + inventory helper logika, zónák, kliens/szerver.
+  main.lua           getFrameWork, getCore exportok; eseményregisztráció ESX/QB-hez.
+
+standalone/          config, overrides/<név>, usableitem.lua – részletek:
+                     „Standalone modulok (standalone/)” szekció lent.
+
+imports/             locale, utils, discordlog, core.lua – részletek:
+                     „Imports modulok (imports/)” szekció lent.
+libs/                helper (hf), meta, config_check – részletek:
+                     „Libs modulok (libs/)” szekció lent.
+client/              main.lua, exports.lua – „Client resource” szekció lent.
+html/                ui.html, main.css, js (model, view, app), img – **1.5 NUI**.
+server/              main, meta, labor, db, exports – részletek:
+                     „Server resource (server/)” szekció **1.4**.
+locales/             hu, en, de…
+
+Indulás (server.cfg): ensure e_core a consumer resource-ok **előtt**.
+
+Keretrendszer: egy szerveren **egy** legacy core (ESX **vagy** QB); kettő
+egyszerre nem támogatott (lásd „Keretrendszer-felismerés” → „Kettős core egy
+szerveren”). Az e_core a GetResourceState alapján választ; a modernizációs terv
+összefoglalja a hibás kettős-indítás kockázatát is.
+
+================================================================================
+1.1 Imports modulok (imports/)
+================================================================================
+
+Cél
+  Közös **segédfüggvények** és **consumer belépési minta** az e_core-hoz
+  kapcsolódó resource-oknak; az e_core saját futása közben is betöltődnek
+  (fxmanifest sorrend). Nem része az exports.e_core névtérnek – globális
+  függvénynevek / másolható minta.
+
+Mérvadó forrásfájlok (fxmanifest.lua)
+  shared_scripts (részleges sorrend):
+    imports/locale.lua          – közvetlenül az ox_lib után; Config még
+                                  nincs minden override-mal felülírva, de a
+                                  locale kulcs (Config.locale) a bridge config
+                                  után áll; a tényleges szótár: locales/*.lua
+    imports/utils.lua           – standalone config + overrides config után,
+                                  **közvetlenül a libs/helper.lua előtt**
+                                  (a helper később érhető el más fájloknak).
+  server_scripts:
+    imports/discordlog.lua      – a **bridge/main.lua után** töltődik, hogy
+                                  eCore.helper (hf) már létezzen a modul
+                                  betöltésekor.
+  files:
+    imports/core.lua            – nem fut automatikusan az e_core-ban; más
+                                  resource `shared_scripts` / `client_scripts` /
+                                  `server_scripts` sorában include-olható.
+
+---
+
+imports/locale.lua (shared)
+  Szerep
+    Egységes **fordítás** a `locales` táblán (betöltés: `locales/*.lua`) és
+    `Config.locale` alapján.
+  Globálisok
+    `locales` tábla (üres kezdet, a locale fájlok töltik); `translate(str, …)`;
+    `translateU(str, …)` – első betű nagy (csak a szó elején).
+  Paraméterek: translate / translateU
+    str: string, kulcs a locale táblában.
+    …: opcionális, `string.format` argumentumok, ha a fordítás tartalmaz `%s` /
+       `%d` stb.
+  Visszatérés
+    Hiányzó locale fájl: `'locale [' .. Config.locale .. '] does not exist'`
+    Hiányzó kulcs: **visszaadja az eredeti str** (nincs throw).
+    Formátum hiba (pcall): `translation .. ' (format error)'`
+  Megjegyzés
+    A `Config.locale` és a `locales[Config.locale]` létezése a betöltési sorrend
+    függvénye (config → locales/*.lua).
+
+---
+
+imports/utils.lua (shared)
+  Szerep
+    Debug és kliens-oldali **kényelmi** segédek (blip, model/anim/ptfx load,
+    feltételes console log).
+  Függvények (globálisok, export nélkül)
+    print_r(t)           – rekurzív tábla kiírás a konzolra (körreferencia
+                         védelem cache-sel).
+    createBlip(coords, sprite, color, scale, name)
+                         – vec3-szerű coords; vissza: blip handle.
+    animDictLoader(dict) – max ~20×100 ms próba; false ha nincs dict vagy nem
+                         tölt be.
+    modelLoader(model)   – hasonló próbahurok; false ha invalid / timeout.
+    fxLoader(dict)       – RequestNamedPtfxAsset + várakozás (végtelen ciklus
+                         amíg nem tölt be – resource stop nélkül óvatosság).
+    cLog(k, v, level)    – ha `Config.debugLevel` hiányzik vagy < 1: no-op;
+                         egyébként szint szűrés; tábla/függvény: print_r.
+  Megjegyzés
+    `cLog` a bridge/main.lua-ban is használatos (eseményregisztráció log); a
+    `Config.debugLevel` standalone configban állítható.
+
+---
+
+imports/discordlog.lua (server)
+  Szerep
+    **Discord webhook** üzenet építő: embed, mezők, `PerformHttpRequest` POST
+    JSON-nel. Jelenleg a repóban nincs belső hívó – újrafelhasználható library
+    minta consumer szerverkódhoz vagy későbbi e_core funkcióhoz.
+  Függőség
+    `local hf = eCore.helper` – `hf.trim` a webhook üres ellenőrzéséhez; az
+    e_core manifestben a fájl a **bridge/main.lua** után van, így `hf` a
+    chunk betöltésekor érvényes.
+  Név: createDiscordLog
+    Oldal: server
+    Keretrendszer: közös (eCore.helper a libs/helper.lua-ból, nem ESX/QB spec.)
+    Paraméterek
+      webhook: string, nem üres (trim után); különben **false**.
+      botName: opcionális string; alap: `'ECOBOT'`.
+    Visszatérés
+      **self** tábla metódusokkal: `reset()`, `putEmbed()`, `content(s)`,
+      `title(s)`, `description(s)`, `color(s)` – `yellow|green|red` vagy szám,
+      `putField(name, value, inline)`, `footer(s)`, `send()`.
+    Hibák / viselkedés
+      HTTP nem 2xx: konzol `print(statusCode .. ': Discord failed request…')`;
+      nincs lua-szintű return hiba.
+    Forrás
+      imports/discordlog.lua
+
+---
+
+imports/core.lua (files – consumer include)
+  Szerep
+    **Minimális belépés** más resource-ból: globális `FRAMEWORK`, `eCore`,
+    `eCoreConfig` az exports.e_core három hívásával.
+  Tartalom (3 sor)
+    `FRAMEWORK = exports.e_core:getFrameWork()`
+    `eCore = exports.e_core:getCore()`
+    `eCoreConfig = exports.e_core:getConfig()`
+  Oldal
+    shared / client / server: attól függ, melyik manifest listába include-olod
+    a fájlt (tipikusan `shared_script '@e_core/imports/core.lua'`).
+  Megjegyzés
+    **Ensure sorrend:** az `e_core` resource-nak el kell indulnia és exportot
+    kell szolgálnia, mielőtt a consumer chunk lefut (lásd README ensure).
+    Modern stílusban gyakran `local eCore = exports.e_core:getCore()` lokális,
+    nem globális (lásd modernizációs terv).
+
+Összefüggés más részekkel
+  `translate` / `translateU` – eco resource-ok ugyanazzal a mintával használhatják
+  a közös locale fájlokat, ha a `locales` és `Config.locale` egyeztetve van.
+  `cLog`, `print_r` – debug egyeztetés `Config.debugLevel`-lel.
+  `eCore.helper` – libs/helper.lua → részletes felsorolás: „Libs modulok (libs/)”
+  szekció (1.2), `hf` tábla.
+
+================================================================================
+1.2 Libs modulok (libs/)
+================================================================================
+
+Cél
+  **Közös segédkönyvtár** (`hf`) inventory / meta / config ellenőrzésekhez;
+  **szint és kedvezmény** számítás (`Config.levels`); **Config** mezők
+  típushelyes alapértelmezése induláskor. Mindhárom fájl **shared_scripts**-ben
+  fut (fxmanifest); a `meta.lua` egyes függvényei csak **szerveren** hívódnak
+  a gyakorlatban (`ECO.meta`).
+
+Mérvadó forrásfájlok (fxmanifest.lua, shared_scripts sorrend)
+  imports/utils.lua után:
+    libs/helper.lua       – globális `hf = { … }` + metódusok
+    libs/meta.lua         – globális `getLevel`, `getDiscounts`, stb.
+    locales/*.lua
+    libs/config_check.lua – `configCheck()` + azonnali hívás a fájl végén
+
+---
+
+libs/helper.lua (shared) – `hf`
+  Szerep
+    Általános **string / tábla / szám** segédek; a bridge végén `eCore.helper =
+    hf` (bridge/main.lua). Inventory és meta kód gyakran `hf.isEmpty`,
+    `hf.isPopulatedTable`, `hf.trim` stb.
+  Megjegyzés
+    `hf.moneyFormat` a **`Config.currency`** mezőket olvassa (`suffix`, `symbol`);
+    üres `currency` tábla esetén híváskor hiba lehet – töltsd a standalone
+    configban vagy hagyatkozz a `config_check` után érvényes alapokra.
+
+  Főbb metódusok (nem teljes lista – grep: `hf\.` a repóban)
+    Véletlen / sorozat
+      randomStr(length), randomInt(length), getSerialNumber()
+    Tábla / string típus
+      isTable(t), isPopulatedTable(t), isPopulatedString(s), isEmpty(v),
+      inTable(needs, t), findingFirstMatch(t1, t2) – érték-kereszt egyezés;
+      strToTable(v) – string → { v }; tableToStr(v) – tábla értékek vesszővel;
+      getKeys(t)
+    Szöveg / vektor
+      trim(v), removePrefix(str, prefix), stringSplit(input, sep?),
+      removeNonAlphaNumeric(inputString)
+    Szám / esély
+      round(num, numDecimalPlaces?), rangeLimit(v, max), draw(chance) – 1..100
+      százalék szerinti „sorsolás”; numberFormat(number), moneyFormat(amount)
+    Másolat / vektor
+      copy(t) – sekély másolat táblára; deepCopy(orig, copies?) – mély másolás,
+      körkörös hivatkozás kezeléssel; tableToVector(t) – {x,y,z[,w]} → vec vagy
+      false
+    Egyéb
+      shuffle(t) – **sorozatos indexű** táblán (1..#t); hash táblán helytelen
+      lehet a `#t`.
+    Szerver – MySQL (3E)
+      `mysqlAwait(tag, fn)` – `fn` belül oxmysql **`.await`**; `pcall` + `cLog`
+      hiba esetén; `server/db.lua`, `server/db_migrations.lua`.
+
+---
+
+libs/meta.lua (shared)
+  Szerep
+    **Proficiency szint** (`Config.levels[].limit` küszöbök szerint) és
+    **kedvezmény interpoláció** (`getDiscounts`); szerver meta módosításkor
+    szintváltás értesítés (`messageIfLevelChange` → `e_core:levelChange`).
+  Függőség
+    `local hf = hf` – a helper már betöltött; `getDiscounts` a szint sorok
+    másolásához helyi **`shallow_copy`** (sekély `pairs` másolat; luacheck /
+    `table.clone` környezetfüggetlen).
+
+  Név: checkMetaExists
+    Oldal: shared fájl; **hívás:** szerver (server/meta.lua), mert `ECO.meta`
+      a szerveren töltődik (server/main.lua: `ECO = {}`).
+    Paraméterek: playerId (number), category (string), name (string).
+    Vissza: boolean – false, ha hiányzik a játékos meta sáv vagy a proficiency
+      nem szám.
+
+  Név: getLevel
+    Oldal: shared; export: client + server (`getLevel` – lásd szekció 2).
+    Paraméter: value – elért pontszám (number); nem szám vagy < 1 → **0**.
+    Vissza: szint index **0 … (#levels - 1)**; logika: az első olyan i, ahol
+      `levels[i].limit > value`, vissza **i - 1**; ha egyik küszöb sem nagyobb,
+      `#levels - 1`. Üres `Config.levels` → **0**.
+
+  Név: checkLevelChange
+    Oldal: shared (szerver meta.lua hívja).
+    Paraméterek: baseValue, newValue (number).
+    Vissza: **false**, ha nincs változás vagy invalid; egyébként **true**,
+      baseLevel, newLevel (multi-return).
+
+  Név: messageIfLevelChange
+    Oldal: shared; **csak szerver** kontextusban értelmes (TriggerClientEvent).
+    Paraméterek: playerId, category, name, baseValue, newValue.
+    Viselkedés: ha `checkLevelChange` true → `e_core:levelChange` payload
+      (category, name, baseLevel, newLevel).
+
+  Név: getDiscounts
+    Oldal: shared; export: client + server.
+    Paraméter: value – pontszám (number); `tonumber` fallback 0.
+    Vissza: kedvezmény **tábla** (level, progress, limit, mezők interpolálva)
+      VAGY **false, 'not_levels_data'** ha `Config.levels` üres.
+
+---
+
+libs/config_check.lua (shared)
+  Szerep
+    **Egyszeri** normalizálás shared induláskor: `configCheck()` a fájl végén
+    meghívódik; a `Config` mezőket **felülírja** típushelyes alapértelmezésekkel,
+    ha hiányoznak vagy nem tábla/szám.
+  Érintett mezők (rövid)
+    debugLevel (number vagy false), maxInventoryWeight, maxInventorySlots,
+    systemMode, displayComponent, currency, metaFields, defaultLabor,
+    laborLimit, abilityLimit, laborIncreaseTime / laborIncrease /
+    laborIncreaseOffline, keyBind, discordBotName, discordWebHook – üres
+    táblák helyett `{}`, ahol `hf.isPopulatedTable` dönt.
+  Megjegyzés
+    A bridge és standalone config **után** fut; így a convar / override értékek
+    tipikusan megmaradnak, a „lyukak” töltődnek be.
+
+Összefüggés más részekkel
+  `exports.e_core:getLevel` / `getDiscounts` → libs/meta.lua definíció.
+  Bridge és server meta → `checkMetaExists`, `messageIfLevelChange`.
+  `eCore.helper` → teljes `hf` API ehhez a szekcióhoz igazítsd a doksit.
+
+================================================================================
+1.3 Standalone modulok (standalone/)
+================================================================================
+
+Cél
+  **Frissítésbiztonságos** testreszabás: globális `Config` és `Config.levels`,
+  valamint **eCore** metódusok / inventory mezők felülírása **a bridge fájlok
+  szerkesztése nélkül**. A repóban kész override-minták állnak; új integráció:
+  másold a legközelebbi mappát (lásd 0.1 / szekció 4).
+
+Mérvadó forrásfájlok (fxmanifest.lua)
+  shared_scripts (részleges sorrend)
+    bridge/framework_config.lua (+ defaults) után:
+      standalone/config/main.lua      – általános eco Config (locale, labor,
+                                        metaFields, currency, keyBind, discord…)
+      standalone/config/levels.lua    – Config.levels proficiency szintek
+      standalone/overrides/**/config.lua – resource flag + Config felülírás
+                                        (pl. ox_inventory convar, imagePath)
+  client_scripts
+    … bridge esx/qb client után:
+      standalone/overrides/**/shared.lua
+      standalone/overrides/**/client.lua   – `eCore:` metódusok felülírása
+  server_scripts
+    … bridge esx/qb server után:
+      standalone/overrides/**/shared.lua
+      standalone/overrides/**/server.lua
+    server/exports.lua **után:**
+      standalone/usableitem.lua       – createUsableItem regisztráció
+
+---
+
+standalone/config/main.lua (shared)
+  Szerep
+    Eco **globális beállítások**: nyelv, debug, inventory súly/slot alap (bridge
+    és override tovább finomíthatja), `systemMode` (profession / labor), NUI
+    `displayComponent`, `currency`, `metaFields`, labor növekedés időzítők,
+    stat menü / `keyBind`, Discord webhook tábla.
+  Megjegyzés
+    A bridge framework + defaults előbb állít keretrendszer-specifikus alapokat;
+    ez a fájl **eco** réteg. A `libs/config_check.lua` a teljes `Config` egyesítése
+    után tölti ki a hiányzó mezőket.
+
+standalone/config/levels.lua (shared)
+  Szerep
+    **`Config.levels`** – proficiency küszöbök (`limit`) és szintenkénti
+    kedvezmény mezők (labor, time, price, chance, speed). A `libs/meta.lua`
+    `getLevel` / `getDiscounts` erre épül.
+  Megjegyzés
+    A fájl tetején lévő komment: a `limit` értékek **nem csökkenhetnek** szint
+    szerint; sorrend és monoton növekedés kritikus.
+
+---
+
+standalone/overrides/<név>/ (glob minta)
+  Szerep
+    Feltételes integráció: a `config.lua` tetején tipikusan
+    `GetResourceState('<resource>') == 'started'` flag; ha true, **Config** és
+    opcionálisan **eCore** metódusok (shared / client / server) felülírása.
+  Fájlok
+    config.lua   – shared; flag + Config (mezők, súly, slots, `Config.fields`,
+                 `itemBox`, `totalStackWeight`, stb.)
+    shared.lua   – közös eCore logika (pl. inventory konverzió) – mindkét oldalon
+                 betöltődik a manifest szerint
+    client.lua   – kliens eCore (pl. progressbar, notify, getInventory)
+    server.lua   – szerver eCore (pl. addItem, getRegisteredItems)
+  Betöltési sorrend / ütközés
+    A `**/shared.lua` és `**/client.lua` **glob** miatt a mappa nevek
+    lexikografikus sorrendje dönti el, **melyik override utolsó** – ugyanarra a
+    `eCore:` függvényre több fájl is definiálhat; az utolsó nyer. Új override:
+    egyértelmű név, vagy szándékos sorrend.
+  Jelenlegi példa mappák a repóban (grep / másolás alap)
+    ox_inventory, qs_inventory, avp_grid_inventory, example_custom_inventory –
+      inventory / súly / mezőnevek
+    ox_progressbar, 17_movement, inside_scripts – **progressbar** (ox_lib,
+      17mov_Hud, is_ui)
+    core – üres minta: kommentelt `eCore:convertItems` / `convertPlayer` sablon
+
+---
+
+standalone/usableitem.lua (server)
+  Szerep
+    Példa **használható tárgy** regisztráció az aktív bridge `eCore` API-val,
+    az `exports.e_core` meta/labor exportokkal és `translate`-tel.
+  Viselkedés
+    `eCore:createUsableItem("labor_enhancer", …)` – sikeres `addLabor` esetén
+    üzenet + `removeItem`; hiba esetén `sendMessage` a `reason` kulccsal
+    (translate).
+  Megjegyzés
+    Csak akkor működik, ha a tárgy létezik az inventory rendszerben és a
+    `createUsableItem` a keretrendszerhez kötve van; a fájl a **server/exports.lua
+    után** töltődik, hogy az exportok elérhetők legyenek.
+
+Összefüggés más részekkel
+  `exports.e_core:getConfig()` → összeolvadt `Config` (bridge + standalone +
+  override config + `config_check`). Inventory GYIK és 0.1 sablon → új mappa
+  ide, nem a `bridge/` szerkesztése.
+
+================================================================================
+1.4 Server resource (server/)
+================================================================================
+
+Cél
+  **ECO** szerverállapot (meta, labor, mentés ütemezés), **exports.e_core**
+  szerver oldali implementáció (`meta.lua`, `labor.lua`), **MySQL** perzisztencia
+  (`db.lua`), indulási **REGISTERED_ITEMS** / `CORE_READY` szál (`main.lua`),
+  export regisztráció (`exports.lua`).
+
+Mérvadó forrásfájlok (fxmanifest.lua → server_scripts sorrend, releváns rész)
+  … `bridge/global/callbacks/server.lua` után:
+    server/main.lua      – ECO táblák, REGISTERED_ITEMS töltő ciklus, CORE_READY
+    server/meta.lua      – meta CRUD, sync, játékos események, időzített mentés
+    server/labor.lua     – labor CRUD, automatikus / offline labor
+    server/db_migrations.lua – `e_core_migrations` tábla + `e_core_run_db_migrations`
+    server/db.lua        – MySQL.ready → migrációk, majd saveMeta / loadMeta / saveAllMeta
+    server/exports.lua   – `exports.e_core:*` regisztráció
+    standalone/usableitem.lua – (lásd 1.3)
+
+---
+
+server/main.lua
+  Globálisok
+    `ECO` – `meta`, `lastSave`, `idsToSync`, `syncRequested` (meta.lua / db használja).
+    `CORE_READY`, `REGISTERED_ITEMS` – induláskor nil; egy szál `hf.awaitItemRegistryReady`
+    tölti a táblát `eCore:getRegisteredItems()` hívásokkal. Siker: `CORE_READY = true`.
+    Timeout: `CORE_READY = false`, részletes `cLog` (nem végtelen ciklus).
+  ConVarok (ugyanaz a kliensen)
+    `e_core:items_ready_timeout_ms` – alap 120000, érvényes tartomány 30000–600000.
+    `e_core:items_ready_poll_ms` – alap 1000, 200–5000 (két próba közötti Wait).
+  Export
+    `exports.e_core:isReady()` – csak `true`, ha a registry kész; töltés közben és
+    timeout után `false`. Háromállapot: `eCore:isReady()` → nil / false / true.
+  Kockázat (csökkentve)
+    Üres registry esetén korábban végtelen várakozás; most timeout + napló.
+  Indulási összegzés (egy sor)
+    A registry szál végén: `hf.logEcoreStartupSummary('server')` – konzolra: verzió
+    (`fxmanifest` `version`), `FRAMEWORK`, aktív inventory címke (`hf.inventoryIntegrationLabel`),
+    `items=ready|timeout|pending`. Kliens: `client/main.lua` ugyanígy `'client'`.
+
+---
+
+server/meta.lua
+  Szerep
+    Meta és proficiency **forrásigazság** a szerveren: `ECO.meta[playerId]`,
+    kliens sync (`e_core:sync`), szintváltás (`messageIfLevelChange` →
+    `e_core:levelChange`).
+  Net / események
+    `RegisterServerEvent('e_core:loadMeta')` – forrás + rate limit (`hf.isValidPlayerSource`,
+      `hf.netRateLimit`, ConVar `e_core:loadmeta_rate_ms`), majd `loadMeta(xPlayer)`.
+    `AddEventHandler('e_core:playerLoaded', …)` – **csak** `TriggerEvent` a bridge-ből
+      (nem kliens net); `loadMeta(xPlayer)`.
+    `AddEventHandler('e_core:playerUnload')`, `playerDropped` – `saveRequest`
+    (throttle: >1 s az utolsó mentés óta).
+    `onResourceStop` (saját resource) – `saveAllMeta()`.
+    txAdmin: `scheduledRestart` (60 s előtt ~50 s után), `serverShuttingDown` –
+    `saveAllMeta()`.
+    **10 percenként** `saveAllMeta()` – `SetTimeout` rekurzív ütemezés.
+  Főbb függvények (globálisok; definíció itt, `exports()` regisztráció csak
+    `server/exports.lua`-ban)
+    `setMeta` / `getMeta` / `registerMeta` – hibák: pl. `not_found_metadata`,
+      `no_valid_meta_name`.
+    `getAbility` / `addAbility` / `removeAbility` / `setAbility` – `checkMetaExists`,
+      `Config.abilityLimit`, `messageIfLevelChange`; hiba: `not_found_metadata`,
+      `has_already_reached_the_limit` (add/remove labor-szerű ágon is).
+    `syncRequest(playerId)` – kötegelt `TriggerClientEvent('e_core:sync', …)` egy
+      tickben (`ECO.idsToSync`).
+    `prepareMeta(playerId, meta)` – DB-ből jövő tábla normalizálása, `labor.val`,
+      `Config.metaFields` alapértékek, `login` időbélyeg.
+
+---
+
+server/labor.lua
+  Szerep
+    Labor olvasás/írás `ECO.meta[playerId].labor` alatt; **automatikus online**
+    növelés (`laborIncrease` – `SetTimeout`, ha `systemMode.labor` és pozitív
+    `laborIncreaseTime` / `laborIncrease`); **offline** számítás `addOfflineLabor`
+    (loadMeta hívja).
+  Exportált függvények (definíció itt, export `server/exports.lua`)
+    `getLabor`, `setLabor`, `addLabor`, `removeLabor` – hibák: pl.
+    `the_system_is_turned_off`, `not_found_metadata`, `not_valid_amount`,
+    `has_already_reached_the_limit` (labor limit / üres érték esetek).
+
+---
+
+Labor, meta sync, „laboros” consumer művelet – átfogó összefoglaló (support / AI)
+  Részletes levezetés, táblázatok, külső kód-idézetek:
+    **docs/LABOR_KEZELES_MUNKAFIL_HU.md**
+  Szerveren tipikus sikeres akció (pl. craft, halászat catch) e_core oldala:
+    1) **Ellenőrzés (0 e_core → kliens hálózat):** `getLabor(playerId)`,
+      szükség szerint `getAbility`, `getDiscounts(proficiency)`; a fizetendő
+      munkapont kanonikus formában: `base` alapköltség, `p` = kedvezmény % a
+      `getDiscounts(...).labor` mezőből (0–100), majd
+      `paidLabor = math.max(0, math.ceil(base * (1 - p/100)))` (ekvivalens:
+      `ceil(base - (base/100)*p)`). Összehasonlítás: `getLabor` < `paidLabor` →
+      hiba, nincs levonás.
+    2) **Levonás + jártasság:** `removeLabor(playerId, paidLabor)` majd gyakran
+      `addAbility(..., paidLabor)` – mindkettő `syncRequest(playerId)`-et hív;
+      ugyanarra a `SetTimeout(0, …)` kötegre jellemzően **egyetlen**
+      `TriggerClientEvent('e_core:sync', id, ECO.meta[id])` (ECO.idsToSync).
+    3) **Payload:** a teljes `ECO.meta[playerId]` tábla megy, **nem** delta –
+      okok: egy pillanatképes szerződés, kliens–NUI konzisztencia, egyszerűbb
+      mint részleges merge (részletek + mermaid: a munkafájl „Miért teljes meta”
+      fejezete).
+    4) **Kliens:** `e_core:sync` → `ECO.meta` felülírás; ha NUI kész: egy
+      `SendNUIMessage` UPDATE (page vagy hud), teljes `metadata`.
+    5) **Auto labor:** `server/labor.lua` `laborIncrease()` tick után
+      **`syncRequest(playerId)`** (ugyanaz a kötegelt útvonal, mint a meta
+      írásnál); részletek: `docs/LABOR_KEZELES_MUNKAFIL_HU.md` fókuszlista.
+    6) **Külső resource** (eco_crafting, eco_fishing stb.) saját eseményei,
+      callback válaszok, inventory – **plusz** hálózat; nem helyettesítik az
+      e_core meta sync-et.
+  Kliens előellenőrzés (pl. craft UI): `getLabor()` / `getAbility` / getDiscounts
+    a cache-ből – **0** e_core hálózat; a szerver újraszámol (hiteles).
+  Jövőbeli egységesítés (ötlet): egy export vagy lib segéd, pl.
+    `computePaidLabor(baseLabor, proficiencyPoints)` – a munkafájl „kanonikus
+    labor-költség” és „Jövőbeli e_core segédfüggvény” része.
+
+---
+
+server/db_migrations.lua
+  Szerep
+    **Fázis 3:** `e_core_migrations` tábla létrehozása; **`ECORE_DB_MIGRATIONS`** tömb
+    sorrendben; `#1` = `e_core` LONGTEXT oszlop (`ALTER … IF NOT EXISTS`). Részlet:
+    **`docs/DB_MIGRATIONS_HU.md`**. Globális: `ECORE_DB_SCHEMA_TARGET`, `e_core_run_db_migrations`,
+    `e_core_get_applied_migration_id`. **3E:** minden `MySQL.query.await` **`hf.mysqlAwait`**
+    körül; `getDbSchemaVersion` ha `alkalmazott_max < ECORE_DB_SCHEMA_TARGET` → figyelmeztető log.
+
+server/db.lua
+  Szerep
+    **oxmysql**: `users.e_core` (ESX) vagy `players.e_core` (QB) LONGTEXT JSON;
+    oszlop létrehozása a **migráció** `#1`-ben történik (nem közvetlenül itt).
+  Függvények
+    `saveMeta(xPlayer, dropMeta?)` – `hf.mysqlAwait` + `MySQL.update.await`; hiba esetén return;
+      opcionálisan `ECO.meta[playerId] = nil` (dropMeta).
+    `saveAllMeta()` – `hf.mysqlAwait` + `MySQL.prepare.await` batch; siker után log.
+    `loadMeta(xPlayer)` – `hf.mysqlAwait` + `MySQL.scalar.await`; hiba esetén return (nincs sync);
+      egyébként `json.decode`, `prepareMeta`, `addOfflineLabor`, `e_core:sync`.
+  Megjegyzés
+    Azonosító: `xPlayer.identifier` (bridge `convertPlayer` / játékos objektum
+    szerint ESX vagy QB).
+
+---
+
+server/exports.lua
+  Szerep
+    Csak **exports.e_core** név alatti regisztráció; a tényleges függvények
+    `server/meta.lua` és `server/labor.lua` (+ `libs/meta.lua` getLevel /
+    getDiscounts).
+
+Összefüggés más részekkel
+  Szerver exportok szerződése: szekció **2** + **export_examples_server.md**.
+  `checkMetaExists` / `messageIfLevelChange`: **libs/meta.lua**. Kliens oldali
+  párhuzam (REGISTERED_ITEMS, NUI): „Client resource” szekció; NUI üzenetek és
+  `html/`: **1.5**.
+
+================================================================================
+1.5 NUI (html/)
+================================================================================
+
+Cél
+  FiveM **NUI** felület: **statisztika / skill oldal** (`#container`) és **labor
+  HUD** (`#meta_hud`). A kliens `client/main.lua` **SendNUIMessage** /
+  **SetNuiFocus** / **RegisterNUICallback** réteggel köti össze a Lua és a
+  böngésző oldalt.
+
+Mérvadó forrásfájlok
+  fxmanifest.lua
+    `ui_page 'html/ui.html'`
+    `files { … 'html/ui.html', 'html/main.css', 'html/js/*.js', 'html/img/*.png' }`
+  html/ui.html
+    Statikus váz + külső **Google Fonts** + **Font Awesome (CDN)** + `main.css`;
+    jQuery: `nui://game/ui/jquery.js`; saját szkriptek: `js/model.js`, `view.js`,
+    `app.js` (betöltési sorrend).
+  html/main.css, html/js/model.js, view.js, app.js
+  html/img/*.png
+    Opcionális proficiency ikonok, ha `Config.displayComponent.icon` igaz –
+    fájlnév pl. `weaponry.png` (standalone config komment szerint).
+
+---
+
+Üzenetek: `window` → `message` (Lua: `SendNUIMessage`)
+
+Forrás: `html/js/app.js` `switch (item.action)` és `client/main.lua`.
+
+  action **INIT**
+    Első konfiguráció a NUI betöltése után (Lua `nuiInit` a `nuiReady` callback
+    után).
+    Mezők: `metadata`, `levels`, `locale` (tábla kulcs → szöveg), `laborLimit`,
+    `abilityLimit`, `displayComponent` (pl. `statisticsPage`, `laborHud`, `icon`).
+
+  action **OPEN** + `subject`
+    `subject = 'page'` – skill felület + `metadata`; Lua: `SetNuiFocus(true,true)`.
+    `subject = 'hud'` – labor HUD megjelenítés (bejelentkezés / config feltétel).
+
+  action **CLOSE** + `subject`
+    `'page'` | `'hud'` | `'all'` – oldal / HUD / mindkettő bezárása; `exit`
+    callbacknél is `SetNuiFocus(false,false)`.
+
+  action **UPDATE** + `subject`
+    `'page'` – meta frissítés, ha a NUI fókuszban van (`IsNuiFocused`).
+    `'page'` helyett egyébként `'hud'` – csak HUD frissítés.
+
+  action **POPUP** + `data`
+    Szintlépés értesítés (`e_core:levelChange` → szerver `messageIfLevelChange`);
+    a `view.popUp` jeleníti meg (tartalom: pl. category, name, baseLevel,
+    newLevel).
+
+---
+
+NUI → Lua (`$.post`)
+
+Forrás: `html/js/app.js`, `html/js/view.js` (close).
+
+  `https://${GetParentResourceName()}/nuiReady`
+    Oldal betöltésekor egyszer; Lua `RegisterNUICallback('nuiReady')` → `nuiReady
+    = true`, majd INIT küldhető.
+  `https://…/exit`
+    Bezárás gomb / **Escape**; Lua `RegisterNUICallback('exit')` → fókusz ki.
+
+---
+
+Front architektúra (rövid)
+  **Model** (`model.js`) – INIT adatok, `metadata`, `levels`, `rankData()` szint/
+    progress számítás (a Lua `getDiscounts` / `getLevel` párhuzama a UI oldalon).
+  **View** (`view.js`) – kategória menü (`Config.displayComponent.statisticsPage`),
+    stat HTML, HUD sáv, popup.
+  **App** (`app.js`) – üzenet demux, `numberFormat` (hu-HU locale), `translate`
+    a NUI-n belül a kapott `locale` táblából.
+
+Külső függőségek
+  CDN (font, ikonok) – zárt / offline környezetben a NUI betöltése **hibásodhat**;
+  ilyenkor lokális asset vagy self-host szükséges (nem az e_core repo része).
+
+Összefüggés más részekkel
+  Lua oldali életciklus és események: „Client resource” szekció, `main.lua` NUI
+  rész. Szintváltás adat: **server/meta.lua** + **libs/meta.lua**
+  `messageIfLevelChange`.
+
+================================================================================
+2. exports.e_core – táblázat (Lua export API)
+================================================================================
+Kapcsolódó példák (kódblokkokkal, angol szöveg)
+  Gyökér: **export_examples_client.md** (kliens exportok), **export_examples_server.md**
+  (szerver exportok). Ezek **ismertetik** a gyakori hívásokat; ez a szekció a
+  **szerződés** (paraméter / visszatérés / hiba) rövid magyar összefoglalója.
+  Eltérés esetén a Lua forrás és ez a .txt a mérvadó.
+
+Megjegyzés: FiveM-ben a client és server export névtér **külön**. Ugyanaz a név
+lehet mindkét oldalon, de a **paraméterlista eltérhet** (lásd getLabor).
+
+--- Mindkét oldalon elérhető (bridge/main.lua) ---
+
+getFrameWork()
+  Oldal: client és server (a bridge/main.lua mindkét listában szerepel; külön példány).
+  Paraméter: nincs.
+  Visszaad: FRAMEWORK string / azonosító (a betöltött bridge szerint).
+
+getCore()
+  Oldal: client + server.
+  Paraméter: nincs.
+  Visszaad: eCore tábla (metódusok: lentebb, ESX vs QB eltérhet).
+
+getConfig()
+  Oldal: client + server.
+  Paraméter: nincs.
+  Visszaad: Config tábla (standalone/config + override configok összeolvadása).
+
+Megjegyzés (helper)
+  Nincs `exports.e_core:getHelper()` export. A `libs/helper.lua` **hf** táblája
+  `exports.e_core:getCore().helper` alatt (ugyanaz, mint `eCore.helper` a
+  resourceon belül); részletek: szekció **1.2**, `bridge/main.lua`.
+
+--- Client (client/exports.lua) ---
+
+getAbility(category, name?)
+  category: string, pl. crafting, reputation…
+  name:      opcionális string, pl. weaponry, cooking…
+  Vissza:    ha name megvan: szám (proficiency) VAGY false, hiba string
+             (pl. category_does_not_exist, meta_does_not_exist).
+             ha name nincs: az egész kategória tábla.
+
+getMeta(meta?)
+  meta: opcionális string kulcs.
+  Vissza: egy meta részfa VAGY teljes ECO.meta (kliens cache a szerver sync után).
+
+getLabor()
+  Vissza: ha labor ki van kapcsolva Config.systemMode.labor alatt:
+          false, eCoreErr.the_system_is_turned_off
+          ha még nincs labor blokk a kliens cache-ben (sync előtt / üres meta):
+          false, eCoreErr.not_found_metadata
+          egyébként: ECO.meta.labor.val (szám).
+  Forrás: `client/main.lua` `getLabor`.
+
+isReady()
+  Paraméter: nincs.
+  Vissza: `true` **csak** ha `eCore:isReady() == true` (item registry kész);
+          egyébként `false` (töltés vagy timeout után is).
+  Megjegyzés: `eCore:isReady()` a globális `CORE_READY`-t adja (nil / false / true);
+          export explicit `== true` (lásd `bridge/global/shared.lua`).
+
+getLevel(value)
+  value: elért pontszám (szám).
+  Vissza: szint index (0…), Config.levels alapján. Lásd libs/meta.lua.
+
+getDiscounts(value)
+  value: pontszám.
+  Vissza: kedvezmény tábla a szinthez, vagy false, 'not_levels_data'.
+
+--- Server (server/exports.lua) – mindhez kell playerId = source vagy explicit ---
+
+getAbility(playerId, category, name)
+  **name kötelező** a szerveren (egyetlen proficiency mező); nincs „teljes kategória”
+  olvasás itt – kliens `getAbility(category)` név nélkül másképp viselkedik.
+setAbility(playerId, category, name, value)
+addAbility(playerId, category, name, value)
+removeAbility(playerId, category, name, value)
+  Gyakori hiba visszatérés: false, 'not_found_metadata'
+  Limit: Config.abilityLimit; lehet false, 'has_already_reached_the_limit'
+
+getLabor(playerId) / setLabor(playerId, amount) / addLabor / removeLabor
+  Labor kikapcsolva: false, 'the_system_is_turned_off'
+  Érvénytelen amount: false, 'not_valid_amount'
+  Meta hiány: false, 'not_found_metadata'
+
+registerMeta(playerId, category, defaultValue)
+  Új meta kategória alapértelmezett kulcsokkal; meglévőnél opcionálisan tölti
+  a hiányzó mezőket.
+
+getMeta(playerId, meta?) / setMeta(playerId, meta, value)
+  setMeta: teljes kategória tábla cseréje (value); sync a kliensnek.
+
+getLevel / getDiscounts – shared logika, szerver oldalon is exportálva.
+
+isReady()
+  Paraméter: nincs.
+  Vissza: mint a kliensen – `true` csak sikeres item registry után.
+
+getDbSchemaVersion()
+  Paraméter: nincs.
+  Vissza: szám – alkalmazott migrációk közül a legnagyobb `id` (`e_core_migrations`);
+    **0** ha üres tábla vagy lekérdezés sikertelen (indulás előtt ne hívd megbízhatóan).
+
+================================================================================
+3. eCore facade – áttekintés + hol a részlet
+================================================================================
+A `getCore()` által visszaadott tábla **függ** az aktív keretrendszertől (ESX/QB)
+és az oldaltól (client/server).
+
+**Mérvadó névsor (táblázat):** `docs/PUBLIC_API_HU.md` → §6–§10 (`eCore:` metódusok
+bridge fájlonként).
+
+**Magyar narratíva + integrációs megjegyzések:** ez a fájl – „ESX bridge”, „QB
+bridge”, „Global bridge”, „Client resource”, **1.4** szerver, **1.5** NUI.
+
+Az alábbi felsorolás **index**; új metódusnál először a forrásfájl + `PUBLIC_API`,
+majd itt a szekció szerinti blokk bővítése.
+
+Közös / globális jellegű (részlet):
+  Shared: getInventoryWeight, canSwapItems, canCarryItem, countFreeSlots,
+          getItemWeight, getFirstSlotByItem, getAmountOfItems, getRegisteredItem,
+          getRegisteredItems, isReady, convertItems (ESX/QB shared),
+          convertPlayer …
+  Megjegyzés: **több stack** összesített mennyiséghez `getAmountOfItems`; QB+ox
+  esetén **override** `canSwapItems` / `canCarryItem` – részletek: „Global
+  bridge” → shared.lua blokk fent.
+  Client: ox_target-szerű add/remove* zónák és entitások, disableTargeting,
+          triggerCallback, sendMessage, drawText, hideText, progressbar,
+          cancelProgressbar, isLoggedIn, getInventory, getPlayerMaxWeight,
+          getPlayer, getAccounts, canInteract, jármű helper metódusok…
+  Server: createCallback, createUsableItem, sendMessage, drawText, hideText,
+          addMoney, removeMoney, getAccounts, getInventory, addItem, removeItem,
+          removeItems, getPlayerMaxWeight, getPlayer, itemBox, addCommands,
+          createVehicle (global server) …
+
+eCore.helper
+  bridge/main.lua végén: eCore.helper = hf (libs/helper.lua). Segédfüggvények
+  inventory és általános ellenőrzésekhez. Részletes felsorolás: szekció **1.2
+  Libs modulok (libs/)**, `hf` tábla.
+
+================================================================================
+4. Inventory integráció (AI rövid útmutató)
+================================================================================
+- A `standalone/overrides/` szerkezet és glob sorrend: szekció **1.3 Standalone
+  modulok (standalone/)**.
+- A tényleges item lista / súly / slot logika: **override** + bridge/global
+  shared.lua együtt alakítja ki.
+- Új inventory típus: standalone/overrides/<új_mappa>/config.lua + shared/
+  client/server minták másolása egy létező override-ból (pl. ox_inventory).
+- Config.fields és hasonló kulcsok: az adott override config.lua-ban.
+- Ha REGISTERED_ITEMS nem töltődik: szerveren és kliensen **timeout** után
+  `CORE_READY = false` + log (nem végtelen várakozás); lásd szekció **1.4**
+  (ConVarok), GYIK `items=timeout`; ellenőrizd az override `getRegisteredItems`
+  láncolatot.
+
+================================================================================
+5. GYIK (gyakori kérdések – audit után kitöltve; bővíthető)
+================================================================================
+
+K: Mi a különbség a `docs/PUBLIC_API_HU.md` és ez a fájl között?
+A: A **PUBLIC_API** a szerződés **táblázata** (exportok, `eCore:` névsor,
+  `eCoreErr` tábla, deprec). Az **AI_SUPPORT_REFERENCE** a **magyar** kontextus:
+  mappa szerepek, indulás, labor/meta forgalom, override stratégia. Eltérésnél
+  a Lua forrás + PUBLIC_API mérvadó a névlistában; itt a narratíva.
+
+K: Az indulási logban `items=timeout` – mit csináljak?
+A: A szerver/kliens item registry **nem** töltődött be a ConVar időkorlátig
+  (`e_core:items_ready_timeout_ms`). Ellenőrizd: core indulás **e_core előtt**,
+  inventory override `getRegisteredItems` láncolat, `ox_lib` fut-e. Részlet:
+  szekció **1.4** `server/main.lua`, **SZERVER_OPERATOR_CHECKLIST_HU.md**.
+
+K: `exports.e_core:isReady()` mikor `true`?
+A: Csak ha a registry szál sikeresen befejeződött (`CORE_READY == true`). Timeout
+  után `false` marad; töltés közben is `false` (vagy belsőleg `eCore:isReady()`
+  lehet `nil`). Lásd `libs/helper.lua` `awaitItemRegistryReady`.
+
+K: Kliensen `getLabor()` ad `false, not_found_metadata` – hiba?
+A: Nem feltétlenül: **sync előtt** vagy üres kliens meta esetén várható. A szerver
+  újraszámol; UI-ban ne kezeld fatális hibának első frame-ben. **1.4** labor
+  összefoglaló, `LABOR_KEZELES_MUNKAFIL_HU.md`.
+
+K: Két core fut (ESX + QB) – miért áll le az e_core?
+A: `e_core:framework=auto` szándékosan **error** – egy szerveren egy legacy core.
+  Állítsd a ConVart `esx` vagy `qb`-ra, és távolítsd el a felesleges core-t.
+  **Keretrendszer-felismerés** szekció, `FRAMEWORK_CONFIG_REFACTOR_TERVEZES_HU.md`.
+
+K: `e_core:createVehicle` – hogyan hívjam kliensről?
+A: **Ne** `TriggerServerEvent('e_core:createVehicle')`-et várj: **callback** az
+  aktív bridge `eCore:createCallback('e_core:createVehicle', …)` útvonalon;
+  forrás ellenőrzés a szerveren. **`docs/NET_EVENTS_AUDIT_HU.md`**.
+
+K: Hol írjam át az ox_inventory viselkedést?
+A: **`standalone/overrides/ox_inventory/`** – ne a `bridge/` tömeges forkja;
+  a manifest glob sorrendje dönti el, melyik override nyer. **1.3**, stack:
+  `SUPPORTED_STACK_MATRIX_HU.md`.
+
+K: `e_core:playerLoaded` kliensről `TriggerServerEvent` – működik?
+A: **Nem** (szándékos): csak szerver `TriggerEvent` + `AddEventHandler`. Régi
+  külső script ilyen hívása nem fut; lásd **NET_EVENTS** doksi, `changelog` 0.0.14.
+
+K: Mi az `e_core_migrations` tábla?
+A: Az e_core **alkalmazott DB migrációinak** nyilvántartása (Fázis 3). Induláskor
+  `e_core_run_db_migrations()` létrehozza, majd soronként futtatja a `#1`, `#2`, …
+  lépéseket. Részlet: **`docs/DB_MIGRATIONS_HU.md`**, export: `getDbSchemaVersion`.
+
+--------------------------------------------------------------------------------
+Új GYIK bejegyzés sablon (másold, töltsd ki):
+  K: …
+  A: … (fájl: …, export / esemény: …)
+--------------------------------------------------------------------------------
+
+================================================================================
+Végjegyzet
+================================================================================
+Export vagy eCore aláírás változásakor frissítsd ezt a fájlt ugyanabban a PR-ban
+vagy commitban, ahol a kód változik – így az AI és az ügyfél ugyanazt a
+„szerződést” látja.

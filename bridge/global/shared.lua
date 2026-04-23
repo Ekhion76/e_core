@@ -92,11 +92,11 @@ function eCore:canSwapItems(swappingItems, itemData, playerData)
 
     -- check
     if itemWeight > capacity then
-        return false, 'too_heavy'
+        return false, eCoreErr.too_heavy
     end
 
     if requiredSlot > freeSlots then
-        return false, 'not_enough_space'
+        return false, eCoreErr.not_enough_space
     end
 
     return true
@@ -114,7 +114,7 @@ function eCore:canCarryItem(itemData, playerData)
     local itemWeight = self:getItemWeight(itemData.name, itemData.metadata) * itemData.amount
 
     if itemWeight > capacity then
-        return false, 'too_heavy'
+        return false, eCoreErr.too_heavy
     end
 
     if REGISTERED_ITEMS[itemData.name:lower()].isUnique then
@@ -128,7 +128,7 @@ function eCore:canCarryItem(itemData, playerData)
     end
 
     if requiredSlot > self:countFreeSlots(inventory) then
-        return false, 'not_enough_space'
+        return false, eCoreErr.not_enough_space
     end
 
     return true

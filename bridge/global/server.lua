@@ -25,7 +25,7 @@ function eCore:createVehicle(pos, model, vType, props)
     until plate ~= '' or try > 200
 
     if not hf.isPopulatedString(plate) then
-        return false, 'Failed: No data can be retrieved from the vehicle.'
+        return false, eCoreErr.vehicle_no_plate_data
     end
 
     try = 1

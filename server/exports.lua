@@ -24,3 +24,15 @@ exports("getConfig", function()
 
     return Config
 end)
+
+--- @return boolean true only when item registry finished loading successfully
+exports('isReady', function()
+
+    return eCore:isReady() == true
+end)
+
+--- @return number alkalmazott DB migráció legnagyobb `id` (0 ha még nincs tábla / üres)
+exports('getDbSchemaVersion', function()
+
+    return e_core_get_applied_migration_id()
+end)

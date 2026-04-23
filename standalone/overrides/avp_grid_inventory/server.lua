@@ -13,7 +13,7 @@ if AVP_GRID_INVENTORY then
     function eCore:removeItems(xPlayer, items)
 
         if not hf.isPopulatedTable(items) then
-            return false, 'there are no items to remove'
+            return false, eCoreErr.there_are_no_items_to_remove
         end
 
         for _, item in pairs(items) do
@@ -27,7 +27,7 @@ if AVP_GRID_INVENTORY then
             end
         end
 
-        return true, 'ok'
+        return true, eCoreErr.ok
     end
 
     function eCore:addItem(xPlayer, item, count, slot, metadata)
@@ -51,12 +51,18 @@ if AVP_GRID_INVENTORY then
     end
 
     eCore:createCallback('e_core:getCanSwap', function(source, cb, swappingItems, itemData)
-
+        if not hf.isValidPlayerSource(source) then
+            cb(false)
+            return
+        end
         cb(exports["avp_grid_inventory"]:CanCarryItem(source, itemData.name, itemData.amount) == true)
     end)
 
     eCore:createCallback('e_core:getCanCarry', function(source, cb, itemData)
-
+        if not hf.isValidPlayerSource(source) then
+            cb(false)
+            return
+        end
         cb(exports["avp_grid_inventory"]:CanCarryItem(source, itemData.name, itemData.amount) == true)
     end)
 end

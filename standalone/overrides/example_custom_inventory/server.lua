@@ -3,6 +3,7 @@
 --- Copy the function you want to modify here
 
 if CUSTOM_INVENTORY then
+    (function(_inv) end)(CUSTOM_INVENTORY)
 
     -- function eCore:addItem(xPlayer, item, count, slot, metadata) end
     -- function eCore:removeItems(xPlayer, items) end

@@ -147,3 +147,22 @@ Returns the e_core config file
 ```lua
 exports.e_core:getConfig()
 ```
+
+## isReady
+
+**@return**: boolean – `true` csak akkor, ha az item registry (`REGISTERED_ITEMS`) sikeresen betöltött. Betöltés alatt és timeout után `false`. Részletesebb állapot: `exports.e_core:getCore():isReady()` (`nil` töltés közben, `false` timeout, `true` kész).
+
+```lua
+if exports.e_core:isReady() then
+    -- pl. itemhez kötött szerver logika
+end
+```
+
+## getDbSchemaVersion
+
+**@return**: number – alkalmazott DB migrációk közül a legnagyobb `id` (`e_core_migrations` tábla). **0** ha üres vagy a tábla még nem létezik. Részlet: `docs/DB_MIGRATIONS_HU.md`.
+
+```lua
+local v = exports.e_core:getDbSchemaVersion()
+-- indulás után tipikusan 1 (egyetlen migráció a repóban); új migráció = nagyobb szám
+```

@@ -90,7 +90,7 @@ if ESX_CORE then
 
     function eCore:removeItems(xPlayer, items)
         if not hf.isPopulatedTable(items) then
-            return false, 'there are no items to remove'
+            return false, eCoreErr.there_are_no_items_to_remove
         end
 
         cLog('eCore:removeItems', items, 4)
@@ -99,7 +99,7 @@ if ESX_CORE then
             xPlayer.removeInventoryItem(item.name, item.amount)
         end
 
-        return true, 'ok'
+        return true, eCoreErr.ok
     end
 
     --- It returns the entire registered item list, unified and filtering out unnecessary information

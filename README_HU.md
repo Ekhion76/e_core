@@ -6,6 +6,7 @@ Az e_core egy adapter, mely az ESX és QBCore, QBox keretrendszerekkel való kom
 ##### Célja:
 - eco_crafting és a jövöben készülő szkripteknek biztosítani a keretrendszer független működést 
 - a felhasználóknak biztosítani a testreszabhatóságot
+- **SDK-szerű réteg:** ne csak belső „glue script” legyen – publikus, dokumentált és verzióhoz kötött felület, amire külső resource-ok és az eco szkriptek egyaránt építhetnek (API-szerződés, changelog, támogatott stack, előre jelezhető indulás és hibák)
 
 ##### Csatoló felületet biztosít:
 - saját inventory exportjainak beillesztésére (addItem, removeItem, stb..) 
@@ -24,7 +25,9 @@ Konfig fájlok:
 - standalone/config/ - globális beállítások
 - standalone/overrides/custom_inventory/config.lua - Inventory specifikus beállítások
 
-**FONTOS!** Az e_core-t az eco scriptek előtt szükséges indítani a server.cfg fájlban!
+**FONTOS!** Az e_core-t az eco scriptek előtt szükséges indítani a server.cfg fájlban! A **legacy core** (`es_extended` vagy `qb-core`) az e_core előtt legyen `ensure`-elve, különben üres maradhat a registry indulásig.
+
+Ha véletlenül **mindkét** core futna: `setr e_core:framework "esx"` vagy `"qb"` (alap `auto` ilyenkor **hibával** leáll). Részlet: `docs/FRAMEWORK_CONFIG_REFACTOR_TERVEZES_HU.md`.
 
 ```
     # ECO SCRIPTS
@@ -35,6 +38,19 @@ Konfig fájlok:
 A 'standalone' mappa nem más, mint felülírási funkciók gyűjteménye. A bridge mappában lévő összes funkció átmásolható a 'standalone' mappába, és ott felülírható.
 
 **FONTOS!** Másold át a bridge függvényeket a 'standalone' mappába és írd felül! (persze csak szükség esetén)
+
+#### Fejlesztőknek / AI és Cursor kontextus
+
+Új chatben vagy refaktorálásnál érdemes erre hivatkozni:
+
+- [docs/PROJECT_STRUCTURE.txt](docs/PROJECT_STRUCTURE.txt) – mappák szerepe és fájlfa
+- [docs/PUBLIC_API_HU.md](docs/PUBLIC_API_HU.md) – publikus `exports.e_core:*` + `eCore:` névsor
+- [docs/SUPPORTED_STACK_MATRIX_HU.md](docs/SUPPORTED_STACK_MATRIX_HU.md) – tier / override mátrix (v0.1)
+- [docs/AI_EGYUTTMUKODES_CHECKLIST_HU.md](docs/AI_EGYUTTMUKODES_CHECKLIST_HU.md) – mit írj az AI elé (környezet, repro, cél)
+- [docs/MODERNIZACIOS_ES_MEGBIZHATOSAGI_TERV_HU.md](docs/MODERNIZACIOS_ES_MEGBIZHATOSAGI_TERV_HU.md) – hosszabb technikai felmérés / terv (opcionális)
+- [docs/SZERVER_OPERATOR_CHECKLIST_HU.md](docs/SZERVER_OPERATOR_CHECKLIST_HU.md) – szerver üzemeltető: ensure sorrend, kockázatlista, ConVarok (Fázis 0)
+- [docs/DB_MIGRATIONS_HU.md](docs/DB_MIGRATIONS_HU.md) – MySQL migrációk, `e_core_migrations`, `getDbSchemaVersion` (Fázis 3)
+- [docs/LUA_LS_AND_CI_HU.md](docs/LUA_LS_AND_CI_HU.md) – LuaLS, luacheck, GitHub Actions (Fázis 4)
 
 Példa a testreszabásra:
 

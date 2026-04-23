@@ -63,11 +63,24 @@ Returns the e_core config file
 exports.e_core:getConfig()
 ```
 
-## getHelper
-Returns a table containing useful helper functions (libs/helper.lua)
+## isReady
 
-**@return**: table helper functions
+**@return**: boolean – `true` csak akkor, ha az item registry (`REGISTERED_ITEMS`) sikeresen betöltött és a core késznek tekinti magát. Betöltés alatt és timeout után `false`. Finomabb háromállapot: `eCore:isReady()` (`nil` / `false` / `true`).
 
 ```lua
-exports.e_core:getHelper()
+if exports.e_core:isReady() then
+    -- biztonságos item / súly logika
+end
+```
+
+## Helper functions (hf)
+
+There is **no** `exports.e_core:getHelper()` export. Use `getCore()` and read `.helper` (same table as `eCore.helper` inside e_core; see `libs/helper.lua`).
+
+**@return**: table – helper methods on the core object
+
+```lua
+local eCore = exports.e_core:getCore()
+local hf = eCore.helper
+-- e.g. hf.trim(s), hf.isPopulatedTable(t)
 ```

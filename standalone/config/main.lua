@@ -4,8 +4,8 @@ Config.locale = 'en'
 
 Config.debugLevel = false -- 0-4, false or 0 = off
 
-Config.maxInventoryWeight = 24000 -- See the bridge/esx|qb/config.lua or standalone/overrides/inventory name/config.lua
-Config.maxInventorySlots = 41 -- See the bridge/esx|qb/config.lua or standalone/overrides/inventory name/config.lua
+Config.maxInventoryWeight = 24000 -- bridge/esx|qb/config_defaults.lua + framework_config.lua, vagy standalone/overrides/.../config.lua
+Config.maxInventorySlots = 41 -- ugyanaz
 
 Config.versionCheck = true
 
@@ -46,7 +46,7 @@ Config.laborIncreaseTime = 5 -- Default 5 (min), if 0 then turn off automatic la
 Config.laborIncrease = 10 -- Every increaseTime minutes grow so much
 Config.laborIncreaseOffline = 10 -- Every increaseTime minutes grow so much, if 0 then turn off automatic OFFLINE labor
 
-Config.enableStatMenu = false -- enable skill page keyBind(openStat)
+Config.enableStatMenu = true -- enable skill page keyBind(openStat)
 Config.keyBind = { -- Default RegisterKeyMapping (if useTarget = false)
     openStat = 'o', -- Open Skill page
 }

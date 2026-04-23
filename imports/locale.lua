@@ -1,3 +1,4 @@
+-- luacheck: push ignore 131
 locales = {}
 
 function translate(str, ...)
@@ -29,3 +30,4 @@ function translateU(str, ...)
     local translated = translate(str, ...)
     return translated:gsub("^%l", string.upper)
 end
+-- luacheck: pop

@@ -1,3 +1,4 @@
+-- luacheck: push ignore 131
 local hf = eCore.helper
 
 function createDiscordLog(webhook, botName)
@@ -83,3 +84,4 @@ function createDiscordLog(webhook, botName)
 
     return self
 end
+-- luacheck: pop

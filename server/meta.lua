@@ -1,6 +1,20 @@
 RegisterServerEvent('e_core:loadMeta', function()
     local playerId = source
-    loadMeta(eCore:getPlayer(playerId))
+    if not hf.isValidPlayerSource(playerId) then
+        return
+    end
+    local cooldown = GetConvarInt('e_core:loadmeta_rate_ms', 2500)
+    if cooldown < 500 then
+        cooldown = 500
+    end
+    if not hf.netRateLimit(playerId, 'e_core:loadMeta', cooldown) then
+        return
+    end
+    local xPlayer = eCore:getPlayer(playerId)
+    if not xPlayer then
+        return
+    end
+    loadMeta(xPlayer)
 end)
 
 --- @param playerId number (source)
@@ -9,11 +23,11 @@ end)
 --- @return boolean success and, in case of an error, the reason as well
 function setMeta(playerId, meta, value)
     if not tonumber(playerId) or not ECO.meta[playerId] then
-        return false, 'not_found_metadata'
+        return false, eCoreErr.not_found_metadata
     end
 
     if type(meta) ~= 'string' then
-        return false, 'no_valid_meta_name'
+        return false, eCoreErr.no_valid_meta_name
     end
 
     ECO.meta[playerId][meta] = value
@@ -27,14 +41,14 @@ end
 --- @return boolean|table success or values
 function getMeta(playerId, meta)
     if not tonumber(playerId) or not ECO.meta[playerId] then
-        return false, 'not_found_metadata'
+        return false, eCoreErr.not_found_metadata
     end
 
     if meta then
         if type(meta) == 'string' then
             return ECO.meta[playerId][meta]
         else
-            return false, 'no_valid_meta_name'
+            return false, eCoreErr.no_valid_meta_name
         end
     end
 
@@ -48,11 +62,11 @@ end
 --- @return boolean success
 function registerMeta(playerId, category, defaultValue)
     if not tonumber(playerId) or not ECO.meta[playerId] then
-        return false, 'not_found_metadata'
+        return false, eCoreErr.not_found_metadata
     end
 
     if type(category) ~= 'string' then
-        return false, 'no_valid_meta_name'
+        return false, eCoreErr.no_valid_meta_name
     end
 
     if ECO.meta[playerId][category] then
@@ -85,7 +99,7 @@ end
 --- @return boolean success and, in case of an error, the reason as well
 function getAbility(playerId, category, name)
     if not checkMetaExists(playerId, category, name) then
-        return false, 'not_found_metadata'
+        return false, eCoreErr.not_found_metadata
     end
 
     return ECO.meta[playerId][category][name]
@@ -98,14 +112,14 @@ end
 --- @return boolean success and, in case of an error, the reason as well
 function addAbility(playerId, category, name, value)
     if not checkMetaExists(playerId, category, name) then
-        return false, 'not_found_metadata'
+        return false, eCoreErr.not_found_metadata
     end
 
     local metaValue = ECO.meta[playerId][category][name]
     local baseValue = metaValue
 
     if metaValue >= Config.abilityLimit then
-        return false, 'has_already_reached_the_limit'
+        return false, eCoreErr.has_already_reached_the_limit
     end
 
     if tonumber(value) then
@@ -130,7 +144,7 @@ end
 --- @return boolean success and, in case of an error, the reason as well
 function removeAbility(playerId, category, name, value)
     if not checkMetaExists(playerId, category, name) then
-        return false, 'not_found_metadata'
+        return false, eCoreErr.not_found_metadata
     end
 
     local metaValue = ECO.meta[playerId][category][name]
@@ -158,7 +172,7 @@ end
 --- @return boolean success and, in case of an error, the reason as well
 function setAbility(playerId, category, name, value)
     if not checkMetaExists(playerId, category, name) then
-        return false, 'not_found_metadata'
+        return false, eCoreErr.not_found_metadata
     end
 
     local metaValue = ECO.meta[playerId][category][name]
@@ -219,7 +233,11 @@ end
 ---
 --- SAVE AND LOAD EVENTS
 ---
-RegisterServerEvent('e_core:playerLoaded', function(xPlayer)
+--- Csak szerver oldali TriggerEvent (bridge); ne RegisterServerEvent – különben a kliens is küldhetne hamis xPlayer-t.
+AddEventHandler('e_core:playerLoaded', function(xPlayer)
+    if not xPlayer or not xPlayer.source then
+        return
+    end
     loadMeta(xPlayer)
 end)
 

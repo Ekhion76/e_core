@@ -16,3 +16,9 @@ exports("getConfig", function()
 
     return Config
 end)
+
+--- @return boolean true only when item registry finished loading successfully
+exports('isReady', function()
+
+    return eCore:isReady() == true
+end)

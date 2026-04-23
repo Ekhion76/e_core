@@ -1,0 +1,19 @@
+{
+  "$schema": "https://raw.githubusercontent.com/LuaLS/vscode-lua/master/setting/schema.json",
+  "Lua": {
+    "runtime": {
+      "version": "Lua 5.4",
+      "path": ["?.lua", "?/init.lua", "types/?.lua"]
+    },
+    "workspace": {
+      "checkThirdParty": false,
+      "ignoreDir": [".git", "html", ".cursor"]
+    },
+    "diagnostics": {
+      "disable": ["lowercase-global"]
+    },
+    "hint": {
+      "enable": true
+    }
+  }
+}

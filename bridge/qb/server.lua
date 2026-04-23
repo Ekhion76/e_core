@@ -75,7 +75,7 @@ if QB_CORE then
 
     function eCore:addItem(xPlayer, item, count, slot, metadata)
         if not xPlayer.Functions.AddItem(item, count, slot, metadata) then
-            return false, 'inventory_full'
+            return false, eCoreErr.inventory_full
         end
 
         return true
@@ -88,7 +88,7 @@ if QB_CORE then
     function eCore:removeItem(xPlayer, itemName, count, metadata, slot)
         count = tonumber(count)
         if not hf.isPopulatedString(itemName) or not count or count < 1 then
-            return false, 'no_items_to_remove'
+            return false, eCoreErr.no_items_to_remove
         end
 
         if count == 1 then
@@ -99,7 +99,7 @@ if QB_CORE then
         local inventory = xPlayer.items
 
         if hf.isEmpty(inventory) then
-            return false, 'inventory_is_empty'
+            return false, eCoreErr.inventory_is_empty
         end
 
         local totalItemsCount = 0
@@ -111,7 +111,7 @@ if QB_CORE then
         end
 
         if totalItemsCount < count then
-            return false, 'not_enough_items'
+            return false, eCoreErr.not_enough_items
         end
 
         for _, item in pairs(inventory) do
@@ -140,19 +140,19 @@ if QB_CORE then
         end
 
         xPlayer.Functions.SetInventory(temp, true)
-        return true, 'ok'
+        return true, eCoreErr.ok
     end
 
     function eCore:removeItems(xPlayer, items)
         if not hf.isPopulatedTable(items) then
-            return false, 'no_items_to_remove'
+            return false, eCoreErr.no_items_to_remove
         end
 
         local count
         local inventory = xPlayer.items
 
         if hf.isEmpty(inventory) then
-            return false, 'inventory_is_empty'
+            return false, eCoreErr.inventory_is_empty
         end
 
         -- check all item exists:
@@ -166,7 +166,7 @@ if QB_CORE then
                 end
 
                 if count < itemToRemove.amount then
-                    return false, 'not_enough_items'
+                    return false, eCoreErr.not_enough_items
                 end
             end
         end
@@ -204,7 +204,7 @@ if QB_CORE then
         end
 
         xPlayer.Functions.SetInventory(temp, true)
-        return true, 'ok'
+        return true, eCoreErr.ok
     end
 
     function eCore:getPlayer(playerId)

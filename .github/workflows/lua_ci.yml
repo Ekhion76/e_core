@@ -1,0 +1,26 @@
+# Luacheck – teljes repó (lásd `.luacheckrc`) + fxmanifest helyi útvonalak.
+name: Lua CI
+
+on:
+  push:
+    branches: [main, master, develop]
+  pull_request:
+
+jobs:
+  luacheck:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Validate fxmanifest paths
+        run: python3 scripts/validate_fxmanifest.py
+
+      - name: Install Luacheck
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -qq -y luarocks
+          sudo luarocks install luacheck
+
+      - name: Run Luacheck
+        run: luacheck .

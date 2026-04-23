@@ -6,6 +6,7 @@ The e_core is an adapter that provides support for compatibility with ESX and QB
 ##### Its goal:
 - to ensure framework-independent operation for eco_crafting and future scripts
 - to provide users with customization
+- **SDK-style layer:** not merely internal glue—a documented, versioned public surface that external resources and eco scripts can rely on (API contract, changelog, supported stack matrix, predictable startup and errors)
 
 ##### It provides a connecting surface:
 - to insert your own inventory functions/exports (addItem, removeItem, etc..)
@@ -24,7 +25,9 @@ Config files:
 - standalone/config/ - global settings
 - standalone/overrides/custom_inventory/config.lua - Inventory specific settings
 
-**IMPORTANT!** It is necessary to start e_core before the eco scripts in the server.cfg file!
+**IMPORTANT!** Start e_core before eco scripts in `server.cfg`. Start the **legacy core** (`es_extended` or `qb-core`) before e_core so framework globals and item registry can initialise.
+
+If both cores are running by mistake, set `setr e_core:framework "esx"` or `"qb"` (default `auto` will **error**). See `docs/FRAMEWORK_CONFIG_REFACTOR_TERVEZES_HU.md`.
 
 ```
     # ECO SCRIPTS
@@ -34,6 +37,19 @@ Config files:
 **IMPORTANT!** Due to the overwriting of later updates, it is advisable to make all changes in the 'standalone' folder!
 The 'standalone' folder is nothing more than a collection of override functions. All functions in the bridge folder can be copied to the 'standalone' folder and overwritten there.
 **IMPORTANT!** Copy the bridge functions to the 'standalone' folder and overwrite them! (of course only if necessary)
+
+#### For developers / AI and Cursor context
+
+When starting a new chat or refactor, link or attach:
+
+- [docs/PROJECT_STRUCTURE.txt](docs/PROJECT_STRUCTURE.txt) – folder roles and file tree
+- [docs/PUBLIC_API_HU.md](docs/PUBLIC_API_HU.md) – public `exports.e_core:*` + `eCore:` name inventory
+- [docs/SUPPORTED_STACK_MATRIX_HU.md](docs/SUPPORTED_STACK_MATRIX_HU.md) – supported stack tiers / overrides (v0.1)
+- [docs/AI_EGYUTTMUKODES_CHECKLIST_HU.md](docs/AI_EGYUTTMUKODES_CHECKLIST_HU.md) – what to put in the first message (environment, repro, goals; text is Hungarian)
+- [docs/MODERNIZACIOS_ES_MEGBIZHATOSAGI_TERV_HU.md](docs/MODERNIZACIOS_ES_MEGBIZHATOSAGI_TERV_HU.md) – longer technical plan (optional)
+- [docs/SZERVER_OPERATOR_CHECKLIST_HU.md](docs/SZERVER_OPERATOR_CHECKLIST_HU.md) – server operator checklist and risk list (Hungarian; Phase 0)
+- [docs/DB_MIGRATIONS_HU.md](docs/DB_MIGRATIONS_HU.md) – MySQL migrations, `e_core_migrations`, `getDbSchemaVersion` (Hungarian; Phase 3)
+- [docs/LUA_LS_AND_CI_HU.md](docs/LUA_LS_AND_CI_HU.md) – LuaLS, luacheck, GitHub Actions (Hungarian; Phase 4)
 
 Example of customization:
 

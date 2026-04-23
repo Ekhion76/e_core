@@ -1,18 +1,19 @@
+-- luacheck: push ignore 131
 --function print_r(data)
 --    print(json.encode(data, { indent = true }))
 --end
 
 function print_r(t)
     local print_r_cache = {}
-    local function sub_print_r(t, indent)
-        if (print_r_cache[tostring(t)]) then
-            print(indent .. "*" .. tostring(t))
+    local function sub_print_r(tbl, indent)
+        if (print_r_cache[tostring(tbl)]) then
+            print(indent .. "*" .. tostring(tbl))
         else
-            print_r_cache[tostring(t)] = true
-            if (type(t) == "table") then
-                for pos, val in pairs(t) do
+            print_r_cache[tostring(tbl)] = true
+            if (type(tbl) == "table") then
+                for pos, val in pairs(tbl) do
                     if (type(val) == "table") then
-                        print(indent .. "[" .. pos .. "] => " .. tostring(t) .. " {")
+                        print(indent .. "[" .. pos .. "] => " .. tostring(tbl) .. " {")
                         sub_print_r(val, indent .. string.rep(" ", string.len(pos) + 8))
                         print(indent .. string.rep(" ", string.len(pos) + 6) .. "}")
                     else
@@ -20,7 +21,7 @@ function print_r(t)
                     end
                 end
             else
-                print(indent .. tostring(t))
+                print(indent .. tostring(tbl))
             end
         end
     end
@@ -126,3 +127,4 @@ function cLog(k, v, level)
         print('^3DEBUG', k, '->^4', v, '^7')
     end
 end
+-- luacheck: pop

@@ -1,0 +1,43 @@
+---@meta
+--- e_core facade – LuaLS stub; a valós metóduslista: `docs/PUBLIC_API_HU.md` §6–10.
+--- A keretrendszer (ESX/QB) és oldal (client/server) szerint eltérő kulcsok lehetnek.
+
+---@class eCore
+---@field helper table
+---@field Err table<string, string>
+---@field isReady fun(self: eCore): boolean|nil
+---@field getInventoryWeight fun(self: eCore, playerData: table): number
+---@field canSwapItems fun(self: eCore, swappingItems: table, itemData: table, playerData: table): boolean|nil, string|nil
+---@field canCarryItem fun(self: eCore, itemData: table, playerData: table): boolean|nil, string|nil
+---@field getAmountOfItems fun(self: eCore, inventory: table): table
+---@field getRegisteredItem fun(self: eCore, name: string): table|nil
+---@field getRegisteredItems fun(self: eCore): table
+---@field convertItems fun(self: eCore, items: table): table
+---@field convertPlayer fun(self: eCore, playerData: table, newJob?: table): table
+---@field triggerCallback fun(self: eCore, name: string, cb: fun(...), ...): nil
+---@field createCallback fun(self: eCore, name: string, fn: fun(source: number, cb: function, ...)): nil
+---@field getPlayer fun(self: eCore, id: number|table?, ...): table|nil
+---@field addItem fun(self: eCore, xPlayer: table, item: string, count: number, metadata?: table, slot?: number): boolean|nil, string|nil
+---@field removeItem fun(self: eCore, xPlayer: table, item: string, count: number, metadata?: table, slot?: number): boolean|nil, string|nil
+---@field removeItems fun(self: eCore, xPlayer: table, items: table): boolean|nil, string|nil
+---@field getInventory fun(self: eCore, player: table): table
+---@field sendMessage fun(self: eCore, target: number|table, message: any, ...): nil
+eCore = {}
+
+---@type string|nil
+FRAMEWORK = nil
+
+---@type boolean
+ESX_CORE = false
+
+---@type boolean
+QB_CORE = false
+
+---@type table
+Config = {}
+
+---@type table<string, string>
+eCoreErr = {}
+
+---@type table
+hf = {}

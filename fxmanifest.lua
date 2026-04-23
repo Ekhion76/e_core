@@ -1,19 +1,22 @@
 fx_version 'cerulean'
 game 'gta5'
 description 'ECO CORE'
-version '0.0.9'
+version '0.0.28'
 
 shared_scripts {
     '@ox_lib/init.lua',
     'imports/locale.lua',
 
-    'bridge/**/config.lua',
+    'bridge/esx/config_defaults.lua',
+    'bridge/qb/config_defaults.lua',
+    'bridge/framework_config.lua',
     'standalone/config/main.lua',
     'standalone/config/levels.lua',
     'standalone/overrides/**/config.lua',
 
     'imports/utils.lua',
     'libs/helper.lua',
+    'libs/errors.lua',
 
     'libs/meta.lua',
     'locales/*.lua',
@@ -45,7 +48,6 @@ client_scripts {
 
 server_scripts {
     '@oxmysql/lib/MySQL.lua',
-    'imports/discordlog.lua',
 
     'bridge/global/shared.lua',
     'bridge/global/server.lua',
@@ -65,11 +67,14 @@ server_scripts {
 
     'bridge/main.lua',
 
+    'imports/discordlog.lua',
+
     'bridge/global/callbacks/server.lua',
 
     'server/main.lua',
     'server/meta.lua',
     'server/labor.lua',
+    'server/db_migrations.lua',
     'server/db.lua',
     'server/exports.lua',
     'standalone/usableitem.lua',

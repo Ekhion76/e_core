@@ -11,16 +11,16 @@ if QS_INVENTORY then
 
     function eCore:removeItems(xPlayer, items)
         if not hf.isPopulatedTable(items) then
-            return false, 'there are no items to remove'
+            return false, eCoreErr.there_are_no_items_to_remove
         end
 
         for _, item in pairs(items) do
             if not qs_inventory:RemoveItem(xPlayer.source, item.name, item.amount) then
-                return false, 'unknown_error'
+                return false, eCoreErr.unknown_error
             end
         end
 
-        return true, 'ok'
+        return true, eCoreErr.ok
     end
 
     function eCore:addItem(xPlayer, item, count, slot, metadata)

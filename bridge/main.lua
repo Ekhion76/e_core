@@ -16,6 +16,7 @@ if ESX_CORE then
 end
 
 eCore.helper = hf
+eCore.Err = eCoreErr
 
 exports("getFrameWork", function()
 

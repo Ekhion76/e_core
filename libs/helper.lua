@@ -103,6 +103,140 @@ function hf.isPopulatedString(s)
     return string.gsub(s, '^%s*(.-)%s*$', '%1') ~= ''
 end
 
+-- Gyakori item tábla elírások (pl. QBCore): ha nincs érvényes szabványos súlykulcs, de ezek közül van → ne 0-zzuk csendben, hanem convertItems kihagyja + log.
+local MISSPELLED_WEIGHT_KEYS = {
+    weigt = true,
+    wieght = true,
+    weigth = true,
+    weght = true,
+    weighjt = true,
+    wight = true,
+    weigtht = true,
+}
+
+--- @return string wKey
+--- @return table weightKeys ordered list (same as normalizeRegisteredItemDef)
+function hf.getRegisteredItemWeightKeyConfig()
+    local wKey = 'weight'
+    if type(Config) == 'table' and type(Config.fields) == 'table' and type(Config.fields.weight) == 'string' then
+        wKey = Config.fields.weight
+    end
+    return wKey, { wKey, 'weight', 'Weight', 'itemWeight', 'item_weight', 'totalWeight' }
+end
+
+--- Van-e legalább egy elfogadott kulcsról olvasható nem negatív szám súly.
+--- @param row table
+--- @return boolean
+function hf.hasResolvableStandardWeight(row)
+    if type(row) ~= 'table' then
+        return false
+    end
+    local _, weightKeys = hf.getRegisteredItemWeightKeyConfig()
+    for _, k in ipairs(weightKeys) do
+        local n = tonumber(row[k])
+        if n and n >= 0 then
+            return true
+        end
+    end
+    return false
+end
+
+--- Ha nincs szabványos súly, de ismert elírású „weight” kulcs van → ne regisztráljuk (convertItems skip + indoklás).
+--- @param row table
+--- @return boolean ok ha folytatható a regisztráció
+--- @return string|nil reason ha nem ok
+function hf.itemDefinitionWeightGate(row)
+    if type(row) ~= 'table' then
+        return false, 'not_a_table'
+    end
+    if hf.hasResolvableStandardWeight(row) then
+        return true
+    end
+    local wKey = hf.getRegisteredItemWeightKeyConfig()
+    for k, v in pairs(row) do
+        if type(k) == 'string' and MISSPELLED_WEIGHT_KEYS[k:lower()] then
+            return false,
+                ('invalid_weight_field:%s=%s (expected numeric key: %s)'):format(k, tostring(v), wKey)
+        end
+    end
+    return true
+end
+
+--- REGISTERED_ITEMS / getItemWeight / canCarryItem egyeztetett mezői (bridge + override convertItems).
+--- Rossz / hiányzó mezőnevek ellen: több súly- és lőszer-alias, string fallback, belső pcall + minimális fallback.
+--- @param nameLower string már kisbetűs kulcs (pl. ox item kulcs)
+--- @param row table a forrás item tábla (helyben módosul)
+--- @return table row
+function hf.normalizeRegisteredItemDef(nameLower, row)
+    if type(row) ~= 'table' or type(nameLower) ~= 'string' or nameLower == '' then
+        return row
+    end
+
+    local wKey, weightKeys = hf.getRegisteredItemWeightKeyConfig()
+
+    local ok, err = pcall(function()
+        row.name = nameLower
+
+        local wNum
+        for _, k in ipairs(weightKeys) do
+            local n = tonumber(row[k])
+            if n and n >= 0 then
+                wNum = n
+                break
+            end
+        end
+        row[wKey] = wNum or 0
+
+        local lab
+        for _, k in ipairs({ 'label', 'formatName', 'title', 'Label', 'description' }) do
+            local v = row[k]
+            if type(v) == 'string' and v ~= '' then
+                lab = v
+                break
+            end
+            if type(v) == 'number' then
+                lab = tostring(v)
+                break
+            end
+        end
+        row.label = (type(lab) == 'string' and lab ~= '') and lab or nameLower
+
+        row.isUnique = row.isUnique == true
+        row.isWeapon = row.isWeapon == true
+
+        if type(row.image) ~= 'string' or row.image == '' then
+            row.image = nameLower .. '.png'
+        end
+
+        local ammoStr
+        for _, k in ipairs({
+            'ammoname', 'ammoName', 'ammotype', 'ammoType', 'ammunition',
+        }) do
+            local v = row[k]
+            if type(v) == 'string' and v ~= '' then
+                ammoStr = v:lower()
+                break
+            end
+        end
+        row.ammoname = ammoStr
+    end)
+
+    if not ok then
+        if cLog then
+            cLog('eCore:normalizeRegisteredItemDef', { name = nameLower, err = tostring(err) }, 1)
+        end
+        row.name = nameLower
+        row[wKey] = tonumber(row[wKey]) or tonumber(row.weight) or 0
+        row.label = (type(row.label) == 'string' and row.label ~= '') and row.label or nameLower
+        row.isUnique = row.isUnique == true
+        row.isWeapon = row.isWeapon == true
+        row.image = (type(row.image) == 'string' and row.image ~= '') and row.image or (nameLower .. '.png')
+        row.ammoname = (type(row.ammoname) == 'string' and row.ammoname ~= '') and row.ammoname:lower() or nil
+    end
+
+    return row
+end
+
 function hf.isEmpty(v)
     if v == nil then
         return true

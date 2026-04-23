@@ -2,6 +2,7 @@ OX_INVENTORY = GetResourceState('ox_inventory') == 'started'
 
 if OX_INVENTORY then
 
+    --- Alap max (gramm); a **szerver** `eCore:getPlayerMaxWeight` élő értéke az ox `GetInventory(source).maxWeight`, ha már létezik a leltár (fallback: ez a ConVar).
     Config.maxInventoryWeight = GetConvarInt('inventory:weight', 24000)
     Config.maxInventorySlots = GetConvarInt('inventory:slots', 50)
 

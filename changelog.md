@@ -1,3 +1,24 @@
+0.0.35
+- **Diagnosztika UX:** szinte átlátszó háttér + üveg modál (látszik a játék, progress, notify). **Élő sáv** (`diag_live_strip`): épp futó lépés szövege. **Checklist** lépésről lépésre (szerver `CreateThread` + `Config.diagnostics.uiStepMs`); státusz: fut / OK / hiba / kihagyva / **megszakítva** (progress `onCancel` narancs). Technikai napló továbbra lent. Új események: `e_core:diagnostics:nuiPush`, `consoleOnly`.
+
+0.0.34
+- **Diagnosztika NUI:** `/ecore_diag` eredménye középre zárt, modern modálban (blur, szekciók, színkódolt sorok, **másolás** a NUI-ból `clipboard` / `execCommand`, **Esc** bezár). `Config.diagnostics.useNui` / `printToConsole`. Szerver: `clientPrint` szekció (`server` / `progress` / `error`). `html/js/diagnostics.js`, `fxmanifest` JS felsorolás betöltési sorrendhez.
+
+0.0.33
+- **convertItems / elírásos súlykulcs:** `hf.itemDefinitionWeightGate` + `hf.hasResolvableStandardWeight` / `hf.getRegisteredItemWeightKeyConfig` (`libs/helper.lua`). Ha **nincs** érvényes szabványos súly (`Config.fields.weight`, `weight`, `Weight`, `itemWeight`…), de az item sorban ismert **hibás kulcs** van (pl. `weigt`, `weigth`…), az item **nem kerül** a `REGISTERED_ITEMS` listába; `cLog('eCore:convertItems:skip', { framework, item, reason })`. Ha egyáltalán nincs súlymező és nincs ilyen elírás → változatlan: **0 súly** + normalize. A korábbi alias / pcall / típusvédelem megmaradt.
+
+0.0.32
+- **convertItems / normalize:** `hf.normalizeRegisteredItemDef` – több **súly** kulcs (`weight`, `Weight`, `itemWeight`…), **label** aliasok, **lőszer** mezők (`ammotype`, `ammoType`…), belső **pcall** + hiba esetén `cLog` + minimális fallback. **convertItems** hurkok (ESX, QB, ox, qs, avp): **itemenkénti pcall** + típusellenőrzés; QB `label` csak stringre `gsub`; ox `client.image` csak stringre `string.match`; nem tábla sor = kihagyás (nem állítja meg a teljes listát).
+
+0.0.31
+- **REGISTERED_ITEMS / convertItems:** `hf.normalizeRegisteredItemDef` (`libs/helper.lua`) – egységes mezők minden ágon (`name`, `label`, súly kulcs `Config.fields.weight`, `isUnique`, `isWeapon`, `image`, `ammoname` kisbetű vagy nil). Hívva: `bridge/esx|qb/shared.lua`, `standalone/overrides/ox_inventory|qs_inventory|avp_grid_inventory/shared.lua`. QB: robosztusabb kulcsnév (`item` / `data.name`).
+
+0.0.30
+- **ox_inventory súly / limit:** `standalone/overrides/ox_inventory/server.lua` – `eCore:getInventoryWeight` és `getPlayerMaxWeight` az ox **`GetInventory(source)`** `weight` / `maxWeight` mezőiből olvas (pcall + fallback: ESX `getWeight` / shared számítás, ill. `Config.maxInventoryWeight`). Kliens override: opcionális **`GetPlayerWeight` / `GetPlayerMaxWeight`** export pcall, majd bridge fallback. Így a `canCarryItem` / diagnosztika ugyanazt a súlyt látja, mint az ox.
+
+0.0.29
+- **Integritás parancs:** `Config.diagnostics` (`standalone/config/main.lua`) – `/ecore_diag` (név változtatható). Engedély: **ACE** (`acePermission`, pl. `ecore.diagnostics`) **vagy** `allowedIdentifiers` lista (`GetPlayerIdentifiers` egyezés). Szerver: aktuális / max súly (`getInventoryWeight`, `getPlayerMaxWeight`), `canCarryItem` + opc. `tryAddRemove`; kliens: **progressbar** onFinish/onCancel riport. Alapból `enabled = false`. Operátor: `docs/SZERVER_OPERATOR_CHECKLIST_HU.md`.
+
 0.0.28
 - Labor auto tick (`server/labor.lua` → `laborIncrease`): céljátékosok **`GetPlayers()`** + `hf.isValidPlayerSource` + betöltött `ECO.meta[id].labor` alapján (nem a teljes `ECO.meta` bejárása). Opcionális szerver ConVar: **`e_core:labor_tick_chunk`** (alap **0** = egy hullámban mind; **>0** = legfeljebb ennyi fő / `SetTimeout(0)` hullám nagy online létszámnál). Doksi: `docs/LABOR_KEZELES_MUNKAFIL_HU.md`, `docs/SZERVER_OPERATOR_CHECKLIST_HU.md`.
 

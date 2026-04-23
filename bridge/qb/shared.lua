@@ -15,11 +15,30 @@ if QB_CORE then
 
         for item, data in pairs(items) do
             if hf.isPopulatedTable(data) then
-                local name = item:lower()
-                temp[name] = data
-                temp[name].label = data.label and data.label:gsub("'", "\\'") or ''
-                temp[name].isUnique = data.unique == true
-                temp[name].isWeapon = data.type == 'weapon'
+                local okConv, errConv = pcall(function()
+                    local name = type(item) == 'string' and item:lower()
+                        or (type(data.name) == 'string' and data.name:lower())
+                        or tostring(item):lower()
+                    local allowW, skipW = hf.itemDefinitionWeightGate(data)
+                    if not allowW then
+                        if cLog then
+                            cLog('eCore:convertItems:skip', { framework = 'QB', item = name, reason = skipW }, 1)
+                        end
+                        return
+                    end
+                    temp[name] = data
+                    if type(data.label) == 'string' then
+                        temp[name].label = data.label:gsub("'", "\\'")
+                    else
+                        temp[name].label = ''
+                    end
+                    temp[name].isUnique = data.unique == true
+                    temp[name].isWeapon = data.type == 'weapon'
+                    hf.normalizeRegisteredItemDef(name, temp[name])
+                end)
+                if not okConv and cLog then
+                    cLog('eCore:convertItems(QB)', { err = tostring(errConv), item = tostring(item) }, 1)
+                end
             else
                 print("^3* Not valid item: *", item)
                 print_r(data)

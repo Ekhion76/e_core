@@ -86,6 +86,9 @@ function onClose(item) {
 
         view.closePage();
         view.closeHud();
+        if (typeof window.eCoreDiagCloseSilent === 'function') {
+            window.eCoreDiagCloseSilent();
+        }
     }
 }
 
@@ -94,7 +97,55 @@ const messageHandlers = {
     INIT: onInit,
     OPEN: onOpen,
     CLOSE: onClose,
-    POPUP: (item) => view.popUp(item.data)
+    POPUP: (item) => view.popUp(item.data),
+    DIAGNOSTICS_OPEN: (item) => {
+        const h = window.eCoreDiagnosticsHandlers;
+        if (h && typeof h.DIAGNOSTICS_OPEN === 'function') {
+            h.DIAGNOSTICS_OPEN(item);
+        }
+    },
+    DIAGNOSTICS_APPEND: (item) => {
+        const h = window.eCoreDiagnosticsHandlers;
+        if (h && typeof h.DIAGNOSTICS_APPEND === 'function') {
+            h.DIAGNOSTICS_APPEND(item);
+        }
+    },
+    DIAGNOSTICS_CLOSE: () => {
+        const h = window.eCoreDiagnosticsHandlers;
+        if (h && typeof h.DIAGNOSTICS_CLOSE === 'function') {
+            h.DIAGNOSTICS_CLOSE();
+        }
+    },
+    DIAGNOSTICS_RUN_START: (item) => {
+        const h = window.eCoreDiagnosticsHandlers;
+        if (h && typeof h.DIAGNOSTICS_RUN_START === 'function') {
+            h.DIAGNOSTICS_RUN_START(item);
+        }
+    },
+    DIAGNOSTICS_CHECKLIST_INIT: (item) => {
+        const h = window.eCoreDiagnosticsHandlers;
+        if (h && typeof h.DIAGNOSTICS_CHECKLIST_INIT === 'function') {
+            h.DIAGNOSTICS_CHECKLIST_INIT(item);
+        }
+    },
+    DIAGNOSTICS_CHECKLIST_SET: (item) => {
+        const h = window.eCoreDiagnosticsHandlers;
+        if (h && typeof h.DIAGNOSTICS_CHECKLIST_SET === 'function') {
+            h.DIAGNOSTICS_CHECKLIST_SET(item);
+        }
+    },
+    DIAGNOSTICS_LOG_SET: (item) => {
+        const h = window.eCoreDiagnosticsHandlers;
+        if (h && typeof h.DIAGNOSTICS_LOG_SET === 'function') {
+            h.DIAGNOSTICS_LOG_SET(item);
+        }
+    },
+    DIAGNOSTICS_LIVE_HINT: (item) => {
+        const h = window.eCoreDiagnosticsHandlers;
+        if (h && typeof h.DIAGNOSTICS_LIVE_HINT === 'function') {
+            h.DIAGNOSTICS_LIVE_HINT(item);
+        }
+    },
 };
 
 function onNuiMessage(event) {
@@ -123,6 +174,10 @@ $('#close').on('click', closePageAndExit);
 $(document).on('keyup', (e) => {
 
     if (e.which === 27) {
+        const diag = document.getElementById('diag_overlay');
+        if (diag && diag.classList.contains('diag-visible')) {
+            return;
+        }
 
         closePageAndExit();
     }

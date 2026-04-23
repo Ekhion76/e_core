@@ -4,7 +4,7 @@
     <meta charset="utf-8"/>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Red+Hat+Display&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Red+Hat+Display:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.3.0/css/all.min.css">
     <link rel="stylesheet" href="main.css" type="text/css">
 </head>
@@ -20,6 +20,53 @@
         <nav id="meta_categories"></nav>
         <div class="content"></div>
         <div class="footer"></div>
+    </div>
+</div>
+
+<div id="diag_overlay" class="diag-overlay diag-hidden" aria-hidden="true">
+    <div class="diag-backdrop" aria-hidden="true"></div>
+    <div class="diag-modal" id="diag_modal" role="dialog" aria-modal="true" aria-labelledby="diag_title">
+        <header class="diag-header">
+            <div class="diag-header-text">
+                <h2 id="diag_title" class="diag-title">e_core – integritás</h2>
+                <p id="diag_subtitle" class="diag-subtitle">Szerver ellenőrzések és kliens progress teszt.</p>
+            </div>
+            <button type="button" class="diag-icon-btn" id="diag_btn_close" title="Bezárás (ESC)" aria-label="Bezárás">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+        </header>
+        <div id="diag_live_strip" class="diag-live-strip" aria-live="polite">
+            <span class="diag-live-dot" aria-hidden="true"></span>
+            <span id="diag_live_text" class="diag-live-text"></span>
+        </div>
+        <div class="diag-checklist-wrap" id="diag_checklist_wrap">
+            <div class="diag-checklist-head">
+                <span class="diag-checklist-title"><i class="fa-solid fa-list-check"></i> Ellenőrzések</span>
+            </div>
+            <div id="diag_checklist" class="diag-checklist"></div>
+        </div>
+        <div class="diag-scroll">
+            <section class="diag-section" aria-labelledby="diag_h_server">
+                <div class="diag-section-head">
+                    <span class="diag-badge diag-badge--server" id="diag_h_server"><i class="fa-solid fa-server"></i> Szerver</span>
+                </div>
+                <div class="diag-block" id="diag_server_body"></div>
+            </section>
+            <section class="diag-section diag-section--idle" id="diag_section_progress" aria-labelledby="diag_h_progress">
+                <div class="diag-section-head">
+                    <span class="diag-badge diag-badge--client" id="diag_h_progress"><i class="fa-solid fa-display"></i> Kliens progress</span>
+                    <span class="diag-hint" data-when-pending>A checklisten narancs = megszakítva; a játékban látod a progress sávot.</span>
+                </div>
+                <div class="diag-block diag-block--progress" id="diag_progress_body"></div>
+            </section>
+        </div>
+        <footer class="diag-footer">
+            <button type="button" class="diag-btn diag-btn--ghost" id="diag_btn_copy">
+                <i class="fa-regular fa-copy"></i> Összes másolása
+            </button>
+            <span class="diag-footer-hint"><kbd>Esc</kbd> bezárás</span>
+        </footer>
+        <div class="diag-toast" id="diag_toast" role="status"></div>
     </div>
 </div>
 
@@ -41,6 +88,7 @@
 <script src="nui://game/ui/jquery.js" type="text/javascript"></script>
 <script src="js/model.js" type="text/javascript"></script>
 <script src="js/view.js" type="text/javascript"></script>
+<script src="js/diagnostics.js" type="text/javascript"></script>
 <script src="js/app.js" type="text/javascript"></script>
 </body>
 </html>

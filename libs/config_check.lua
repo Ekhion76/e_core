@@ -21,6 +21,25 @@ function configCheck()
 
     Config.discordBotName = Config.discordBotName or 'ECOBOT'
     Config.discordWebHook = hf.isPopulatedTable(Config.discordWebHook) and Config.discordWebHook or {}
+
+    Config.diagnostics = hf.isPopulatedTable(Config.diagnostics) and Config.diagnostics or {}
+    Config.diagnostics.command = tostring(Config.diagnostics.command or 'ecore_diag'):gsub('^%s+', ''):gsub('%s+$', '')
+    if Config.diagnostics.command == '' then
+        Config.diagnostics.command = 'ecore_diag'
+    end
+    Config.diagnostics.acePermission = type(Config.diagnostics.acePermission) == 'string' and Config.diagnostics.acePermission or ''
+    Config.diagnostics.allowedIdentifiers = hf.isPopulatedTable(Config.diagnostics.allowedIdentifiers)
+        and Config.diagnostics.allowedIdentifiers
+        or {}
+    Config.diagnostics.cooldownMs = math.max(3000, tonumber(Config.diagnostics.cooldownMs) or 15000)
+    Config.diagnostics.testItem = tostring(Config.diagnostics.testItem or 'water'):lower()
+    Config.diagnostics.testItemAmount = math.max(1, tonumber(Config.diagnostics.testItemAmount) or 1)
+    Config.diagnostics.tryAddRemove = Config.diagnostics.tryAddRemove == true
+    Config.diagnostics.progressDurationMs = math.max(1000, math.min(60000, tonumber(Config.diagnostics.progressDurationMs) or 3000))
+    Config.diagnostics.enabled = Config.diagnostics.enabled == true
+    Config.diagnostics.useNui = Config.diagnostics.useNui ~= false
+    Config.diagnostics.printToConsole = Config.diagnostics.printToConsole == true
+    Config.diagnostics.uiStepMs = math.max(0, math.min(400, tonumber(Config.diagnostics.uiStepMs) or 55))
 end
 
 configCheck()

@@ -5,6 +5,38 @@ if OX_INVENTORY then
     local hf = hf
     local ox_inventory = exports.ox_inventory
 
+    local fallbackGetInventoryWeight = eCore.getInventoryWeight
+    local fallbackGetPlayerMaxWeight = eCore.getPlayerMaxWeight
+
+    local function oxPlayerInventory(xPlayer)
+        if not xPlayer or not xPlayer.source then
+            return nil
+        end
+        local ok, inv = pcall(function()
+            return ox_inventory:GetInventory(xPlayer.source)
+        end)
+        if ok and type(inv) == 'table' and type(inv.weight) == 'number' then
+            return inv
+        end
+        return nil
+    end
+
+    function eCore:getInventoryWeight(xPlayer)
+        local inv = oxPlayerInventory(xPlayer)
+        if inv then
+            return inv.weight
+        end
+        return fallbackGetInventoryWeight(self, xPlayer)
+    end
+
+    function eCore:getPlayerMaxWeight(xPlayer)
+        local inv = oxPlayerInventory(xPlayer)
+        if inv and type(inv.maxWeight) == 'number' and inv.maxWeight > 0 then
+            return inv.maxWeight
+        end
+        return fallbackGetPlayerMaxWeight(self, xPlayer)
+    end
+
     function eCore:removeItem(xPlayer, item, count, metadata, slot)
         return ox_inventory:RemoveItem(xPlayer.source, item, count)
     end
@@ -30,12 +62,5 @@ if OX_INVENTORY then
         end
 
         return true
-    end
-
-    function eCore:getPlayerMaxWeight(xPlayer)
-        return Config.maxInventoryWeight
-
-        --local inventory = ox_inventory:GetInventory(xPlayer.source, false)
-        --return inventory.maxWeight
     end
 end

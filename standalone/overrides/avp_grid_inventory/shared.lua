@@ -22,16 +22,34 @@ if AVP_GRID_INVENTORY then
         local tmp = {}
 
         for item, data in pairs(items) do
-
-            local name = item:lower()
-            tmp[name] = {}
-            tmp[name].name = name
-            tmp[name].label = data.formatName
-            tmp[name].isUnique = not data.isStackable
-            tmp[name].isWeapon = data.isWeapon
-            tmp[name].weight = data.weight
-            tmp[name].image = item .. '.png'
-            tmp[name].ammoname = data.weaponAmmoType
+            local okConv, errConv = pcall(function()
+                if type(data) ~= 'table' then
+                    return
+                end
+                local itemKey = type(item) == 'string' and item or tostring(item)
+                local name = itemKey:lower()
+                local allowW, skipW = hf.itemDefinitionWeightGate(data)
+                if not allowW then
+                    if cLog then
+                        cLog('eCore:convertItems:skip', { framework = 'avp_grid_inventory', item = name, reason = skipW }, 1)
+                    end
+                    return
+                end
+                tmp[name] = {}
+                tmp[name].name = name
+                tmp[name].label = data.formatName
+                tmp[name].isUnique = not data.isStackable
+                tmp[name].isWeapon = data.isWeapon == true
+                tmp[name].weight = data.weight
+                tmp[name].image = itemKey .. '.png'
+                tmp[name].ammoname = (type(data.weaponAmmoType) == 'string' and data.weaponAmmoType ~= '')
+                    and data.weaponAmmoType
+                    or nil
+                hf.normalizeRegisteredItemDef(name, tmp[name])
+            end)
+            if not okConv and cLog then
+                cLog('eCore:convertItems(avp_grid_inventory)', { err = tostring(errConv), item = tostring(item) }, 1)
+            end
         end
 
         return tmp

@@ -7,6 +7,8 @@ Cél: **kisebb abuse felület**, dokumentált **szerver** határok. Frissítés:
 | Esemény | Szerep | Védelem |
 |---------|---------|---------|
 | `e_core:loadMeta` | Meta betöltés kérés spawn után | `hf.isValidPlayerSource(source)`; `hf.netRateLimit(source, 'e_core:loadMeta', cooldown)`; `eCore:getPlayer` kötelező; ConVar: `e_core:loadmeta_rate_ms` (alap 2500, min 500). |
+| `e_core:diagnostics:request` | Integritás teszt indul (`/ecore_diag`) | `Config.diagnostics.enabled`; ACE **vagy** `allowedIdentifiers`; `hf.netRateLimit` burst; cooldown; `eCore:getPlayer` + read-only / opc. add-remove. |
+| `e_core:diagnostics:progressResult` | Progress teszt befejezés jelzése | Csak ha `awaitingProgress[source]` aktív; `hf.netRateLimit`. |
 
 ## 2. Csak szerver belső (AddEventHandler)
 

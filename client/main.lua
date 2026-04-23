@@ -1,5 +1,6 @@
 ECO = {}
 ECO.meta = {}
+ECO.nuiReady = false
 local hf = hf
 
 CORE_READY, REGISTERED_ITEMS = nil, nil
@@ -139,6 +140,7 @@ end)
 -- NUI CALLBACKS
 RegisterNUICallback('nuiReady', function(_, cb)
     nuiReady = true
+    ECO.nuiReady = true
     cb('ok')
 end)
 

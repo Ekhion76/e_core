@@ -20,22 +20,41 @@ if OX_INVENTORY then
         local tmp = {}
 
         for item, data in pairs(items) do
-            local image = item .. '.png'
+            local okConv, errConv = pcall(function()
+                if type(data) ~= 'table' then
+                    return
+                end
+                local itemKey = type(item) == 'string' and item or tostring(item)
+                local image = itemKey .. '.png'
 
-            if QB_CORE then
-                image = self:getQBImage(item)
+                if QB_CORE then
+                    image = self:getQBImage(itemKey)
+                end
+
+                if type(data.client) == 'table' and type(data.client.image) == 'string' then
+                    local m = string.match(data.client.image, "([^/]+%.[%w]+)")
+                    if m then
+                        image = m
+                    end
+                end
+
+                local name = itemKey:lower()
+                local allowW, skipW = hf.itemDefinitionWeightGate(data)
+                if not allowW then
+                    if cLog then
+                        cLog('eCore:convertItems:skip', { framework = 'ox_inventory', item = name, reason = skipW }, 1)
+                    end
+                    return
+                end
+                tmp[name] = data
+                tmp[name].isUnique = data.stack == false
+                tmp[name].isWeapon = data.weapon == true
+                tmp[name].image = image
+                hf.normalizeRegisteredItemDef(name, tmp[name])
+            end)
+            if not okConv and cLog then
+                cLog('eCore:convertItems(ox_inventory)', { err = tostring(errConv), item = tostring(item) }, 1)
             end
-
-            if data.client and data.client.image then
-                image = string.match(data.client.image, "([^/]+%.[%w]+)")
-            end
-
-            local name = item:lower()
-            tmp[name] = data
-            tmp[name].name = name
-            tmp[name].isUnique = data.stack == false
-            tmp[name].isWeapon = data.weapon == true
-            tmp[name].image = image
         end
 
         return tmp

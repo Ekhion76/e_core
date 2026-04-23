@@ -9,6 +9,30 @@ Config.maxInventorySlots = 41 -- ugyanaz
 
 Config.versionCheck = true
 
+--- Integritás / integráció teszt (parancs). **Alapból ki** – engedélyezéshez `enabled = true` + ACE és/vagy azonosítók.
+--- Szerver.cfg példa ACE-hez: `add_ace group.admin ecore.diagnostics allow` majd `add_principal identifier.steam:xxxxx group.admin` vagy használd az `allowedIdentifiers` listát.
+Config.diagnostics = {
+    enabled = true,
+    command = 'ecore_diag',
+    --- Üres string = ACE ellenőrzés kikapcsolva (csak azonosító lista vagy konzol). Nem üres = `IsPlayerAceAllowed(source, acePermission)` is elég az engedélyhez.
+    acePermission = 'ecore.diagnostics',
+    --- `GetPlayerIdentifiers` értékek (kisbetű ajánlott), pl. `steam:...`, `license:...`, `fivem:...`, `discord:...`
+    allowedIdentifiers = {},
+    cooldownMs = 15000,
+    --- `canCarryItem` / opcionális add-remove teszthez (regisztrált item név).
+    testItem = 'water',
+    testItemAmount = 1,
+    --- Ha true: megpróbál +1 itemet adni, majd levonni (élesen óvatosan).
+    tryAddRemove = true,
+    progressDurationMs = 3000,
+    --- Grafikus NUI modál (képernyő közepe). Ha false, csak konzol / notify marad.
+    useNui = true,
+    --- Ha useNui true: F8 print is (fejlesztőknek). Ha useNui false: mindig printel.
+    printToConsole = false,
+    --- Checklist lépések közti szünet (ms), hogy a NUI közben újrarajzoljon (0–400).
+    uiStepMs = 55,
+}
+
 Config.systemMode = {
     profession = true, -- proficiency system on/off
     labor = true, -- if you turn off the lab, the profession system will automatically turn off.

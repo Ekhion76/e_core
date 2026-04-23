@@ -20,18 +20,34 @@ if QS_INVENTORY then
         local tmp = {}
 
         for item, data in pairs(items) do
-            local image = item .. '.png'
+            local okConv, errConv = pcall(function()
+                if type(data) ~= 'table' then
+                    return
+                end
+                local itemKey = type(item) == 'string' and item or tostring(item)
+                local image = itemKey .. '.png'
 
-            if QB_CORE then
-                image = self:getQBImage(item)
+                if QB_CORE then
+                    image = self:getQBImage(itemKey)
+                end
+
+                local name = itemKey:lower()
+                local allowW, skipW = hf.itemDefinitionWeightGate(data)
+                if not allowW then
+                    if cLog then
+                        cLog('eCore:convertItems:skip', { framework = 'qs_inventory', item = name, reason = skipW }, 1)
+                    end
+                    return
+                end
+                tmp[name] = data
+                tmp[name].isUnique = data.unique == true
+                tmp[name].isWeapon = not data.useable and string.find(name, "^weapon_") ~= nil
+                tmp[name].image = image
+                hf.normalizeRegisteredItemDef(name, tmp[name])
+            end)
+            if not okConv and cLog then
+                cLog('eCore:convertItems(qs_inventory)', { err = tostring(errConv), item = tostring(item) }, 1)
             end
-
-            local name = item:lower()
-            tmp[name] = data
-            tmp[name].name = name
-            tmp[name].isUnique = data.unique == true
-            tmp[name].isWeapon = not data.useable and string.find(name, "^weapon_") ~= nil
-            tmp[name].image = image
         end
 
         return tmp

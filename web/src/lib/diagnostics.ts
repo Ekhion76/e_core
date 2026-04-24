@@ -50,6 +50,8 @@ export type DiagnosticsResultDetail = {
   docHints: DocHint[]
 }
 
+import { getResourceName } from './nui'
+
 type DiagnosticsApiResponse<T> = {
   ok: boolean
   code: string
@@ -222,6 +224,35 @@ function getApiBaseUrl(): string {
   return (import.meta.env.VITE_DIAGNOSTICS_API_BASE_URL as string | undefined)?.trim() ?? ''
 }
 
+function isFivemNui(): boolean {
+  return typeof (window as unknown as { GetParentResourceName?: () => string }).GetParentResourceName === 'function'
+}
+
+async function invokeDiagnosticsNui<T = Record<string, unknown>>(
+  body: Record<string, unknown>
+): Promise<DiagnosticsApiResponse<T>> {
+  if (!isFivemNui()) {
+    throw new Error(
+      'Diagnostics admin: csak FiveM NUI-ban (ecore_admin), vagy dev mock (VITE_USE_MOCK_DIAGNOSTICS=true).'
+    )
+  }
+  const res = await fetch(`https://${getResourceName()}/eCoreDiagnosticsApi`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json; charset=UTF-8' },
+    body: JSON.stringify(body)
+  })
+  const text = await res.text()
+  let data: DiagnosticsApiResponse<T>
+  try {
+    data = text
+      ? (JSON.parse(text) as DiagnosticsApiResponse<T>)
+      : ({ ok: false, code: 'empty', message: 'Üres válasz' } as DiagnosticsApiResponse<T>)
+  } catch {
+    throw new Error(`Diagnostics NUI: nem JSON válasz (HTTP ${res.status})`)
+  }
+  return data
+}
+
 async function getJson<T>(url: string): Promise<T> {
   const response = await fetch(url)
   if (!response.ok) {
@@ -289,13 +320,21 @@ function normalizeRun(input: any): DiagnosticsRun {
     })
   }
 
+  const createdAt = input.createdAt ?? input.created_at
+  const startedFromCreated =
+    typeof createdAt === 'number' && createdAt > 0
+      ? new Date(createdAt * 1000).toLocaleString('hu-HU')
+      : ''
+
   return {
     runId: String(input.runId ?? input.run_id ?? ''),
     testKey: String(
       input.testKey ?? input.test_key ?? (Array.isArray(input.tests) ? input.tests.join(',') : 'unknown-test')
     ),
     status: (input.status ?? 'queued') as RunStatus,
-    startedAt: String(input.startedAt ?? input.started_at ?? '-'),
+    startedAt: String(
+      input.startedAt ?? input.started_at ?? (startedFromCreated || '-')
+    ),
     durationMs: Number(input.durationMs ?? input.duration_ms ?? 0),
     summary: summaryText,
     docHints: Array.isArray(input.docHints) ? input.docHints.map(normalizeHint) : docHints,
@@ -310,9 +349,18 @@ export async function listDiagnosticsRuns(): Promise<DiagnosticsRun[]> {
     return structuredClone(mockRuns)
   }
 
+  if (isFivemNui()) {
+    const payload = await invokeDiagnosticsNui<{ items?: unknown[]; runs?: unknown[] }>({ action: 'listRuns' })
+    if (!payload.ok) {
+      throw new Error(payload.message ?? String(payload.code ?? 'listRuns failed'))
+    }
+    const items = payload.data?.items ?? payload.data?.runs ?? []
+    return items.map(normalizeRun)
+  }
+
   const baseUrl = getApiBaseUrl()
   if (!baseUrl) {
-    throw new Error('VITE_DIAGNOSTICS_API_BASE_URL not configured')
+    throw new Error('VITE_DIAGNOSTICS_API_BASE_URL nincs beállítva (vagy NUI-ban futtasd).')
   }
 
   const payload = await getJson<DiagnosticsApiResponse<{ items?: any[]; runs?: any[] }>>(
@@ -331,9 +379,17 @@ export async function getDiagnosticsRun(runId: string): Promise<DiagnosticsRun> 
     return structuredClone(run)
   }
 
+  if (isFivemNui()) {
+    const payload = await invokeDiagnosticsNui<{ run?: unknown }>({ action: 'getRun', runId })
+    if (!payload.ok || !payload.data?.run) {
+      throw new Error(payload.message ?? 'Run lekérés sikertelen')
+    }
+    return normalizeRun(payload.data.run)
+  }
+
   const baseUrl = getApiBaseUrl()
   if (!baseUrl) {
-    throw new Error('VITE_DIAGNOSTICS_API_BASE_URL not configured')
+    throw new Error('VITE_DIAGNOSTICS_API_BASE_URL nincs beállítva (vagy NUI-ban futtasd).')
   }
 
   const payload = await getJson<DiagnosticsApiResponse<any>>(`${baseUrl}/diagnostics/runs/${runId}`)
@@ -353,9 +409,17 @@ export async function cancelDiagnosticsRun(runId: string): Promise<void> {
     return
   }
 
+  if (isFivemNui()) {
+    const payload = await invokeDiagnosticsNui({ action: 'cancelRun', runId })
+    if (!payload.ok) {
+      throw new Error(payload.message ?? String(payload.code ?? 'cancel failed'))
+    }
+    return
+  }
+
   const baseUrl = getApiBaseUrl()
   if (!baseUrl) {
-    throw new Error('VITE_DIAGNOSTICS_API_BASE_URL not configured')
+    throw new Error('VITE_DIAGNOSTICS_API_BASE_URL nincs beállítva (vagy NUI-ban futtasd).')
   }
 
   const response = await fetch(`${baseUrl}/diagnostics/runs/${runId}/cancel`, { method: 'POST' })
@@ -369,9 +433,23 @@ export async function listDiagnosticsTests(): Promise<DiagnosticsTest[]> {
     return structuredClone(mockTests)
   }
 
+  if (isFivemNui()) {
+    const payload = await invokeDiagnosticsNui<{ items?: DiagnosticsTest[] }>({ action: 'listTests' })
+    if (!payload.ok) {
+      throw new Error(payload.message ?? String(payload.code ?? 'listTests failed'))
+    }
+    const items = payload.data?.items ?? []
+    return items.map((item) => ({
+      key: String(item.key ?? ''),
+      label: String(item.label ?? item.key ?? 'Unknown test'),
+      description: String((item as any).description ?? (item as any).estimatedCost ?? ''),
+      docHints: Array.isArray(item.docHints) ? item.docHints.map(normalizeHint) : []
+    }))
+  }
+
   const baseUrl = getApiBaseUrl()
   if (!baseUrl) {
-    throw new Error('VITE_DIAGNOSTICS_API_BASE_URL not configured')
+    throw new Error('VITE_DIAGNOSTICS_API_BASE_URL nincs beállítva (vagy NUI-ban futtasd).')
   }
 
   const payload = await getJson<DiagnosticsApiResponse<{ items?: DiagnosticsTest[] }>>(
@@ -411,9 +489,31 @@ export async function runDiagnosticsTests(tests: string[]): Promise<{ runId: str
     return { runId }
   }
 
+  if (isFivemNui()) {
+    const payload = await invokeDiagnosticsNui<{
+      run?: { runId?: string; run_id?: string }
+      runId?: string
+      run_id?: string
+    }>({ action: 'run', tests })
+    if (!payload.ok) {
+      throw new Error(payload.message ?? String(payload.code ?? 'run failed'))
+    }
+    const runId = String(
+      (payload.data as { run?: { runId?: string; run_id?: string } } | undefined)?.run?.runId ??
+        (payload.data as { run?: { runId?: string; run_id?: string } } | undefined)?.run?.run_id ??
+        payload.data?.runId ??
+        payload.data?.run_id ??
+        ''
+    )
+    if (!runId) {
+      throw new Error('Hiányzó runId a diagnostics válaszból')
+    }
+    return { runId }
+  }
+
   const baseUrl = getApiBaseUrl()
   if (!baseUrl) {
-    throw new Error('VITE_DIAGNOSTICS_API_BASE_URL not configured')
+    throw new Error('VITE_DIAGNOSTICS_API_BASE_URL nincs beállítva (vagy NUI-ban futtasd).')
   }
 
   const response = await fetch(`${baseUrl}/diagnostics/run`, {

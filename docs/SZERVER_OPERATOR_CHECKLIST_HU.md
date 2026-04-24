@@ -15,7 +15,8 @@ Egy oldalnyi ellenőrzés **éles vagy teszt szerver** indítás előtt / után.
 - [ ] **Inventory override:** ha ox / qs / avp stb., a megfelelő resource is fusson; ütköző két override ne írja felül egymást véletlenül (`standalone/overrides/**` sorrend).
 - [ ] **Indulási log:** konzolon megjelenik-e az egységes sor (`logEcoreStartupSummary`): verzió, framework, inventory címke, `items=ready|timeout|pending`. `timeout` esetén: item registry / inventory integráció ellenőrzése.
 - [ ] **Opcionális ConVarok** (ha nem az alap kell): `e_core:framework`, `e_core:items_ready_timeout_ms`, `e_core:items_ready_poll_ms`, `e_core:loadmeta_rate_ms` (net rate limit meta betöltéshez), `e_core:labor_tick_chunk` (labor auto tick: 0 = mind egyben, pl. 32–128 = hullámonkénti feldolgozás nagy online létszámnál).
-- [ ] **Integritás parancs (`/ecore_diag`):** `Config.diagnostics.enabled = true` + ACE (`add_ace group.admin ecore.diagnostics allow`) és/vagy `allowedIdentifiers` (steam/license/fivem/discord). Részletek: `standalone/config/main.lua` → `Config.diagnostics`.
+- [ ] **Admin konzol (`/ecore_admin`):** `Config.operator.admin.enabled = true` + `Config.operator.identifiers` és/vagy ACE (`add_ace … ecore.admin allow`). Alap: `standalone/config/main.lua` → `Config.operator.admin` (a betöltéskor szintetizált `Config.web` mezők csak belső használatra maradnak).
+- [ ] **Integritás parancs (`/ecore_diag`):** `Config.operator.integrityCheck.enabled = true`. Ha az admin NUI be van kapcsolva (`Config.operator.admin.enabled`), a jog a **`hf.webConsoleAccess`** (admin policy) szerint van; különben `integrityCheck` ACE + azonosítók. Részletek: `standalone/config/main.lua` → `Config.operator.integrityCheck`.
 
 ---
 

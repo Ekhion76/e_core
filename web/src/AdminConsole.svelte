@@ -9,24 +9,23 @@
     type DiagnosticsRun
   } from './lib/diagnostics'
   import DiagnosticsPanel from './lib/DiagnosticsPanel.svelte'
+  import IntegrityPanel from './lib/IntegrityPanel.svelte'
   import DocumentationPanel from './lib/DocumentationPanel.svelte'
   import ProfessionsPanel from './lib/ProfessionsPanel.svelte'
   import LevelProfilesPanel from './lib/LevelProfilesPanel.svelte'
+  import { postNui } from './lib/nui'
 
-  type TabId =
-    | 'overview'
-    | 'diagnostics'
-    | 'documentation'
-    | 'professions'
-    | 'level-profiles'
+  type TabId = 'overview' | 'diagnostics' | 'integrity' | 'documentation' | 'professions' | 'level-profiles'
 
   type Tab = { id: TabId; label: string }
+
   const docsHomeUrl =
     (import.meta.env.VITE_DOCS_BASE_URL as string | undefined)?.trim() || 'https://example.github.io/e_core-docs/'
 
   const tabs: Tab[] = [
     { id: 'overview', label: 'Overview' },
     { id: 'diagnostics', label: 'Diagnostics' },
+    { id: 'integrity', label: 'Integritás' },
     { id: 'documentation', label: 'Documentation' },
     { id: 'professions', label: 'Professions' },
     { id: 'level-profiles', label: 'Level Profiles' }
@@ -165,31 +164,38 @@
 
     return () => clearInterval(intervalId)
   })
+
+  function closeConsole() {
+    postNui('webAdminExit')
+  }
 </script>
 
-<main class="layout">
-  <header class="header">
-    <h1>e_core Admin Console</h1>
-    <p>Fazis 3.5 MVP kezdovaz - Svelte 5 runes alapon</p>
+<main class="layout layout--overlay layout--scrollable">
+  <header class="header header--with-close">
+    <div>
+      <h1>e_core Admin</h1>
+      <p class="muted">
+        Integritás: <strong>Integritás</strong> fül (itt futtatható) · Admin NUI: <code>/ecore_admin</code> · Registry futások: Diagnostics fül
+      </p>
+    </div>
+    <button type="button" class="overlay-close" onclick={closeConsole} title="Bezárás">✕</button>
   </header>
 
-  <nav class="tabs" aria-label="Admin tabs">
+  <nav class="tabs" aria-label="Web tabs">
     {#each tabs as tab}
-      <button
-        type="button"
-        class:active={tab.id === activeTab}
-        onclick={() => selectTab(tab.id)}
-      >
+      <button type="button" class:active={tab.id === activeTab} onclick={() => selectTab(tab.id)}>
         {tab.label}
       </button>
     {/each}
   </nav>
 
-  <section class="panel">
+  <section class="panel panel--body">
     <h2>{activeTabLabel}</h2>
 
     {#if activeTab === 'overview'}
-      <p>Rendszer allapot, aktiv cleanup jobok es utolso diagnostics futasok helye.</p>
+      <p>Rendszer állapot, cleanup jobok és diagnostics futások helye.</p>
+    {:else if activeTab === 'integrity'}
+      <IntegrityPanel />
     {:else if activeTab === 'diagnostics'}
       <DiagnosticsPanel
         diagnosticsRuns={diagnosticsRuns}
@@ -217,3 +223,58 @@
     {/if}
   </section>
 </main>
+
+<style>
+  .layout--overlay.layout--scrollable {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    max-height: 100%;
+    overflow: hidden;
+  }
+  .layout--overlay {
+    max-width: none;
+    margin: 0;
+    min-height: 100%;
+    border-radius: 0;
+    border: none;
+  }
+  :global(.panel.panel--body) {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    overflow-x: hidden;
+  }
+  .header--with-close {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 1rem;
+  }
+  .overlay-close {
+    flex-shrink: 0;
+    width: 2.25rem;
+    height: 2.25rem;
+    border-radius: 8px;
+    border: 1px solid #31466f;
+    background: #182746;
+    color: #e2ecff;
+    font-size: 1.1rem;
+    cursor: pointer;
+  }
+  .overlay-close:hover {
+    border-color: #f87171;
+    color: #fecaca;
+  }
+  .muted {
+    margin: 0.35rem 0 0;
+    color: #9fb2d8;
+    font-size: 0.9rem;
+  }
+  .muted code {
+    font-size: 0.85em;
+    padding: 0.1em 0.35em;
+    border-radius: 4px;
+    background: #182746;
+  }
+</style>

@@ -155,6 +155,47 @@ function hf.adminApiCanAccess(section, payload)
     return false, 'Nincs jogosultság (ACE vagy allowedIdentifiers).'
 end
 
+--- Játékbeli admin NUI (`Config.web`, pl. `ecore_admin` + `ecore.admin`): ACE és/vagy `allowedIdentifiers`.
+--- @param src number
+--- @return boolean ok
+--- @return string|nil err
+function hf.webConsoleAccess(src)
+    if not hf.isValidPlayerSource(src) then
+        return false, 'Érvénytelen játékos.'
+    end
+    local w = type(Config) == 'table' and Config.web or {}
+    if w.enabled ~= true then
+        return false, 'Az admin konzol ki van kapcsolva (Config.operator.admin.enabled = false).'
+    end
+    local acePerm = tostring(w.acePermission or '')
+    local aceOk = acePerm ~= '' and IsPlayerAceAllowed(src, acePerm)
+    local idOk = false
+    local list = w.allowedIdentifiers
+    if hf.isPopulatedTable(list) then
+        local ids = GetPlayerIdentifiers(src)
+        for _, pid in ipairs(ids) do
+            local low = tostring(pid):lower()
+            for _, allow in ipairs(list) do
+                if type(allow) == 'string' and allow ~= '' and low == allow:lower() then
+                    idOk = true
+                    break
+                end
+            end
+            if idOk then
+                break
+            end
+        end
+    end
+    if aceOk or idOk then
+        return true, nil
+    end
+    if acePerm == '' and not hf.isPopulatedTable(list) then
+        return false,
+            'Nincs jogosultság: állíts `Config.web.acePermission`-t és add_ace-et, vagy töltsd a `Config.web.allowedIdentifiers` listát.'
+    end
+    return false, 'Nincs jogosultság az admin konzolhoz (ACE vagy azonosító lista).'
+end
+
 --- Jogosultság-elutasítás audit (in-memory ring + opcionális cLog).
 --- @param section string
 --- @param action string

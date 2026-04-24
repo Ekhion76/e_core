@@ -9,42 +9,39 @@ Config.maxInventorySlots = 41 -- ugyanaz
 
 Config.versionCheck = true
 
---- Integritás / integráció teszt (parancs). **Alapból ki** – engedélyezéshez `enabled = true` + ACE és/vagy azonosítók.
---- Szerver.cfg példa ACE-hez: `add_ace group.admin ecore.diagnostics allow` majd `add_principal identifier.steam:xxxxx group.admin` vagy használd az `allowedIdentifiers` listát.
-Config.diagnostics = {
-    enabled = true,
-    command = 'ecore_diag',
-    --- Üres string = ACE ellenőrzés kikapcsolva (csak azonosító lista vagy konzol). Nem üres = `IsPlayerAceAllowed(source, acePermission)` is elég az engedélyhez.
-    acePermission = 'ecore.diagnostics',
-    --- `GetPlayerIdentifiers` értékek (kisbetű ajánlott), pl. `steam:...`, `license:...`, `fivem:...`, `discord:...`
-    allowedIdentifiers = {},
-    cooldownMs = 15000,
-    --- `canCarryItem` / opcionális add-remove teszthez (regisztrált item név).
-    testItem = 'water',
-    testItemAmount = 1,
-    --- Ha true: megpróbál +1 itemet adni, majd levonni (élesen óvatosan).
-    tryAddRemove = true,
-    progressDurationMs = 3000,
-    --- Grafikus NUI modál (képernyő közepe). Ha false, csak konzol / notify marad.
-    useNui = true,
-    --- Ha useNui true: F8 print is (fejlesztőknek). Ha useNui false: mindig printel.
-    printToConsole = false,
-    --- Checklist lépések közti szünet (ms), hogy a NUI közben újrarajzoljon (0–400).
-    uiStepMs = 55,
-}
+--[[
+  Operátori beállítások (`Config.operator`):
 
--- Admin API policy (profession cleanup workflows)
--- `auth.source` payload mezővel ellenőrizhető játékos jogosultság.
--- Ha nincs source (pl. belső szerver script), `allowServerWithoutSource=true` esetén engedélyezett.
-Config.adminApi = Config.adminApi or {
+  • `identifiers` — közös lista (`GetPlayerIdentifiers`), pl. `'fivem:…'`, `'license:…'`.
+  • `admin` — játékbeli admin NUI (alap parancs `ecore_admin`, ACE `ecore.admin`). Legacy kulcs: `web`.
+  • `integrityCheck` — integritás checklist + progress (futtatás: admin NUI → Integritás fül); ha `admin.enabled`, ugyanaz a jog mint az admin NUI-nál (`hf.webConsoleAccess`), különben ACE + lista. Legacy kulcs: `diagnostics`. Opc.: `cooldownMs` (két **teljes** futtatás között, min. 1500 ms, alap 1500; egy lépésre kattintva nincs ez a várakozás).
+  • `cleanup` — szerver admin cleanup policy (`Config.adminApi.cleanup`).
+  • `registryDiagnostics` — profession registry admin futások (`Config.adminApi.diagnostics`). Legacy: `adminApi.diagnostics`.
+  • `deniedAudit` — denied audit tároló. Legacy: `adminApi.deniedAudit`.
+
+  Technikai részletek (cooldown, teszt item, NUI checklist időzítés) a kódban fixek + az admin Integritás fülön állítható teszt-item az interaktív futtatáshoz.
+]]
+Config.operator = {
+    identifiers = {
+        'fivem:754961'
+    },
+    admin = {
+        enabled = true,
+        command = 'ecore_admin',
+        acePermission = 'ecore.admin',
+    },
+    integrityCheck = {
+        enabled = true,
+        acePermission = 'ecore.diagnostics',
+        --- Két **teljes** integritás futtatás között (ms). Szerver: min 1500; alap 1500. Egy lépés (`onlyStep`) nem használja.
+        cooldownMs = 1500,
+    },
     cleanup = {
         acePermission = 'ecore.admin.cleanup',
-        allowedIdentifiers = {},
         allowServerWithoutSource = true,
     },
-    diagnostics = {
+    registryDiagnostics = {
         acePermission = 'ecore.admin.diagnostics',
-        allowedIdentifiers = {},
         allowServerWithoutSource = true,
     },
     deniedAudit = {
@@ -52,37 +49,6 @@ Config.adminApi = Config.adminApi or {
         retentionDays = 30,
         purgeIntervalMinutes = 60,
         maxDeletePerRun = 2000,
-    },
-}
-
--- Admin HTTP (read + CRUD) policy (`server/admin_http.lua`) — ugyanaz a jogosultság
--- Read route-ok:
---   GET /admin/professions
---   GET /admin/level-profiles
---   GET /admin/professions/defaults, /validate, /profile (query: lásd doks)
--- Write route-ok (azonos `read` block: header + token):
---   POST /admin/professions   (body: professionAdminCreate)
---   PUT  /admin/professions?category=&name=   (body: professionAdminUpdate)
---   DELETE /admin/professions?category=&name=
---   POST /admin/level-profiles  (body: levelProfileAdminCreate)
---   PUT  /admin/level-profiles?profileKey=  (body: levelProfileAdminUpdate)
---   DELETE /admin/level-profiles?profileKey=
---
--- Jogosultság:
--- - `allowedIdentifiers`: kérés headerből (`identifierHeader`) olvasott azonosítóval ellenőriz
--- - `token`: opcionális shared secret (`tokenHeader`)
--- - Engedés: ha bármelyik (identifier vagy token) valid
-Config.adminHttp = Config.adminHttp or {
-    enabled = true,
-    read = {
-        identifierHeader = 'x-ecore-identifier',
-        tokenHeader = 'x-ecore-token',
-        allowedIdentifiers = {
-            -- 'fivem:12345678',
-            -- 'license:abcdef1234567890',
-            -- 'discord:123456789012345678',
-        },
-        token = '',
     },
 }
 
@@ -104,8 +70,8 @@ Config.currency = {
 }
 
 -- the labor points is registered by default
--- each script can register its own category using the registerMeta export e.g: exports.e_core:registerMeta(playerId, 'harvesting', {})
--- add default registered meta fields:
+-- each script can register its own category using the registerMeta export e.g exports.e_core:registerMeta(playerId, 'harvesting', {})
+-- Add default registered meta fields:
 Config.metaFields = {
     --crafting = {},
     --harvesting = {},
@@ -116,7 +82,7 @@ Config.metaFields = {
 
 Config.defaultLabor = 1000 -- Default labor for new players
 Config.laborLimit = 5000 -- Max labor points
-Config.abilityLimit = 120000 -- if the not set levels (eg.: Max proficiency points)
+Config.abilityLimit = 120000 -- Max if the not set levels (eg.: Max proficiency points)
 
 -- Optional profession-specific progression caps (fallback: Config.abilityLimit)
 -- Example:
@@ -139,8 +105,8 @@ Config.laborIncreaseTime = 5 -- Default 5 (min), if 0 then turn off automatic la
 Config.laborIncrease = 10 -- Every increaseTime minutes grow so much
 Config.laborIncreaseOffline = 10 -- Every increaseTime minutes grow so much, if 0 then turn off automatic OFFLINE labor
 
-Config.enableStatMenu = true -- enable skill page keyBind(openStat)
-Config.keyBind = { -- Default RegisterKeyMapping (if useTarget = false)
+Config.enableStatMenu = true -- skill page keyBind(openStat)
+Config.keyBind = {
     openStat = 'o', -- Open Skill page
 }
 

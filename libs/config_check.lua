@@ -1,4 +1,111 @@
 -- Check setting values
+-- `Config.operator` → szintetizált `Config.web` (admin NUI), `Config.integrityCheck` (integritás / admin Integritás fül), `Config.adminApi`.
+
+--- Két **teljes** futtatás között (integritás, `onlyStep` nélkül); `operator.integrityCheck.cooldownMs` felülírható.
+local INTEGRITY_COOLDOWN_MIN_MS = 1500
+local INTEGRITY_COOLDOWN_DEFAULT_MS = 1500
+
+local function copyIdList(list)
+    if not hf.isPopulatedTable(list) then
+        return {}
+    end
+    local out = {}
+    for _, v in ipairs(list) do
+        if type(v) == 'string' and hf.trim(v) ~= '' then
+            out[#out + 1] = hf.trim(v)
+        end
+    end
+    return out
+end
+
+local function applyOperatorConfig()
+    local op = hf.isPopulatedTable(Config.operator) and Config.operator or nil
+    if not op then
+        return false
+    end
+
+    local ids = copyIdList(op.identifiers)
+    --- Admin NUI (`ecore_admin`): új `operator.admin`, legacy `operator.web`.
+    local admin = hf.isPopulatedTable(op.admin) and op.admin or hf.isPopulatedTable(op.web) and op.web or nil
+    if not hf.isPopulatedTable(admin) then
+        admin = { enabled = true, command = 'ecore_admin', acePermission = 'ecore.admin' }
+    end
+    --- Integritás: új `operator.integrityCheck`, legacy `operator.diagnostics`.
+    local integ = hf.isPopulatedTable(op.integrityCheck) and op.integrityCheck
+        or hf.isPopulatedTable(op.diagnostics) and op.diagnostics
+        or nil
+    if not hf.isPopulatedTable(integ) then
+        integ = { enabled = true, acePermission = 'ecore.diagnostics' }
+    end
+
+    Config.web = {
+        enabled = admin.enabled == true,
+        command = tostring(admin.command or 'ecore_admin'):gsub('^%s+', ''):gsub('%s+$', ''),
+        acePermission = type(admin.acePermission) == 'string' and admin.acePermission or '',
+        allowedIdentifiers = ids,
+    }
+    if Config.web.command == '' then
+        Config.web.command = 'ecore_admin'
+    end
+    if Config.web.acePermission == '' then
+        Config.web.acePermission = 'ecore.admin'
+    end
+
+    Config.integrityCheck = {
+        enabled = integ.enabled == true,
+        acePermission = type(integ.acePermission) == 'string' and integ.acePermission or '',
+        allowedIdentifiers = ids,
+        cooldownMs = tonumber(integ.cooldownMs),
+    }
+
+    local api = hf.isPopulatedTable(op.adminApi) and op.adminApi or {}
+    local cleanup = hf.isPopulatedTable(op.cleanup) and op.cleanup or hf.isPopulatedTable(api.cleanup) and api.cleanup or {}
+    local diagApi = hf.isPopulatedTable(op.registryDiagnostics) and op.registryDiagnostics
+        or hf.isPopulatedTable(api.diagnostics) and api.diagnostics
+        or {}
+    local denied = hf.isPopulatedTable(op.deniedAudit) and op.deniedAudit or hf.isPopulatedTable(api.deniedAudit) and api.deniedAudit or {}
+
+    Config.adminApi = {
+        cleanup = {
+            acePermission = tostring(cleanup.acePermission or 'ecore.admin.cleanup'),
+            allowedIdentifiers = hf.isPopulatedTable(cleanup.allowedIdentifiers) and copyIdList(cleanup.allowedIdentifiers)
+                or copyIdList(ids),
+            allowServerWithoutSource = cleanup.allowServerWithoutSource ~= false,
+        },
+        diagnostics = {
+            acePermission = tostring(diagApi.acePermission or 'ecore.admin.diagnostics'),
+            allowedIdentifiers = hf.isPopulatedTable(diagApi.allowedIdentifiers) and copyIdList(diagApi.allowedIdentifiers)
+                or copyIdList(ids),
+            allowServerWithoutSource = diagApi.allowServerWithoutSource ~= false,
+        },
+        deniedAudit = {
+            enabled = denied.enabled ~= false,
+            retentionDays = tonumber(denied.retentionDays) or 30,
+            purgeIntervalMinutes = tonumber(denied.purgeIntervalMinutes) or 60,
+            maxDeletePerRun = tonumber(denied.maxDeletePerRun) or 2000,
+        },
+    }
+
+    return true
+end
+
+--- Kliens / szerver: integritás futtatás fix alapértelmezései (`Config.integrityCheck`, NUI-ból felülírható mezők).
+local function applyIntegrityCheckFixedDefaults()
+    local cd = tonumber(Config.integrityCheck.cooldownMs)
+    if cd == nil then
+        Config.integrityCheck.cooldownMs = INTEGRITY_COOLDOWN_DEFAULT_MS
+    else
+        Config.integrityCheck.cooldownMs = math.max(INTEGRITY_COOLDOWN_MIN_MS, cd)
+    end
+    Config.integrityCheck.testItem = 'water'
+    Config.integrityCheck.testItemAmount = 1
+    Config.integrityCheck.tryAddRemove = true
+    Config.integrityCheck.progressDurationMs = 3000
+    Config.integrityCheck.useNui = true
+    Config.integrityCheck.printToConsole = false
+    Config.integrityCheck.uiStepMs = 55
+end
+
 function configCheck()
     Config.debugLevel = tonumber(Config.debugLevel) or false
     Config.maxInventoryWeight = tonumber(Config.maxInventoryWeight) or 24000
@@ -26,34 +133,43 @@ function configCheck()
     Config.discordBotName = Config.discordBotName or 'ECOBOT'
     Config.discordWebHook = hf.isPopulatedTable(Config.discordWebHook) and Config.discordWebHook or {}
 
-    Config.diagnostics = hf.isPopulatedTable(Config.diagnostics) and Config.diagnostics or {}
-    Config.diagnostics.command = tostring(Config.diagnostics.command or 'ecore_diag'):gsub('^%s+', ''):gsub('%s+$', '')
-    if Config.diagnostics.command == '' then
-        Config.diagnostics.command = 'ecore_diag'
-    end
-    Config.diagnostics.acePermission = type(Config.diagnostics.acePermission) == 'string' and Config.diagnostics.acePermission or ''
-    Config.diagnostics.allowedIdentifiers = hf.isPopulatedTable(Config.diagnostics.allowedIdentifiers)
-        and Config.diagnostics.allowedIdentifiers
-        or {}
-    Config.diagnostics.cooldownMs = math.max(3000, tonumber(Config.diagnostics.cooldownMs) or 15000)
-    Config.diagnostics.testItem = tostring(Config.diagnostics.testItem or 'water'):lower()
-    Config.diagnostics.testItemAmount = math.max(1, tonumber(Config.diagnostics.testItemAmount) or 1)
-    Config.diagnostics.tryAddRemove = Config.diagnostics.tryAddRemove == true
-    Config.diagnostics.progressDurationMs = math.max(1000, math.min(60000, tonumber(Config.diagnostics.progressDurationMs) or 3000))
-    Config.diagnostics.enabled = Config.diagnostics.enabled == true
-    Config.diagnostics.useNui = Config.diagnostics.useNui ~= false
-    Config.diagnostics.printToConsole = Config.diagnostics.printToConsole == true
-    Config.diagnostics.uiStepMs = math.max(0, math.min(400, tonumber(Config.diagnostics.uiStepMs) or 55))
+    if not applyOperatorConfig() then
+        --- Legacy: `Config.diagnostics` → `Config.integrityCheck` (breaking átmenet egy override ciklusra).
+        local legacyDiag = hf.isPopulatedTable(Config.diagnostics) and Config.diagnostics or {}
+        Config.integrityCheck = hf.isPopulatedTable(Config.integrityCheck) and Config.integrityCheck or {}
+        for k, v in pairs(legacyDiag) do
+            if Config.integrityCheck[k] == nil then
+                Config.integrityCheck[k] = v
+            end
+        end
+        --- Régi `command` (pl. ecore_diag) már nem regisztrál parancsot; futtatás admin NUI Integritás fül.
+        Config.integrityCheck.command = nil
+        Config.integrityCheck.acePermission = type(Config.integrityCheck.acePermission) == 'string' and Config.integrityCheck.acePermission or ''
+        Config.integrityCheck.allowedIdentifiers = hf.isPopulatedTable(Config.integrityCheck.allowedIdentifiers)
+                and Config.integrityCheck.allowedIdentifiers
+            or {}
+        Config.integrityCheck.enabled = Config.integrityCheck.enabled == true
 
-    Config.adminHttp = hf.isPopulatedTable(Config.adminHttp) and Config.adminHttp or {}
-    Config.adminHttp.enabled = Config.adminHttp.enabled ~= false
-    Config.adminHttp.read = hf.isPopulatedTable(Config.adminHttp.read) and Config.adminHttp.read or {}
-    Config.adminHttp.read.identifierHeader = tostring(Config.adminHttp.read.identifierHeader or 'x-ecore-identifier')
-    Config.adminHttp.read.tokenHeader = tostring(Config.adminHttp.read.tokenHeader or 'x-ecore-token')
-    Config.adminHttp.read.allowedIdentifiers = hf.isPopulatedTable(Config.adminHttp.read.allowedIdentifiers)
-        and Config.adminHttp.read.allowedIdentifiers
-        or {}
-    Config.adminHttp.read.token = tostring(Config.adminHttp.read.token or '')
+        Config.web = hf.isPopulatedTable(Config.web) and Config.web or {}
+        Config.web.enabled = Config.web.enabled == true
+        Config.web.command = tostring(Config.web.command or 'ecore_admin'):gsub('^%s+', ''):gsub('%s+$', '')
+        if Config.web.command == '' then
+            Config.web.command = 'ecore_admin'
+        end
+        Config.web.acePermission = type(Config.web.acePermission) == 'string' and Config.web.acePermission or ''
+        if Config.web.acePermission == '' then
+            Config.web.acePermission = 'ecore.admin'
+        end
+        Config.web.allowedIdentifiers = hf.isPopulatedTable(Config.web.allowedIdentifiers) and Config.web.allowedIdentifiers
+            or {}
+
+        Config.adminApi = hf.isPopulatedTable(Config.adminApi) and Config.adminApi or {}
+        Config.adminApi.cleanup = hf.isPopulatedTable(Config.adminApi.cleanup) and Config.adminApi.cleanup or {}
+        Config.adminApi.diagnostics = hf.isPopulatedTable(Config.adminApi.diagnostics) and Config.adminApi.diagnostics or {}
+        Config.adminApi.deniedAudit = hf.isPopulatedTable(Config.adminApi.deniedAudit) and Config.adminApi.deniedAudit or {}
+    end
+
+    applyIntegrityCheckFixedDefaults()
 end
 
 configCheck()

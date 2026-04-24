@@ -19,13 +19,23 @@ Check out [SvelteKit](https://github.com/sveltejs/kit#readme), which is also pow
 
 This template contains as little as possible to get started with Vite + TypeScript + Svelte, while taking into account the developer experience with regards to HMR and intellisense. It demonstrates capabilities on par with the other `create-vite` templates and is a good starting point for beginners dipping their toes into a Vite + Svelte project.
 
-## e_core Admin env setup
+## e_core Admin NUI (Svelte)
 
-1. Copy `.env.example` to `.env`.
-2. Set `VITE_ADMIN_API_BASE_URL` to your FXServer HTTP address.
-3. Configure auth values to match `Config.adminHttp.read` in e_core:
-   - `VITE_ADMIN_IDENTIFIER` (e.g. `fivem:...` / `license:...`), and/or
-   - `VITE_ADMIN_TOKEN`.
+A FiveM `ui_page` a **`html/web/index.html`** buildre mutat (skills HUD + stat oldal + admin konzol egy bundle-ben). A közös stílusok: `html/main.css` (relatív útvonal: `../main.css`).
+
+```bash
+npm install
+npm run build
+```
+
+- **Admin konzol:** `Config.operator.admin.command` (alap: `ecore_admin`), ha `Config.operator.admin.enabled = true` és ACE / `allowedIdentifiers`. Runtime belső mező: `Config.web` (szintézis a `libs/config_check.lua`-ban). Override: `standalone/overrides/.../config.lua`.
+- **Integritás:** `Config.operator.integrityCheck.command` (alap: `ecore_diag`). Ha az admin NUI engedélyezve (`Config.operator.admin.enabled`), a jog **`hf.webConsoleAccess`** szerint; egyébként `integrityCheck` ACE + lista. Forrás: `Config.operator.integrityCheck`. Az admin **Integritás** fül `inlineAdmin` + opcionális `onlyStep` opciót küld a szervernek.
+
+### Dev böngésző (`npm run dev`)
+
+A profession / level-profile panel **valós adattal csak FiveM NUI-ban** működik (`ecore_admin` → `eCoreAdminApi` bridge). Böngészőben állítsd a **`VITE_USE_MOCK_REGISTRY=true`** értéket (lásd `.env.example`).
+
+UI módosítás után futtasd újra a `npm run build` parancsot, mielőtt a resource-ot újraindítod.
 
 Should you later need the extended capabilities and extensibility provided by SvelteKit, the template has been structured similarly to SvelteKit so that it is easy to migrate.
 

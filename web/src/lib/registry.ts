@@ -184,101 +184,35 @@ function syncMockProfileLinks() {
 
 syncMockProfileLinks()
 
-function getApiBaseUrl(): string {
-  return (import.meta.env.VITE_ADMIN_API_BASE_URL as string | undefined)?.trim() ?? ''
+function isFivemNui(): boolean {
+  return typeof (window as unknown as { GetParentResourceName?: () => string }).GetParentResourceName === 'function'
 }
 
-function getAuthHeaders(): Record<string, string> {
-  const identifierHeader =
-    (import.meta.env.VITE_ADMIN_IDENTIFIER_HEADER as string | undefined)?.trim() || 'x-ecore-identifier'
-  const tokenHeader = (import.meta.env.VITE_ADMIN_TOKEN_HEADER as string | undefined)?.trim() || 'x-ecore-token'
-
-  const identifier = (import.meta.env.VITE_ADMIN_IDENTIFIER as string | undefined)?.trim() ?? ''
-  const token = (import.meta.env.VITE_ADMIN_TOKEN as string | undefined)?.trim() ?? ''
-
-  const headers: Record<string, string> = {}
-  if (identifier) {
-    headers[identifierHeader] = identifier
-  }
-  if (token) {
-    headers[tokenHeader] = token
-  }
-  return headers
+function nuiAdminResource(): string {
+  const w = window as unknown as { GetParentResourceName?: () => string }
+  return typeof w.GetParentResourceName === 'function' ? w.GetParentResourceName() : 'e_core'
 }
 
-function normalizeBase(baseUrl: string): string {
-  return baseUrl.endsWith('/') ? baseUrl.slice(0, -1) : baseUrl
-}
-
-function joinUrl(baseUrl: string, path: string): string {
-  const normalizedPath = path.startsWith('/') ? path : `/${path}`
-  return `${normalizeBase(baseUrl)}${normalizedPath}`
-}
-
-function encodeQuery(params: Record<string, string>): string {
-  const pairs: string[] = []
-  for (const [key, value] of Object.entries(params)) {
-    if (!key) continue
-    pairs.push(`${encodeURIComponent(key)}=${encodeURIComponent(value)}`)
-  }
-  return pairs.join('&')
-}
-
-async function getJson(url: string): Promise<any> {
-  const response = await fetch(url, {
-    headers: getAuthHeaders()
-  })
-  const text = await response.text()
-  let data: any
-  try {
-    data = text ? JSON.parse(text) : {}
-  } catch {
-    throw new Error(`${url} -> HTTP ${response.status}, nem JSON valasz`)
-  }
-  if (response.status === 401) {
-    throw new Error((data as AdminApiResponse<UnknownRecord>)?.message ?? 'HTTP 401')
-  }
-  if (!response.ok) {
+/** Játékbeli web konzol: `eCoreAdminApi` NUI → szerver (`hf.webConsoleAccess`). Külső HTTP admin nincs. */
+async function invokeAdminApi<T = UnknownRecord>(body: Record<string, unknown>): Promise<AdminApiResponse<T>> {
+  if (!isFivemNui()) {
     throw new Error(
-      (data as AdminApiResponse<UnknownRecord>)?.message ?? `${url} -> HTTP ${response.status}`
+      'Profession / level-profile admin: csak FiveM játékbeli NUI-ban (ecore_admin), vagy dev-ben VITE_USE_MOCK_REGISTRY=true. A SetHttpHandler alapú külső HTTP admin el lett távolítva.'
     )
   }
-  return data
-}
-
-async function adminRequest<T = UnknownRecord>(
-  method: 'GET' | 'POST' | 'PUT' | 'DELETE',
-  path: string,
-  options?: { query?: Record<string, string>; body?: unknown }
-): Promise<AdminApiResponse<T>> {
-  const baseUrl = getApiBaseUrl()
-  if (!baseUrl) {
-    throw new Error('VITE_ADMIN_API_BASE_URL not configured')
-  }
-  let url = joinUrl(baseUrl, path)
-  if (options?.query && Object.keys(options.query).length > 0) {
-    const q = encodeQuery(options.query)
-    url = url.includes('?') ? `${url}&${q}` : `${url}?${q}`
-  }
-  const headers: Record<string, string> = { ...getAuthHeaders() }
-  const init: RequestInit = { method, headers }
-  if (options?.body !== undefined && method !== 'GET' && method !== 'DELETE') {
-    headers['Content-Type'] = 'application/json'
-    init.body = JSON.stringify(options.body)
-  }
-  const response = await fetch(url, init)
-  const text = await response.text()
+  const res = await fetch(`https://${nuiAdminResource()}/eCoreAdminApi`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json; charset=UTF-8' },
+    body: JSON.stringify(body)
+  })
+  const text = await res.text()
   let data: AdminApiResponse<T>
   try {
-    data = text ? JSON.parse(text) : { ok: false, code: 'empty', message: 'Ures valasz' }
+    data = text
+      ? (JSON.parse(text) as AdminApiResponse<T>)
+      : ({ ok: false, code: 'empty', message: 'Üres válasz' } as AdminApiResponse<T>)
   } catch {
-    throw new Error(`Nem JSON valasz: ${path} (HTTP ${response.status})`)
-  }
-  if (response.status === 401) {
-    throw new Error(data.message ?? 'HTTP 401 — auth sikertelen')
-  }
-  if (!response.ok) {
-    throw new Error(data.message ?? `HTTP ${response.status}`)
+    throw new Error(`NUI admin: nem JSON válasz (HTTP ${res.status})`)
   }
   return data
 }
@@ -341,12 +275,10 @@ export async function listProfessions(): Promise<ProfessionItem[]> {
     return structuredClone(mockProfessionsStore)
   }
 
-  const baseUrl = getApiBaseUrl()
-  if (!baseUrl) {
-    throw new Error('VITE_ADMIN_API_BASE_URL not configured')
+  const payload = await invokeAdminApi({ action: 'listProfessions', payload: {} })
+  if (!payload.ok) {
+    throw new Error(payload.message ?? String(payload.code ?? 'Profession lista'))
   }
-
-  const payload = await getJson(joinUrl(baseUrl, '/admin/professions'))
   const items = unwrapItems(payload)
   return items.map(normalizeProfession)
 }
@@ -356,12 +288,10 @@ export async function listLevelProfiles(): Promise<LevelProfileItem[]> {
     return structuredClone(mockLevelProfilesStore)
   }
 
-  const baseUrl = getApiBaseUrl()
-  if (!baseUrl) {
-    throw new Error('VITE_ADMIN_API_BASE_URL not configured')
+  const payload = await invokeAdminApi({ action: 'listLevelProfiles', payload: {} })
+  if (!payload.ok) {
+    throw new Error(payload.message ?? String(payload.code ?? 'Level profile lista'))
   }
-
-  const payload = await getJson(joinUrl(baseUrl, '/admin/level-profiles'))
   const items = unwrapItems(payload)
   return items.map(normalizeLevelProfile)
 }
@@ -382,15 +312,10 @@ export async function getProfessionDefaults(category: string): Promise<Professio
     return { category: normalizedCategory, defaults }
   }
 
-  const baseUrl = getApiBaseUrl()
-  if (!baseUrl) {
-    throw new Error('VITE_ADMIN_API_BASE_URL not configured')
-  }
-
-  const query = encodeQuery({ category: normalizedCategory })
-  const payload = (await getJson(
-    joinUrl(baseUrl, `/admin/professions/defaults?${query}`)
-  )) as AdminApiResponse<{ category?: string; defaults?: Record<string, number> }>
+  const payload = (await invokeAdminApi({
+    action: 'getProfessionDefaults',
+    payload: { category: normalizedCategory }
+  })) as AdminApiResponse<{ category?: string; defaults?: Record<string, number> }>
 
   if (!payload.ok) {
     throw new Error(payload.message ?? payload.code ?? 'Defaults request failed')
@@ -426,18 +351,10 @@ export async function validateProfessionKeys(
     }
   }
 
-  const baseUrl = getApiBaseUrl()
-  if (!baseUrl) {
-    throw new Error('VITE_ADMIN_API_BASE_URL not configured')
-  }
-
-  const query = encodeQuery({
-    category: normalizedCategory,
-    keys: normalizedKeys.join(',')
-  })
-  const payload = (await getJson(
-    joinUrl(baseUrl, `/admin/professions/validate?${query}`)
-  )) as AdminApiResponse<ProfessionValidateResult>
+  const payload = (await invokeAdminApi({
+    action: 'validateProfessionKeys',
+    payload: { category: normalizedCategory, keys: normalizedKeys }
+  })) as AdminApiResponse<ProfessionValidateResult>
 
   if (!payload.ok) {
     throw new Error(payload.message ?? payload.code ?? 'Validation request failed')
@@ -476,18 +393,10 @@ export async function getProfessionProfile(category: string, name: string): Prom
     }
   }
 
-  const baseUrl = getApiBaseUrl()
-  if (!baseUrl) {
-    throw new Error('VITE_ADMIN_API_BASE_URL not configured')
-  }
-
-  const query = encodeQuery({
-    category: normalizedCategory,
-    name: normalizedName
-  })
-  const payload = (await getJson(
-    joinUrl(baseUrl, `/admin/professions/profile?${query}`)
-  )) as AdminApiResponse<{
+  const payload = (await invokeAdminApi({
+    action: 'getProfessionProfile',
+    payload: { category: normalizedCategory, name: normalizedName }
+  })) as AdminApiResponse<{
     category?: string
     name?: string
     profile?: { profileKey?: string; displayName?: string; mode?: string; levels?: Record<string, unknown> | unknown[] }
@@ -539,7 +448,10 @@ export async function createProfession(input: ProfessionCreateInput): Promise<Pr
     syncMockProfileLinks()
     return { ...row }
   }
-  const payload = await adminRequest<{ profession: unknown }>('POST', '/admin/professions', { body: input })
+  const payload = await invokeAdminApi<{ profession: unknown }>({
+    action: 'createProfession',
+    payload: input as unknown as Record<string, unknown>
+  })
   if (!payload.ok) {
     throw new Error(payload.message ?? String(payload.code ?? 'profession létrehozás'))
   }
@@ -591,9 +503,9 @@ export async function updateProfession(
     syncMockProfileLinks()
     return { ...next }
   }
-  const payload = await adminRequest<{ profession: unknown }>('PUT', '/admin/professions', {
-    query: { category: c, name: n },
-    body: input
+  const payload = await invokeAdminApi<{ profession: unknown }>({
+    action: 'updateProfession',
+    payload: { category: c, name: n, body: input }
   })
   if (!payload.ok) {
     throw new Error(payload.message ?? String(payload.code ?? 'profession frissítés'))
@@ -620,7 +532,10 @@ export async function deleteProfession(category: string, name: string): Promise<
     syncMockProfileLinks()
     return
   }
-  const payload = await adminRequest('DELETE', '/admin/professions', { query: { category: c, name: n } })
+  const payload = await invokeAdminApi({
+    action: 'deleteProfession',
+    payload: { category: c, name: n }
+  })
   if (!payload.ok) {
     throw new Error(payload.message ?? String(payload.code ?? 'profession törlés'))
   }
@@ -663,7 +578,10 @@ export async function createLevelProfile(input: LevelProfileCreateInput): Promis
     return structuredClone(item)
   }
   const body: LevelProfileCreateInput = { ...input, profileKey }
-  const payload = await adminRequest<{ profile: unknown }>('POST', '/admin/level-profiles', { body })
+  const payload = await invokeAdminApi<{ profile: unknown }>({
+    action: 'createLevelProfile',
+    payload: body as unknown as Record<string, unknown>
+  })
   if (!payload.ok) {
     throw new Error(payload.message ?? String(payload.code ?? 'level profile létrehozás'))
   }
@@ -709,9 +627,9 @@ export async function updateLevelProfile(
     syncMockProfileLinks()
     return structuredClone(next)
   }
-  const payload = await adminRequest<{ profile: unknown }>('PUT', '/admin/level-profiles', {
-    query: { profileKey: pk },
-    body: input
+  const payload = await invokeAdminApi<{ profile: unknown }>({
+    action: 'updateLevelProfile',
+    payload: { profileKey: pk, body: input }
   })
   if (!payload.ok) {
     throw new Error(payload.message ?? String(payload.code ?? 'level profile frissítés'))
@@ -740,7 +658,10 @@ export async function deleteLevelProfile(profileKey: string): Promise<void> {
     syncMockProfileLinks()
     return
   }
-  const payload = await adminRequest('DELETE', '/admin/level-profiles', { query: { profileKey: pk } })
+  const payload = await invokeAdminApi({
+    action: 'deleteLevelProfile',
+    payload: { profileKey: pk }
+  })
   if (!payload.ok) {
     throw new Error(payload.message ?? String(payload.code ?? 'level profile törlés'))
   }

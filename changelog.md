@@ -1,3 +1,22 @@
+0.0.54
+- **Integritás cooldown egységesítés:** `operator.integrityCheck.cooldownMs` (alap 8000 ms, min. 1500); elírás javítva (`1500` ms helyett értelmes default); szerver merge + `Config.integrityCheck` szinkron (`libs/config_check.lua`, `server/integrity_check.lua`, `standalone/config/main.lua`, `web/src/lib/IntegrityPanel.svelte`).
+- **Admin Integritás fül:** két oszlop (vezérlők + görgethető napló), integritás lépések soronként külön futtatással (`onlyStep`), pipa / X állapot; a szerver `inlineAdmin` NUI üzenetek a modális `LiveDiagnosticsPanel` helyett az admin panelben jelennek meg (`server/integrity_check.lua`, `client/integrity_check.lua`, `web/src/lib/IntegrityPanel.svelte`, `LiveDiagnosticsPanel.svelte`).
+- **Admin konzol görgetés:** a fő panel tartalma függőlegesen görgethető (`web/src/AdminConsole.svelte`).
+- **Doksi / üzenetek:** operátori és net audit szövegek `Config.operator.admin.enabled` szerint (nem a felhasználónak szánt `Config.web.enabled` hangsúly); `web/README.md`, `docs/NET_EVENTS_AUDIT_HU.md`, `docs/SZERVER_OPERATOR_CHECKLIST_HU.md`, `standalone/config/main.lua`, `client/web.lua`, `libs/helper_ecore.lua`.
+
+0.0.53
+- **Breaking – integritás vs. registry diagnostics:** az inventory/checklist integritás **`Config.integrityCheck`** (forrás: `Config.operator.integrityCheck`, legacy: `operator.diagnostics`). Net események: **`e_core:integrityCheck:request`**, **`e_core:integrityCheck:progressResult`**, kliens: **`e_core:integrityCheck:*`** (régi `e_core:diagnostics:*` eltávolítva). Szerver: **`server/integrity_check.lua`**; a registry admin futások maradnak **`server/diagnostics.lua`**-ban (`diagnosticsAdmin*` exportok változatlan nevek).
+- **Breaking – admin NUI:** alap parancs **`ecore_admin`**, ACE alap **`ecore.admin`** (`Config.operator.admin`, legacy: `operator.web` → szintetizált `Config.web`). `client/web.lua` üzenetek: „admin konzol”.
+- **Breaking – `Config.operator`:** lapos kulcsok: `admin`, `integrityCheck`, `cleanup`, `registryDiagnostics`, `deniedAudit` (régi `adminApi.*` és `web`/`diagnostics` kulcsok továbbra is olvashatók legacy ágon a `libs/config_check.lua`-ban).
+
+0.0.52
+- **Breaking:** `Config.adminHttp` és a **`SetHttpHandler` HTTP admin** (`/admin/professions`, `/admin/level-profiles`, …) **eltávolítva**. Profession / level-profile admin a játékbeli web konzolon **NUI bridge**-en megy: `eCoreAdminApi` → `e_core:nuiAdminRpc` → `hf.webConsoleAccess` + meglévő `professionAdmin*` / `levelProfileAdmin*` függvények (`client/nui_admin_bridge.lua`, `server/nui_admin_bridge.lua`). Böngészős Vite dev: `VITE_USE_MOCK_REGISTRY=true` (lásd `web/.env.example`). Doksi: `docs/PUBLIC_API_HU.md` §3.1, `web/README.md`.
+
+0.0.51
+- **Egyesített Svelte NUI (`web`):** az `ui_page` most a `html/web` Vite build; a régi jQuery `html/ui.html` + `html/js/*` és az `html/admin` iframe build eltávolítva. Skills / labor HUD + integritás live panel + admin konzol ugyanabban az alkalmazásban (`web/src/NuiApp.svelte`, `AdminConsole.svelte`, `LiveDiagnosticsPanel.svelte`).
+- **`Config.web`:** játékbeli web konzol (`enabled`, `command` alapértelmezés `ecore_web`, `acePermission`, `allowedIdentifiers`). Szerver: `hf.webConsoleAccess`, `e_core:web:requestOpen` → `e_core:web:open` / `deny` (`server/web.lua`, `client/web.lua`). NUI callback: `webAdminExit`.
+- **Integritás jogosultság:** ha `Config.web.enabled`, a `diagnosticsCanRun` a `hf.webConsoleAccess`-t használja; különben a korábbi `Config.diagnostics` ACE + `allowedIdentifiers` (`server/diagnostics.lua`).
+
 0.0.50
 - **Profession registry alap (Sprint 1, e_core only):** új DB-first bootstrap és read-only API réteg. Új server exportok: `getProfessionRegistry`, `isValidProfession`, `getProfessionDefaults`, `getProfessionLevelProfile` (`server/professions.lua`, `server/exports.lua`). Új hibaokok: `profession_registry_unavailable`, `profession_category_not_found`, `profession_not_found`, `profession_profile_not_found` (`libs/errors.lua`).
 - **DB bootstrap:** induláskor migráció után automatikus default profile/profession seed (`default_global`, crafting + harvesting minimum készlet), idempotens beszúrással (`INSERT IGNORE` / `ON DUPLICATE KEY`) (`server/db.lua`, `server/professions.lua`).

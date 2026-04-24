@@ -1,6 +1,8 @@
+/* FiveM NUI: a teljes ui_page kitölti a képernyőt — a gyökérnek átlátszónak kell lennie,
+   különben játék közben is „üres kék lap” takar mindent (parancs nélkül is). */
 :root {
   color: #dbe4ff;
-  background-color: #0f172a;
+  background-color: transparent;
   font-family: Inter, 'Segoe UI', Roboto, sans-serif;
   font-synthesis: none;
   text-rendering: optimizeLegibility;
@@ -12,13 +14,24 @@
   box-sizing: border-box;
 }
 
+/* main.css html { font-size: 11px } túl kicsi CEF-ben; ez a bundle később tölt, felülírja. */
+html {
+  margin: 0;
+  background: transparent;
+  font-size: clamp(16px, 1.55vmin, 20px);
+}
+
 body {
   margin: 0;
+  background: transparent;
+  font-size: 1rem;
+  line-height: 1.45;
 }
 
 #app {
   min-height: 100vh;
-  padding: 1rem;
+  padding: 0;
+  background: transparent;
 }
 
 .layout {

@@ -1,7 +1,7 @@
 fx_version 'cerulean'
 game 'gta5'
 description 'ECO CORE'
-version '0.0.50'
+version '0.0.54'
 
 shared_scripts {
     '@ox_lib/init.lua',
@@ -44,7 +44,10 @@ client_scripts {
     'bridge/main.lua',
 
     'client/main.lua',
-    'client/diagnostics.lua',
+    'client/integrity_check.lua',
+    'client/web.lua',
+    'client/nui_admin_bridge.lua',
+    'client/nui_diagnostics_bridge.lua',
     'client/exports.lua',
 }
 
@@ -81,22 +84,21 @@ server_scripts {
     'server/professions.lua',
     'server/db.lua',
     'server/exports.lua',
+    'server/integrity_check.lua',
     'server/diagnostics.lua',
-    'server/admin_http.lua',
+    'server/web.lua',
+    'server/nui_admin_bridge.lua',
+    'server/nui_diagnostics_bridge.lua',
     'standalone/usableitem.lua',
 }
 
-ui_page 'html/ui.html'
+ui_page 'html/web/index.html'
 
 files {
     'imports/core.lua',
-    'html/ui.html',
     'html/main.css',
-    'html/js/model.js',
-    'html/js/view.js',
-    'html/js/diagnostics.js',
-    'html/js/app.js',
-    'html/img/*.png'
+    'html/img/*.png',
+    'html/web/**'
 }
 
 lua54 'yes'

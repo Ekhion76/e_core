@@ -1,17 +1,17 @@
 # Cursor (helyi agent / chat cache — nem verziózandó)
 .cursor/
 
-# --- admin-web (Vite / npm / Svelte) ---
-admin-web/node_modules/
-admin-web/dist/
-admin-web/.vite/
-admin-web/.svelte-kit/
-admin-web/coverage/
-admin-web/*.log
-admin-web/npm-debug.log*
-admin-web/.env
-admin-web/.env.*
-!admin-web/.env.example
+# --- web (Vite / npm / Svelte → html/web build) ---
+web/node_modules/
+web/dist/
+web/.vite/
+web/.svelte-kit/
+web/coverage/
+web/*.log
+web/npm-debug.log*
+web/.env
+web/.env.*
+!web/.env.example
 
 # --- általános (OS, IDE, naplók) ---
 .DS_Store
@@ -24,7 +24,7 @@ Desktop.ini
 *.swp
 *~
 
-# VSCode (csak a gyökérben; admin-web/.vscode külön útvonal, nem esik ide)
+# VSCode (csak a gyökérben; web/.vscode a web/.gitignore szerint)
 .vscode/*
 !.vscode/extensions.json
 .idea/

@@ -91,40 +91,12 @@ A tábla névsora = a fájlban lévő `exports(...)` sorok sorrendje; közvetlen
 
 ---
 
-### 3.1 Admin-web HTTP read contract (kanonikus route-ok)
+### 3.1 Játékbeli web konzol — profession / level-profile admin (NUI bridge)
 
-Az admin konzol (külön `admin-web` app) a szerver oldali admin read exportokra épülő HTTP rétegen keresztül olvas.
+A **`SetHttpHandler` alapú külső HTTP admin (`/admin/...`) el lett távolítva.** A beépített Svelte admin (`ecore_admin`, `web/src/lib/registry.ts`) a szerver felé **NUI callbacken** (`eCoreAdminApi`) hív: kliens `client/nui_admin_bridge.lua` → szerver `server/nui_admin_bridge.lua`, jogosultság **`hf.webConsoleAccess`** (ugyanaz, mint az admin NUI megnyitásához). Integritás checklist net: `e_core:integrityCheck:*` (`server/integrity_check.lua`).
 
-- Kanonikus profession lista route: `GET /admin/professions`
-- Kanonikus level profile lista route: `GET /admin/level-profiles`
-- Kiegészítő profession read route-ok:
-  - `GET /admin/professions/defaults?category=crafting`
-  - `GET /admin/professions/validate?category=crafting&keys=weaponry,chemist`
-  - `GET /admin/professions/profile?category=crafting&name=weaponry`
-- Válaszshape: az exportokhoz igazított standard objektum (`ok`, `code`, `message`, `data`), ahol a lista elsődlegesen `data.items`.
-- Auth: a HTTP bridge a `Config.adminHttp.read` policy alapján enged:
-  - identifier header: alapértelmezés `x-ecore-identifier` (egyezés `allowedIdentifiers` listával, pl. `fivem:...`, `license:...`, `discord:...`)
-  - opcionális token header: alapértelmezés `x-ecore-token` (`token` mező)
-  - jogosultság: ha az identifier vagy a token valid; ellenkező esetben `401` + `access_denied`
-
-**CRUD (write) — ugyanaz az auth, mint a readnek (`Config.adminHttp.read`)**
-
-- `POST /admin/professions` — JSON body: `professionAdminCreate` payload (`category`, `name`, `profileKey`, opcionális mezők).
-- `PUT /admin/professions?category=...&name=...` — JSON body: `professionAdminUpdate` részleges payload.
-- `DELETE /admin/professions?category=...&name=...` — törzs nélkül.
-- `POST /admin/level-profiles` — JSON body: `levelProfileAdminCreate` (pl. `profileKey`, `displayName`, `mode`, `levels` tömb vagy `easyGenerator`).
-- `PUT /admin/level-profiles?profileKey=...` — JSON body: `levelProfileAdminUpdate` részleges payload.
-- `DELETE /admin/level-profiles?profileKey=...` — törzs nélkül.
-
-A szokásos sikeres/üzleti hibaüzenet a törzsben jön (HTTP 200, `ok: true/false`); a CORS kliensek `Content-Type: application/json` törzset adnak.
-
-Megjegyzés:
-- A frontend (`admin-web/src/lib/registry.ts`) a listázó GET-ekre és a fenti write végpontra épít.
-- Frontend env illesztés (`admin-web`):
-  - `VITE_ADMIN_API_BASE_URL` (pl. `http://127.0.0.1:30120`)
-  - `VITE_ADMIN_IDENTIFIER` (pl. `fivem:12345678`) + opcionális `VITE_ADMIN_IDENTIFIER_HEADER` (alap: `x-ecore-identifier`)
-  - `VITE_ADMIN_TOKEN` + opcionális `VITE_ADMIN_TOKEN_HEADER` (alap: `x-ecore-token`)
-- A route-neveket és response contractot együtt kell kezelni az export oldali admin read szerződéssel (`professionAdminList`, `levelProfileAdminList`).
+- Válasz alakja változatlan: `professionAdminList`, `professionAdminCreate`, `levelProfileAdminList`, stb. ugyanazt az `{ ok, code, message, data }` szerződést adják, mint az exportok.
+- **Böngészős `npm run dev`:** valós CRUD nélkül használd a mock registry-t (`VITE_USE_MOCK_REGISTRY=true`, lásd `web/.env.example`).
 
 ---
 

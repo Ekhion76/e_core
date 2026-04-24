@@ -7,8 +7,9 @@ Cél: **kisebb abuse felület**, dokumentált **szerver** határok. Frissítés:
 | Esemény | Szerep | Védelem |
 |---------|---------|---------|
 | `e_core:loadMeta` | Meta betöltés kérés spawn után | `hf.isValidPlayerSource(source)`; `hf.netRateLimit(source, 'e_core:loadMeta', cooldown)`; `eCore:getPlayer` kötelező; ConVar: `e_core:loadmeta_rate_ms` (alap 2500, min 500). |
-| `e_core:diagnostics:request` | Integritás teszt indul (`/ecore_diag`) | `Config.diagnostics.enabled`; ACE **vagy** `allowedIdentifiers`; `hf.netRateLimit` burst; cooldown; `eCore:getPlayer` + read-only / opc. add-remove. |
-| `e_core:diagnostics:progressResult` | Progress teszt befejezés jelzése | Csak ha `awaitingProgress[source]` aktív; `hf.netRateLimit`. |
+| `e_core:web:requestOpen` | Admin NUI megnyitás (`Config.web.command`, alap `ecore_admin`) | `Config.operator.admin.enabled` (runtime: szintetizált `Config.web.enabled`); `hf.webConsoleAccess(source)`; `hf.netRateLimit`. |
+| `e_core:integrityCheck:request` | Integritás checklist indul (`Config.integrityCheck.command`, alap `ecore_diag`) | `Config.integrityCheck.enabled`; ha `Config.operator.admin.enabled` → `hf.webConsoleAccess`, különben `integrityCheck` ACE + `allowedIdentifiers`; opc. `opts.inlineAdmin` / `opts.onlyStep` (admin Integritás fül); `hf.netRateLimit` burst; cooldown; `eCore:getPlayer` + read-only / opc. add-remove. |
+| `e_core:integrityCheck:progressResult` | Progress teszt befejezés jelzése | Csak ha `awaitingProgress[source]` aktív (`server/integrity_check.lua`); `hf.netRateLimit`. |
 
 ## 2. Csak szerver belső (AddEventHandler)
 
@@ -65,6 +66,7 @@ Csak **szerver** `TriggerClientEvent`-tel érkeznek (kliens–kliens spoof nem c
 |-----|-----------------|---------------------|
 | `e_core:sync` | `server/meta.lua` (`syncRequest`), `server/db.lua` | Teljes meta pillanatkép; megbízhatóság = szerver logika. |
 | `e_core:levelChange` | `libs/meta.lua` | Popup adat; csak szerver küldi. |
+| `e_core:integrityCheck:nuiPush` / `consoleOnly` / `clientPrint` / `progressTest` | `server/integrity_check.lua` | Integritás NUI / konzol / progress; csak érvényes futásból. |
 
 **Labor HUD (`OPEN` subject `hud`):** a bridge `TriggerEvent('e_core:onPlayerLoaded'|'e_core:onPlayerUnload')` **lokális** eseményeket használ; a `client/main.lua` ezekre **`AddEventHandler`**-t használ (korábban `RegisterNetEvent` volt – a bridge nem küldött hálózati eseményt ugyanezen a néven, így a labor HUD nyitás nem futott a bridge útvonalon).
 

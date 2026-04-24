@@ -44,4 +44,14 @@ eCoreErr = {
     meta_value_must_be_table = 'meta_value_must_be_table',
     -- Meglévő kategória slot nem tábla (sérült adat).
     meta_category_not_table = 'meta_category_not_table',
+
+    profession_registry_unavailable = 'profession_registry_unavailable',
+    profession_category_not_found = 'profession_category_not_found',
+    profession_not_found = 'profession_not_found',
+    profession_profile_not_found = 'profession_profile_not_found',
+    profession_already_exists = 'profession_already_exists',
+    cleanup_job_not_found = 'cleanup_job_not_found',
+    cleanup_job_not_resumable = 'cleanup_job_not_resumable',
+    cleanup_job_already_running = 'cleanup_job_already_running',
+    access_denied = 'access_denied',
 }

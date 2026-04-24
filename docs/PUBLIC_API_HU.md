@@ -54,6 +54,33 @@ A tábla névsora = a fájlban lévő `exports(...)` sorok sorrendje; közvetlen
 | `addLabor` | Labor pontok hozzáadása. | `playerId`, `amount` |
 | `removeLabor` | Labor pontok levonása. | `playerId`, `amount` |
 | `registerMeta` | Új meta kulcsok felvétele egy kategóriába, ha még nem léteznek (nem törli / nem írja felül a meglévőket). | `playerId`, `category`, `defaultValue` |
+| `getProfessionRegistry` | Profession registry read modell lekérése DB-alapon, kategória/profession bontásban. | – |
+| `isValidProfession` | Annak ellenőrzése, hogy egy profession létezik-e és engedélyezett-e a registryben. | `category`, `name` |
+| `getProfessionDefaults` | Kezdő meta map egy kategóriára (`{ [professionName] = 0 }`) az engedélyezett professionökből. | `category` |
+| `getProfessionLevelProfile` | Professionhöz rendelt level profile adatai (`profileKey`, `displayName`, `mode`, `levels`). | `category`, `name` |
+| `validateProfessionKeys` | Profession kulcslista validálása egy kategórián belül (`valid`, `invalid`, `missingProfile` listákkal). | `category`, `keys[]` |
+| `professionAdminList` | Admin read API: profession lista lekérése standard válaszformában (`ok`, `code`, `message`, `data`). | – |
+| `professionAdminCreate` | Admin CRUD: új profession létrehozása (`category`, `name`, `profileKey`, opcionális mezők). | `payload` |
+| `professionAdminUpdate` | Admin CRUD: profession frissítése kulcs alapján (`category`, `name` + részleges `payload`). | `category`, `name`, `payload` |
+| `professionAdminSetEnabled` | Admin CRUD: profession engedélyezés/tiltás rövidített műveletként. | `category`, `name`, `enabled` |
+| `professionAdminDelete` | Admin CRUD: profession törlése registryből. | `category`, `name` |
+| `professionAdminDeleteDryRun` | Profession törléshez meta cleanup dry-run job létrehozása (batch/cursor, perzisztens job tábla). | `category`, `name`, `payload?` (`auth.source?`) |
+| `professionAdminDeleteApply` | Profession meta cleanup apply job létrehozása megerősítéssel (`confirmText`), opcionális profession törléssel. | `category`, `name`, `payload?` (`auth.source?`) |
+| `professionAdminCleanupJobList` | Cleanup job lista UI-hoz (`items`, `total`, `limit`, `offset`) szűréssel (`status`, `mode`, `category`, `name`). | `filters?` (`auth.source?`) |
+| `professionAdminCleanupJobGet` | Cleanup job állapot és statisztika lekérése `jobId` alapján. | `jobId`, `payload?` (`auth.source?`) |
+| `professionAdminCleanupJobAbort` | Futó/queued cleanup job megszakításra jelölése. | `jobId`, `payload?` (`auth.source?`) |
+| `professionAdminCleanupJobResume` | Megszakított/hibás cleanup job folytatása az utolsó cursorról. | `jobId`, `payload?` (`auth.source?`) |
+| `professionAdminAuditList` | Profession/cleanup admin audit események listája egységes shape-ben (`eventType`, `actor`, `target`, `outcome`, `details`). | `limit?`, `payload?` (`auth.source?`) |
+| `adminApiDeniedAuditList` | Admin API jogosultság-elutasítás audit lista lapozással; egységes audit shape (`eventType`, `actor`, `target`, `outcome`) + legacy mezők. | `filters?` (`section?`, `action?`, `limit?`, `offset?`, `auth.source?`) |
+| `adminApiDeniedAuditPurge` | Manuális denied audit purge futtatás a retention policy szerint (`dryRun` támogatással). | `payload?` (`auth.source?`, `dryRun?`) |
+| `levelProfileAdminList` | Admin read API: level profile lista lekérése (`levels`, használati darabszám). | – |
+| `levelProfileAdminCreate` | Admin CRUD: level profile létrehozás (`levels` vagy `easyGenerator` alapú generálás). | `payload` |
+| `levelProfileAdminUpdate` | Admin CRUD: level profile frissítés (`displayName`, `mode`, `levels`/`easyGenerator`). | `profileKey`, `payload` |
+| `levelProfileAdminDelete` | Admin CRUD: level profile törlése (csak nem használt profile törölhető). | `profileKey` |
+| `diagnosticsAdminListTests` | Admin diagnostics tesztlista doc hint metaadatokkal (`docHints`). | `payload?` (`auth.source?`) |
+| `diagnosticsAdminRun` | Diagnostics futtatás sorba állítása (run státusz: `queued/running/passed/failed/cancelled`), opcionális célzott profession kulcsvalidációs bemenettel. | `payload` (`tests[]`, `requestedBy?`, `auth.source?`, `professionKeysByCategory?`) |
+| `diagnosticsAdminGetRun` | Egy diagnostics futás állapotának és eredményének lekérése `runId` alapján. | `runId`, `payload?` (`auth.source?`) |
+| `diagnosticsAdminCancelRun` | Sorban álló / futó diagnostics futás megszakításra jelölése. | `runId`, `payload?` (`auth.source?`) |
 | `getMeta` | Egy kategória összes eleme, vagy meta nélkül a teljes meta adatbázis. | `playerId`, `meta?` |
 | `setMeta` | Egy kategória értékeinek felülírása táblával. | `playerId`, `meta`, `value` |
 | `getLevel` | Szint számítása pontszámból (ugyanaz a logika, mint kliensen). | `value` |
@@ -61,6 +88,43 @@ A tábla névsora = a fájlban lévő `exports(...)` sorok sorrendje; közvetlen
 | `getConfig` | Teljes `Config` olvasása. | – |
 | `isReady` | Szerver oldalon is: item registry kész-e indulás / timeout után. | – |
 | `getDbSchemaVersion` | Alkalmazott DB migrációk közül a legnagyobb `id` (`e_core_migrations`); séma „verzió” ellenőrzéshez. | – (visszaadás: max. migráció `id`; **0** ha üres tábla, lekérdezés sikertelen, vagy `MAX` `nil` – részlet és operátori sorrend: `docs/ECORE_ERR_HIBA_NYOMON_HU.md` §4.5) |
+
+---
+
+### 3.1 Admin-web HTTP read contract (kanonikus route-ok)
+
+Az admin konzol (külön `admin-web` app) a szerver oldali admin read exportokra épülő HTTP rétegen keresztül olvas.
+
+- Kanonikus profession lista route: `GET /admin/professions`
+- Kanonikus level profile lista route: `GET /admin/level-profiles`
+- Kiegészítő profession read route-ok:
+  - `GET /admin/professions/defaults?category=crafting`
+  - `GET /admin/professions/validate?category=crafting&keys=weaponry,chemist`
+  - `GET /admin/professions/profile?category=crafting&name=weaponry`
+- Válaszshape: az exportokhoz igazított standard objektum (`ok`, `code`, `message`, `data`), ahol a lista elsődlegesen `data.items`.
+- Auth: a HTTP bridge a `Config.adminHttp.read` policy alapján enged:
+  - identifier header: alapértelmezés `x-ecore-identifier` (egyezés `allowedIdentifiers` listával, pl. `fivem:...`, `license:...`, `discord:...`)
+  - opcionális token header: alapértelmezés `x-ecore-token` (`token` mező)
+  - jogosultság: ha az identifier vagy a token valid; ellenkező esetben `401` + `access_denied`
+
+**CRUD (write) — ugyanaz az auth, mint a readnek (`Config.adminHttp.read`)**
+
+- `POST /admin/professions` — JSON body: `professionAdminCreate` payload (`category`, `name`, `profileKey`, opcionális mezők).
+- `PUT /admin/professions?category=...&name=...` — JSON body: `professionAdminUpdate` részleges payload.
+- `DELETE /admin/professions?category=...&name=...` — törzs nélkül.
+- `POST /admin/level-profiles` — JSON body: `levelProfileAdminCreate` (pl. `profileKey`, `displayName`, `mode`, `levels` tömb vagy `easyGenerator`).
+- `PUT /admin/level-profiles?profileKey=...` — JSON body: `levelProfileAdminUpdate` részleges payload.
+- `DELETE /admin/level-profiles?profileKey=...` — törzs nélkül.
+
+A szokásos sikeres/üzleti hibaüzenet a törzsben jön (HTTP 200, `ok: true/false`); a CORS kliensek `Content-Type: application/json` törzset adnak.
+
+Megjegyzés:
+- A frontend (`admin-web/src/lib/registry.ts`) a listázó GET-ekre és a fenti write végpontra épít.
+- Frontend env illesztés (`admin-web`):
+  - `VITE_ADMIN_API_BASE_URL` (pl. `http://127.0.0.1:30120`)
+  - `VITE_ADMIN_IDENTIFIER` (pl. `fivem:12345678`) + opcionális `VITE_ADMIN_IDENTIFIER_HEADER` (alap: `x-ecore-identifier`)
+  - `VITE_ADMIN_TOKEN` + opcionális `VITE_ADMIN_TOKEN_HEADER` (alap: `x-ecore-token`)
+- A route-neveket és response contractot együtt kell kezelni az export oldali admin read szerződéssel (`professionAdminList`, `levelProfileAdminList`).
 
 ---
 

@@ -33,6 +33,59 @@ Config.diagnostics = {
     uiStepMs = 55,
 }
 
+-- Admin API policy (profession cleanup workflows)
+-- `auth.source` payload mezővel ellenőrizhető játékos jogosultság.
+-- Ha nincs source (pl. belső szerver script), `allowServerWithoutSource=true` esetén engedélyezett.
+Config.adminApi = Config.adminApi or {
+    cleanup = {
+        acePermission = 'ecore.admin.cleanup',
+        allowedIdentifiers = {},
+        allowServerWithoutSource = true,
+    },
+    diagnostics = {
+        acePermission = 'ecore.admin.diagnostics',
+        allowedIdentifiers = {},
+        allowServerWithoutSource = true,
+    },
+    deniedAudit = {
+        enabled = true,
+        retentionDays = 30,
+        purgeIntervalMinutes = 60,
+        maxDeletePerRun = 2000,
+    },
+}
+
+-- Admin HTTP (read + CRUD) policy (`server/admin_http.lua`) — ugyanaz a jogosultság
+-- Read route-ok:
+--   GET /admin/professions
+--   GET /admin/level-profiles
+--   GET /admin/professions/defaults, /validate, /profile (query: lásd doks)
+-- Write route-ok (azonos `read` block: header + token):
+--   POST /admin/professions   (body: professionAdminCreate)
+--   PUT  /admin/professions?category=&name=   (body: professionAdminUpdate)
+--   DELETE /admin/professions?category=&name=
+--   POST /admin/level-profiles  (body: levelProfileAdminCreate)
+--   PUT  /admin/level-profiles?profileKey=  (body: levelProfileAdminUpdate)
+--   DELETE /admin/level-profiles?profileKey=
+--
+-- Jogosultság:
+-- - `allowedIdentifiers`: kérés headerből (`identifierHeader`) olvasott azonosítóval ellenőriz
+-- - `token`: opcionális shared secret (`tokenHeader`)
+-- - Engedés: ha bármelyik (identifier vagy token) valid
+Config.adminHttp = Config.adminHttp or {
+    enabled = true,
+    read = {
+        identifierHeader = 'x-ecore-identifier',
+        tokenHeader = 'x-ecore-token',
+        allowedIdentifiers = {
+            -- 'fivem:12345678',
+            -- 'license:abcdef1234567890',
+            -- 'discord:123456789012345678',
+        },
+        token = '',
+    },
+}
+
 Config.systemMode = {
     profession = true, -- proficiency system on/off
     labor = true, -- if you turn off the lab, the profession system will automatically turn off.

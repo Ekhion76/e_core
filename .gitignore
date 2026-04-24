@@ -1,1 +1,36 @@
+# Cursor (helyi agent / chat cache — nem verziózandó)
 .cursor/
+
+# --- admin-web (Vite / npm / Svelte) ---
+admin-web/node_modules/
+admin-web/dist/
+admin-web/.vite/
+admin-web/.svelte-kit/
+admin-web/coverage/
+admin-web/*.log
+admin-web/npm-debug.log*
+admin-web/.env
+admin-web/.env.*
+!admin-web/.env.example
+
+# --- általános (OS, IDE, naplók) ---
+.DS_Store
+Thumbs.db
+Desktop.ini
+*.log
+*.tmp
+*.temp
+*.bak
+*.swp
+*~
+
+# VSCode (csak a gyökérben; admin-web/.vscode külön útvonal, nem esik ide)
+.vscode/*
+!.vscode/extensions.json
+.idea/
+
+# Python (ha futtatod a repo scriptjeit lokálisan)
+__pycache__/
+*.py[cod]
+.venv/
+venv/

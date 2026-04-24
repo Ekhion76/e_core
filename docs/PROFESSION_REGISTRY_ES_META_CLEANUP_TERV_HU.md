@@ -240,6 +240,12 @@ Backend/API irany:
 - `GET /admin/diagnostics/runs/:run_id`
 - `POST /admin/diagnostics/runs/:run_id/cancel`
 
+Backend-first allapot (F2-T5):
+
+- profession torleshez kapcsolt cleanup dry-run/apply backend exportok keszen,
+- `jobId` alapu cleanup status/get + `abort`/`resume` alap endpoint szerzodes keszen,
+- admin audit lista backend oldalon elerheto; UI erre epitheto a kovetkezo korben.
+
 Biztonsag es uzemeltetes:
 
 - csak admin/ace jogosultsaggal indithato.
@@ -325,7 +331,21 @@ Cel: kenyelmes, atlathato, napi uzemeltetesre alkalmas admin felulet, ahol a sza
 
 ### Frontend stack dontes (Svelte)
 
-Igen, a Svelte jo irany ehhez:
+Igen, a Svelte jo irany ehhez.
+
+Konkret ajanlas: **Svelte 5** modern API-val:
+
+- runes alapu allapotkezeles (`$state`, `$derived`, `$effect`),
+- tiszta komponens-hatarok,
+- kevesebb kulso helper/boilerplate.
+
+Miert:
+
+- hosszu tavon karbantarthatobb admin konzol,
+- jobb prediktalhatosag reaktiv adatfolyamnal,
+- egyszerubb tesztelhetoseg modulonként.
+
+Tovabbi elvek:
 
 - gyors, konnyu runtime,
 - komponens alapu, jol karbantarthato admin UI,
@@ -338,6 +358,19 @@ Javaslat:
 - e_core backend API-kra csatlakozik,
 - fokozatos bevezetes: eloszor Diagnostics + Szakmak, utana tobbi modul.
 
+Kompatibilitas-jovoallósag:
+
+- **Mostani atalakitasi fazis:** kompatibilitas nem elvaras; lehet toro valtozasokat csinalni, ha ez kell a tiszta uj alapokhoz.
+- **Kovetkezo (stabil) fazis:** ugy kell kialakitani az API-kat, hogy kesobb tobb consumer script is erre tamaszkodhasson.
+- Stabil fazisban: stabil export szerzodes + verziozott valtozaskezeles.
+- Stabil fazisban: toro valtozas csak indokoltan, dokumentalt migracios utvonallal.
+
+Strukturális elv:
+
+- a mai bevalt struktura kovetese (service modulok + vekony export reteg),
+- atalakitasi fazisban celzottan johet uj helper/absztrakcio, ha gyorsitja a rendezett ujraepitest,
+- stabil fazisban csak indokolt esetben uj helper reteg; felesleges komplexitast kerulni.
+
 ### Tab struktura (MVP -> bovitheto)
 
 1. `Overview`
@@ -346,8 +379,8 @@ Javaslat:
    - tesztenkenti manualis inditas,
    - futas status, elo log, eredmeny.
 3. `Documentation`
-   - belso doksik indexe/keresoje,
-   - szakaszokra ugrashoz ankerek/hivatkozasok.
+   - kulso, kozponti dokumentacio (GitHub Pages) index/link gyujto,
+   - szakaszokra ugrashoz deep-link ankerek/hivatkozasok.
 4. `Professions`
    - szakma lista, letrehozas/szerkesztes/tiltas/torles.
 5. `Level Profiles`
@@ -361,15 +394,27 @@ Javaslat:
 
 Kovetelmeny: sikertelen teszt utan a rendszer ajanlja fel, melyik doksi szakasz segithet.
 
+Backend-first megvalositasi elv:
+
+- eloszor a backend adatszerzodes keszul el (`docHints` a diagnostics eredmenyben),
+- utana erre epul a UI oldali "Recommended Docs" blokk.
+
 Javasolt mechanizmus:
 
 - minden diagnostics teszthez legyen `docHints` mező:
   - `docId` (pl. `PUBLIC_API_HU`, `DB_MIGRATIONS_HU`),
   - `sectionKey` (pl. `profession-registry-validation`),
+  - `docUrl` (kozvetlen GitHub Pages deep-link),
   - `severity` / `confidence`.
 - fail eseten a UI "Recommended Docs" blokkot mutat:
-  - 1-3 legrelevansabb szakasz linkkel.
+  - 1-3 legrelevansabb szakasz kattinthato kulso linkkel.
 - opcionális "Open relevant section" gomb.
+
+Dokumentacio tarolasi dontes (admin konzol):
+
+- alapertelmezett megoldas: **kulső linkeles** a kozponti GitHub Pages docs oldalra,
+- a `Documentation` tab ebben a fazisban nem iframe embed, hanem docs navigator + "Open in Docs" jellegu kiugro linkeket ad,
+- opcionális kesobbi bovites: iframe preview mode feature flaggel, ha UX oldalrol szukseges.
 
 Peldak:
 
@@ -409,6 +454,10 @@ Peldak:
 - profession <-> profile hozzarendeles
 - diagnostics test endpointok on-demand futtatashoz
 - doc hint endpoint fail esetekhez (`test_key` -> relevans doksi szakaszok)
+- admin UI-hoz szukseges szerzodesek/foundation:
+  - auth + jogosultsag endpoint policy,
+  - run-id/status contract diagnostics futasokhoz,
+  - standard response format (`ok`, `code`, `message`, `data`).
 
 ### Fazis 3 - Consumer atallas
 
@@ -417,11 +466,28 @@ Peldak:
 - level/discount lookup profile alapjan
 - modern proficiency NUI: dashboard + rank details modal (profession/profile alapon)
 
+### Fazis 3 e_core-only elokeszites (consumer hid)
+
+- `F3-E2`: uj backend helper/export `validateProfessionKeys(category, keys[])`
+- cel: a kesobbi consumer startup recipe-validacio (`S1-T5`) ne ad-hoc ellenorzes legyen, hanem kozponti e_core service-re epuljon
+- vart kimenet:
+  - `valid` lista
+  - `invalid` lista
+  - `missingProfile` lista
+- `F3-E3`: diagnostics tesztkatalogus bovitese `profession-key-validation` tipussal
+  - cel: consumer bekotes elott is legyen kesz diagnostics gerinc
+  - fail agban docHint mapping finomitas (registry terv + sprint terv + API szakaszok)
+- `F3-E4`: cleanup/diagnostics/denied audit esemenyek kozos shape-re hozasa
+  - kozos contract: `eventType`, `actor`, `target`, `outcome`
+  - cel: UI es kesobbi reporting oldalon egységes audit feldolgozas
+
 ### Fazis 3.5 - Admin Console MVP (Svelte)
 
+- Svelte 5 admin UI MVP (runes alapu state)
 - tabok: Overview, Diagnostics, Documentation, Professions, Level Profiles
 - diagnostics live run + fail eseti dokumentacio ajanlo
 - profession letrehozo/szerkeszto alap workflow
+- level profile valasztas + easy mode generalas alap nezet
 
 ### Fazis 4 - Meta cleanup tooling
 
@@ -431,6 +497,10 @@ Peldak:
 - GUI-bol indithato profession delete workflow (ketlepcsos megerositessel)
 - batchelt, folytathato cleanup job infrastruktura (`resume`, `abort`, progress)
 - admin UI-bol tesztenkenti diagnostics futtatas (`run_id`, status, log)
+- admin UI halado modulok:
+  - Cleanup Jobs tab (progress + resume/abort),
+  - Audit tab reszletes nezet,
+  - nagy DB futasok operacios kontrolljai.
 
 ### Fazis 5 - Runtime sanitizer
 
@@ -466,3 +536,10 @@ Peldak:
 
 Ez a modell jobb kontrollt ad, mint a recipe-derived auto-regisztracio.
 Az uzemeltetesnek kiszámíthatóbb, auditálhatóbb, es meggatolja az elirasbol eredő hibas szakmaneveket.
+
+## Megvalositasi bontas (Sprint 1)
+
+A blueprinthez tartozó konkret, task-szintu implementacios terv:
+
+- `docs/PROFESSION_REGISTRY_IMPLEMENTACIOS_TERV_SPRINT1_HU.md`
+- futas kozbeni egyhelyes valtozasnaplo: `docs/IMPLEMENTATION_MUNKANAPLO_WIP_HU.md`

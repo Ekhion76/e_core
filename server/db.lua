@@ -8,6 +8,13 @@ end
 
 MySQL.ready(function()
     e_core_run_db_migrations()
+    e_core_bootstrap_profession_registry()
+    if type(e_core_bootstrap_cleanup_jobs) == 'function' then
+        e_core_bootstrap_cleanup_jobs()
+    end
+    if type(e_core_schedule_admin_denied_audit_purge) == 'function' then
+        e_core_schedule_admin_denied_audit_purge()
+    end
 end)
 
 function saveMeta(xPlayer, dropMeta)

@@ -44,6 +44,16 @@ function configCheck()
     Config.diagnostics.useNui = Config.diagnostics.useNui ~= false
     Config.diagnostics.printToConsole = Config.diagnostics.printToConsole == true
     Config.diagnostics.uiStepMs = math.max(0, math.min(400, tonumber(Config.diagnostics.uiStepMs) or 55))
+
+    Config.adminHttp = hf.isPopulatedTable(Config.adminHttp) and Config.adminHttp or {}
+    Config.adminHttp.enabled = Config.adminHttp.enabled ~= false
+    Config.adminHttp.read = hf.isPopulatedTable(Config.adminHttp.read) and Config.adminHttp.read or {}
+    Config.adminHttp.read.identifierHeader = tostring(Config.adminHttp.read.identifierHeader or 'x-ecore-identifier')
+    Config.adminHttp.read.tokenHeader = tostring(Config.adminHttp.read.tokenHeader or 'x-ecore-token')
+    Config.adminHttp.read.allowedIdentifiers = hf.isPopulatedTable(Config.adminHttp.read.allowedIdentifiers)
+        and Config.adminHttp.read.allowedIdentifiers
+        or {}
+    Config.adminHttp.read.token = tostring(Config.adminHttp.read.token or '')
 end
 
 configCheck()

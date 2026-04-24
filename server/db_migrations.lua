@@ -2,7 +2,7 @@
 --- Sorrend: növekvő `id`; alkalmazás után sor kerül az `e_core_migrations` táblába.
 --- Új migráció: bővítsd a `ECORE_DB_MIGRATIONS` tömböt; növeld `ECORE_DB_SCHEMA_TARGET` (export / doksi).
 
-ECORE_DB_SCHEMA_TARGET = 1
+ECORE_DB_SCHEMA_TARGET = 4
 
 local MIGRATIONS_DDL = [[
 CREATE TABLE IF NOT EXISTS `e_core_migrations` (
@@ -59,6 +59,117 @@ local function migration_001_add_e_core_column()
     end
 end
 
+local function migration_002_create_profession_registry_tables()
+    local createLevelProfilesSql = [[
+CREATE TABLE IF NOT EXISTS `e_core_level_profiles` (
+  `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
+  `profile_key` VARCHAR(64) NOT NULL,
+  `display_name` VARCHAR(128) NOT NULL,
+  `mode` VARCHAR(16) NOT NULL DEFAULT 'advanced',
+  `levels_json` LONGTEXT NOT NULL,
+  `created_by` VARCHAR(128) NULL,
+  `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `ux_e_core_level_profiles_profile_key` (`profile_key`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+]]
+
+    local createProfessionsSql = [[
+CREATE TABLE IF NOT EXISTS `e_core_professions` (
+  `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
+  `category` VARCHAR(64) NOT NULL,
+  `name` VARCHAR(64) NOT NULL,
+  `display_name` VARCHAR(128) NOT NULL,
+  `enabled` TINYINT(1) NOT NULL DEFAULT 1,
+  `level_profile_id` INT UNSIGNED NULL,
+  `max_proficiency` INT UNSIGNED NULL,
+  `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `ux_e_core_professions_category_name` (`category`, `name`),
+  KEY `ix_e_core_professions_level_profile_id` (`level_profile_id`),
+  CONSTRAINT `fk_e_core_professions_level_profile_id`
+    FOREIGN KEY (`level_profile_id`) REFERENCES `e_core_level_profiles` (`id`)
+    ON UPDATE CASCADE ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+]]
+
+    local ok1, err1 = hf.mysqlAwait('migration:002_create_level_profiles', function()
+        MySQL.query.await(createLevelProfilesSql)
+    end)
+    if not ok1 then
+        error(tostring(err1))
+    end
+
+    local ok2, err2 = hf.mysqlAwait('migration:002_create_professions', function()
+        MySQL.query.await(createProfessionsSql)
+    end)
+    if not ok2 then
+        error(tostring(err2))
+    end
+end
+
+local function migration_003_create_cleanup_jobs_table()
+    local createCleanupJobsSql = [[
+CREATE TABLE IF NOT EXISTS `e_core_cleanup_jobs` (
+  `job_id` VARCHAR(32) NOT NULL,
+  `status` VARCHAR(16) NOT NULL,
+  `mode` VARCHAR(16) NOT NULL,
+  `category` VARCHAR(64) NOT NULL,
+  `name` VARCHAR(64) NOT NULL,
+  `requested_by` VARCHAR(128) NULL,
+  `batch_size` INT UNSIGNED NOT NULL DEFAULT 500,
+  `last_cursor` VARCHAR(128) NULL,
+  `processed` INT UNSIGNED NOT NULL DEFAULT 0,
+  `changed_rows` INT UNSIGNED NOT NULL DEFAULT 0,
+  `removed_keys` INT UNSIGNED NOT NULL DEFAULT 0,
+  `failed` INT UNSIGNED NOT NULL DEFAULT 0,
+  `invalid_json` INT UNSIGNED NOT NULL DEFAULT 0,
+  `cancel_requested` TINYINT(1) NOT NULL DEFAULT 0,
+  `errors_json` LONGTEXT NULL,
+  `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  `started_at` TIMESTAMP NULL DEFAULT NULL,
+  `finished_at` TIMESTAMP NULL DEFAULT NULL,
+  PRIMARY KEY (`job_id`),
+  KEY `ix_e_core_cleanup_jobs_status_created` (`status`, `created_at`),
+  KEY `ix_e_core_cleanup_jobs_profession` (`category`, `name`, `created_at`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+]]
+
+    local ok, err = hf.mysqlAwait('migration:003_create_cleanup_jobs', function()
+        MySQL.query.await(createCleanupJobsSql)
+    end)
+    if not ok then
+        error(tostring(err))
+    end
+end
+
+local function migration_004_create_admin_denied_audit_table()
+    local createDeniedAuditSql = [[
+CREATE TABLE IF NOT EXISTS `e_core_admin_denied_audit` (
+  `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  `ts` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `section` VARCHAR(64) NOT NULL,
+  `action` VARCHAR(128) NOT NULL,
+  `source` INT NULL,
+  `requested_by` VARCHAR(128) NULL,
+  `reason` VARCHAR(255) NOT NULL,
+  PRIMARY KEY (`id`),
+  KEY `ix_e_core_admin_denied_audit_ts` (`ts`),
+  KEY `ix_e_core_admin_denied_audit_section_action_ts` (`section`, `action`, `ts`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+]]
+
+    local ok, err = hf.mysqlAwait('migration:004_create_admin_denied_audit', function()
+        MySQL.query.await(createDeniedAuditSql)
+    end)
+    if not ok then
+        error(tostring(err))
+    end
+end
+
 --- @return number legmagasabb alkalmazott migráció `id`, vagy 0 ha üres / hiba
 function e_core_get_applied_migration_id()
     local ok, rows = hf.mysqlAwait('migration:max_id', function()
@@ -101,4 +212,7 @@ end
 
 ECORE_DB_MIGRATIONS = {
     { id = 1, name = 'add_e_core_longtext_column', run = migration_001_add_e_core_column },
+    { id = 2, name = 'create_profession_registry_tables', run = migration_002_create_profession_registry_tables },
+    { id = 3, name = 'create_cleanup_jobs_table', run = migration_003_create_cleanup_jobs_table },
+    { id = 4, name = 'create_admin_denied_audit_table', run = migration_004_create_admin_denied_audit_table },
 }

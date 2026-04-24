@@ -192,3 +192,301 @@ end
 local v = exports.e_core:getDbSchemaVersion()
 -- indulás után tipikusan 1 (egyetlen migráció a repóban); új migráció = nagyobb szám
 ```
+
+## getProfessionRegistry
+
+**@return**: success + profession registry map (`{ [category] = { [name] = { ... } } }`) vagy hiba (`eCoreErr.profession_registry_unavailable`).
+
+```lua
+local ok, registryOrErr = exports.e_core:getProfessionRegistry()
+if not ok then
+    return print(('registry load failed: %s'):format(registryOrErr))
+end
+
+local crafting = registryOrErr.crafting or {}
+for professionName, row in pairs(crafting) do
+    print(professionName, row.displayName, row.levelProfileKey)
+end
+```
+
+## isValidProfession
+
+**@return**: success + boolean (`true` ha létezik és engedélyezett), vagy hiba.
+
+```lua
+local ok, validOrErr = exports.e_core:isValidProfession('crafting', 'weaponry')
+if not ok then
+    return print(('isValidProfession error: %s'):format(validOrErr))
+end
+
+if validOrErr then
+    print('profession can be used')
+end
+```
+
+## getProfessionDefaults
+
+**@return**: success + defaults map (`{ [professionName] = 0 }`) vagy hiba (`profession_category_not_found`, stb.).
+
+```lua
+local ok, defaultsOrErr = exports.e_core:getProfessionDefaults('crafting')
+if not ok then
+    return print(('defaults error: %s'):format(defaultsOrErr))
+end
+
+exports.e_core:registerMeta(playerId, 'crafting', defaultsOrErr)
+```
+
+## getProfessionLevelProfile
+
+**@return**: success + profile (`profileKey`, `displayName`, `mode`, `levels`) vagy hiba (`profession_not_found`, `profession_profile_not_found`).
+
+```lua
+local ok, profileOrErr = exports.e_core:getProfessionLevelProfile('crafting', 'weaponry')
+if not ok then
+    return print(('profile error: %s'):format(profileOrErr))
+end
+
+print(profileOrErr.profileKey, #profileOrErr.levels)
+```
+
+## validateProfessionKeys
+
+**@return**: success + structured validation result (`valid`, `invalid`, `missingProfile`) vagy hiba (`profession_category_not_found`, stb.).
+
+```lua
+local ok, resultOrErr = exports.e_core:validateProfessionKeys('crafting', {
+    'weaponry',
+    'chemist',
+    'typo_profession',
+})
+if not ok then
+    return print(('validateProfessionKeys error: %s'):format(resultOrErr))
+end
+
+print('valid', #resultOrErr.valid)
+print('invalid', #resultOrErr.invalid)
+print('missingProfile', #resultOrErr.missingProfile)
+```
+
+## professionAdminList
+
+**@return**: standard response object (`ok`, `code`, `message`, `data.items`).
+
+```lua
+local res = exports.e_core:professionAdminList()
+if not res.ok then
+    return print(('admin list error: %s (%s)'):format(res.code, res.message))
+end
+
+print(('profession count: %s'):format(#res.data.items))
+```
+
+## professionAdminCreate / professionAdminUpdate
+
+```lua
+local created = exports.e_core:professionAdminCreate({
+    category = 'crafting',
+    name = 'tailoring',
+    displayName = 'Tailoring',
+    profileKey = 'default_global',
+    enabled = true,
+})
+
+if created.ok then
+    local updated = exports.e_core:professionAdminUpdate('crafting', 'tailoring', {
+        displayName = 'Tailoring Pro',
+        enabled = false,
+    })
+    print(updated.code, updated.message)
+end
+```
+
+## professionAdminSetEnabled / professionAdminDelete
+
+```lua
+local toggleRes = exports.e_core:professionAdminSetEnabled('crafting', 'tailoring', true)
+print(toggleRes.code, toggleRes.message)
+
+local deleteRes = exports.e_core:professionAdminDelete('crafting', 'tailoring')
+print(deleteRes.code, deleteRes.message)
+```
+
+## professionAdminDeleteDryRun / professionAdminDeleteApply
+
+```lua
+local dryRun = exports.e_core:professionAdminDeleteDryRun('crafting', 'tailoring', {
+    requestedBy = 'admin:console',
+    batchSize = 500,
+    auth = { source = playerId },
+})
+if not dryRun.ok then
+    return print(('cleanup dry-run error: %s (%s)'):format(dryRun.code, dryRun.message))
+end
+
+print(dryRun.data.job.status, dryRun.data.job.stats.changed, dryRun.data.job.stats.removedKeys)
+
+local apply = exports.e_core:professionAdminDeleteApply('crafting', 'tailoring', {
+    requestedBy = 'admin:console',
+    batchSize = 500,
+    confirmText = 'crafting.tailoring DELETE',
+    deleteProfession = true, -- opcionális: apply után törli a registry sort is
+    auth = { source = playerId },
+})
+print(apply.code, apply.message)
+-- mindkettő jobot hoz létre, állapot követéshez használd a professionAdminCleanupJobGet exportot
+```
+
+## professionAdminCleanupJobGet / Abort / Resume / Audit
+
+```lua
+local listRes = exports.e_core:professionAdminCleanupJobList({
+    status = 'queued', -- opcionális filterek: status, mode, category, name
+    limit = 20,
+    offset = 0,
+    auth = { source = playerId },
+})
+print(listRes.code, listRes.data.total, #listRes.data.items)
+
+local state = exports.e_core:professionAdminCleanupJobGet('cleanup-00000001', {
+    auth = { source = playerId },
+})
+print(state.code, state.data and state.data.job and state.data.job.status)
+
+local abortRes = exports.e_core:professionAdminCleanupJobAbort('cleanup-00000001', {
+    requestedBy = 'admin:console',
+    auth = { source = playerId },
+})
+print(abortRes.code, abortRes.message)
+
+local resumeRes = exports.e_core:professionAdminCleanupJobResume('cleanup-00000001', {
+    requestedBy = 'admin:console',
+    auth = { source = playerId },
+})
+print(resumeRes.code, resumeRes.message)
+
+local audit = exports.e_core:professionAdminAuditList(20, {
+    auth = { source = playerId },
+})
+print(audit.code, #audit.data.items)
+
+local deniedAudit = exports.e_core:adminApiDeniedAuditList({
+    section = 'cleanup', -- opcionális: cleanup / diagnostics
+    action = 'professionAdminCleanupJobAbort', -- opcionális
+    limit = 20,
+    offset = 0,
+    auth = { source = playerId },
+})
+print(deniedAudit.code, deniedAudit.data.total, #deniedAudit.data.items)
+if deniedAudit.ok and deniedAudit.data.items[1] then
+    local item = deniedAudit.data.items[1]
+    print(
+        item.eventType,
+        item.actor and item.actor.requestedBy,
+        item.target and item.target.action,
+        item.outcome and item.outcome.status
+    )
+end
+
+local purge = exports.e_core:adminApiDeniedAuditPurge({
+    auth = { source = playerId },
+})
+print(purge.code, purge.data and purge.data.deleted)
+
+local purgeDryRun = exports.e_core:adminApiDeniedAuditPurge({
+    dryRun = true,
+    auth = { source = playerId },
+})
+print(purgeDryRun.code, purgeDryRun.data and purgeDryRun.data.wouldDelete)
+```
+
+## levelProfileAdminList
+
+```lua
+local res = exports.e_core:levelProfileAdminList()
+if not res.ok then
+    return print(('profile list error: %s (%s)'):format(res.code, res.message))
+end
+
+for _, profile in ipairs(res.data.items) do
+    print(profile.profileKey, profile.mode, #profile.levels, profile.professionCount)
+end
+```
+
+## levelProfileAdminCreate / levelProfileAdminUpdate
+
+```lua
+local createRes = exports.e_core:levelProfileAdminCreate({
+    profileKey = 'crafting_easy_v1',
+    displayName = 'Crafting Easy v1',
+    mode = 'easy',
+    easyGenerator = {
+        milestones = 8,
+        maxPoints = 80000,
+        curveType = 'soft',
+        max = {
+            labor = 20,
+            time = 15,
+            price = 10,
+            chance = 8,
+            speed = 12,
+        },
+    },
+})
+
+if createRes.ok then
+    local updateRes = exports.e_core:levelProfileAdminUpdate('crafting_easy_v1', {
+        mode = 'advanced',
+        levels = createRes.data.profile.levels,
+    })
+    print(updateRes.code, updateRes.message)
+end
+```
+
+## levelProfileAdminDelete
+
+```lua
+local deleteRes = exports.e_core:levelProfileAdminDelete('crafting_easy_v1')
+print(deleteRes.code, deleteRes.message)
+```
+
+## diagnosticsAdminListTests
+
+```lua
+local res = exports.e_core:diagnosticsAdminListTests({
+    auth = { source = playerId },
+})
+if not res.ok then
+    return print(('diagnostics list error: %s (%s)'):format(res.code, res.message))
+end
+
+for _, test in ipairs(res.data.items) do
+    print(test.key, test.severity, test.estimatedCost, #test.docHints)
+end
+```
+
+## diagnosticsAdminRun / diagnosticsAdminGetRun / diagnosticsAdminCancelRun
+
+```lua
+local runRes = exports.e_core:diagnosticsAdminRun({
+    requestedBy = 'admin:console',
+    tests = { 'registry_integrity', 'profession-key-validation' },
+    professionKeysByCategory = {
+        crafting = { 'weaponry', 'chemist', 'typo_profession' },
+    },
+    auth = { source = playerId },
+})
+if not runRes.ok then
+    return print(('run error: %s (%s)'):format(runRes.code, runRes.message))
+end
+
+local runId = runRes.data.run.runId
+local state = exports.e_core:diagnosticsAdminGetRun(runId, {
+    auth = { source = playerId },
+})
+print(state.code, state.data.run.status)
+
+-- Optional cancel for queued/running runs:
+-- local cancel = exports.e_core:diagnosticsAdminCancelRun(runId, { auth = { source = playerId } })
+-- print(cancel.code, cancel.message)
+```

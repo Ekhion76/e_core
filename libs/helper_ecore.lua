@@ -106,6 +106,129 @@ function hf.isValidPlayerSource(src)
     return name ~= nil and name ~= ''
 end
 
+--- Admin API policy check (`Config.adminApi[section]`) `auth.source` alapján.
+--- @param section string pl. `cleanup`, `diagnostics`
+--- @param payload table|nil (opcionális: `{ auth = { source = number } }`)
+--- @return boolean
+--- @return string|nil
+function hf.adminApiCanAccess(section, payload)
+    local adminApi = (type(Config) == 'table' and type(Config.adminApi) == 'table') and Config.adminApi or {}
+    local cfg = adminApi[tostring(section or '')] or {}
+    local auth = type(payload) == 'table' and payload.auth or nil
+    local src = type(auth) == 'table' and tonumber(auth.source) or nil
+
+    if not src then
+        if cfg.allowServerWithoutSource == true then
+            return true, nil
+        end
+        return false, 'Hiányzó auth.source az admin API híváshoz.'
+    end
+
+    if not hf.isValidPlayerSource(src) then
+        return false, 'Érvénytelen auth.source.'
+    end
+
+    local acePerm = tostring(cfg.acePermission or '')
+    local aceOk = acePerm ~= '' and IsPlayerAceAllowed(src, acePerm)
+
+    local idOk = false
+    local list = cfg.allowedIdentifiers
+    if hf.isPopulatedTable(list) then
+        local ids = GetPlayerIdentifiers(src)
+        for _, pid in ipairs(ids) do
+            local low = tostring(pid):lower()
+            for _, allow in ipairs(list) do
+                if type(allow) == 'string' and allow ~= '' and low == allow:lower() then
+                    idOk = true
+                    break
+                end
+            end
+            if idOk then
+                break
+            end
+        end
+    end
+
+    if aceOk or idOk then
+        return true, nil
+    end
+    return false, 'Nincs jogosultság (ACE vagy allowedIdentifiers).'
+end
+
+--- Jogosultság-elutasítás audit (in-memory ring + opcionális cLog).
+--- @param section string
+--- @param action string
+--- @param payload table|nil
+--- @param reason string|nil
+function hf.auditAdminApiDenied(section, action, payload, reason)
+    hf.__adminApiDeniedAudit = hf.__adminApiDeniedAudit or {}
+
+    local auth = type(payload) == 'table' and payload.auth or nil
+    local src = type(auth) == 'table' and tonumber(auth.source) or nil
+    local requestedBy = type(payload) == 'table' and tostring(payload.requestedBy or '') or ''
+
+    local entry = {
+        ts = os.time(),
+        eventType = 'admin_api_denied',
+        actor = {
+            source = src,
+            requestedBy = requestedBy ~= '' and requestedBy or nil,
+        },
+        target = {
+            scope = tostring(section or 'unknown'),
+            action = tostring(action or 'unknown'),
+        },
+        outcome = {
+            status = 'denied',
+            reason = tostring(reason or 'access_denied'),
+        },
+        section = tostring(section or 'unknown'),
+        action = tostring(action or 'unknown'),
+        source = src,
+        requestedBy = requestedBy ~= '' and requestedBy or nil,
+        reason = tostring(reason or 'access_denied'),
+    }
+
+    hf.__adminApiDeniedAudit[#hf.__adminApiDeniedAudit + 1] = entry
+    while #hf.__adminApiDeniedAudit > 200 do
+        table.remove(hf.__adminApiDeniedAudit, 1)
+    end
+
+    if type(cLog) == 'function' then
+        cLog(
+            ('[e_core] admin API denied: section=%s action=%s src=%s requestedBy=%s reason=%s'):format(
+                entry.section,
+                entry.action,
+                tostring(entry.source),
+                tostring(entry.requestedBy),
+                entry.reason
+            ),
+            'warning',
+            2
+        )
+    end
+
+    -- Best-effort DB persistence (server only).
+    if rawget(_G, 'MySQL') ~= nil then
+        hf.mysqlAwait('admin_denied_audit:insert', function()
+            MySQL.query.await(
+                [[
+                    INSERT INTO `e_core_admin_denied_audit`
+                        (`section`, `action`, `source`, `requested_by`, `reason`)
+                    VALUES (?, ?, ?, ?, ?)
+                ]],
+                {
+                    entry.section,
+                    entry.action,
+                    entry.source,
+                    entry.requestedBy,
+                    entry.reason,
+                }
+            )
+        end)
+    end
+end
+
 --- Egyszerű rate limit játékos + kulcs szerint (szerver net eseményekhez).
 ---@param src number player source
 ---@param name string egyedi kulcs pl. eseménynév

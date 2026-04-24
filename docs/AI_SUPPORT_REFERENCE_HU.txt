@@ -77,7 +77,8 @@ Kapcsolódó fájlok a repóban
 - html/ui.html, html/main.css, html/js/*.js, html/img/*.png – NUI felület;
   részletek: **1.5 NUI (html/)**
 - server/main.lua, server/meta.lua, server/labor.lua, server/db.lua,
-  server/exports.lua – szerver ECO, meta sync/mentés, labor, MySQL; részletek:
+  server/exports.lua, server/professions.lua, server/diagnostics.lua – szerver ECO,
+  meta sync/mentés, labor, MySQL, profession registry, diagnostics; részletek:
   „Server resource (server/)” szekció **1.4**
 
 ================================================================================
@@ -1166,8 +1167,10 @@ Mérvadó forrásfájlok (fxmanifest.lua → server_scripts sorrend, releváns r
     server/meta.lua      – meta CRUD, sync, játékos események, időzített mentés
     server/labor.lua     – labor CRUD, automatikus / offline labor
     server/db_migrations.lua – `e_core_migrations` tábla + `e_core_run_db_migrations`
+    server/professions.lua – profession registry bootstrap + read model export logika
     server/db.lua        – MySQL.ready → migrációk, majd saveMeta / loadMeta / saveAllMeta
     server/exports.lua   – `exports.e_core:*` regisztráció
+    server/diagnostics.lua – `ecore_diag` ellenőrzés (inventory + profession registry)
     standalone/usableitem.lua – (lásd 1.3)
 
 ---
@@ -1292,6 +1295,35 @@ server/db.lua
   Megjegyzés
     Azonosító: `xPlayer.identifier` (bridge `convertPlayer` / játékos objektum
     szerint ESX vagy QB).
+
+---
+
+server/professions.lua
+  Szerep
+    Profession registry életciklus:
+    - startup bootstrap (default profile/profession seed),
+    - DB read model cache,
+    - read-only export backend (`getProfessionRegistry`, `isValidProfession`,
+      `getProfessionDefaults`, `getProfessionLevelProfile`).
+  Bootstrap
+    `e_core_bootstrap_profession_registry()`:
+      migráció után lefut (`server/db.lua`), ellenőrzi a registry táblák darabszámát,
+      majd szükség esetén default profile + minimális profession seed.
+  Read model
+    DB join: `e_core_professions` + `e_core_level_profiles`, rövid TTL cache.
+    Hibák: `profession_registry_unavailable`, `profession_*_not_found`.
+
+---
+
+server/diagnostics.lua
+  Új registry check
+    `runProfessionRegistryChecks(lines)` – `ecore_diag` futás közben:
+    - registry lekérés,
+    - profession/profile konzisztencia,
+    - profile levels ellenőrzés.
+  Megjelenítés
+    NUI checklist új `registry` lépéssel, illetve console-only módban is ugyanaz
+    a registry audit blokk látszik.
 
 ---
 
@@ -1494,6 +1526,30 @@ getDbSchemaVersion()
   Paraméter: nincs.
   Vissza: szám – alkalmazott migrációk közül a legnagyobb `id` (`e_core_migrations`);
     **0** ha üres tábla vagy lekérdezés sikertelen (indulás előtt ne hívd megbízhatóan).
+
+getProfessionRegistry()
+  Paraméter: nincs.
+  Vissza: `true, registry` ahol `registry = { [category] = { [name] = row } }`,
+    `row` tipikusan: `enabled`, `displayName`, `levelProfileKey`, `maxProficiency`,
+    `profile = { profileKey, displayName, mode, levels }`.
+  Hiba: `false, 'profession_registry_unavailable'`.
+
+isValidProfession(category, name)
+  Paraméter: `category`, `name` (nem üres string, trimelve).
+  Vissza: `true, boolean` (csak létező + engedélyezett profession ad true-t).
+  Hiba: `false, 'no_valid_meta_name'` vagy `false, 'profession_registry_unavailable'`.
+
+getProfessionDefaults(category)
+  Paraméter: `category` (nem üres string, trimelve).
+  Vissza: `true, { [professionName] = 0, ... }` az adott kategória engedélyezett
+    professionjeiből.
+  Hiba: `false, 'profession_category_not_found'` vagy `profession_registry_unavailable`.
+
+getProfessionLevelProfile(category, name)
+  Paraméter: `category`, `name`.
+  Vissza: `true, { profileKey, displayName, mode, levels }`.
+  Hiba: `false, 'profession_not_found'` | `profession_profile_not_found` |
+    `profession_registry_unavailable`.
 
 ================================================================================
 3. eCore facade – áttekintés + hol a részlet

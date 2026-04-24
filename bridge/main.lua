@@ -1,3 +1,5 @@
+--- Mindkét kontextusban (kliens + szerver): `getFrameWork` / `getCore` exportok; `eCore.helper` = `hf` (`libs/helper.lua` + `libs/helper_ecore.lua`), `eCore.Err` = `eCoreErr`.
+--- A QB/ESX ciklusok csak netesemény-regisztrációt végeznek, nem váltanak export ágat.
 if QB_CORE then
 
     for _, event in ipairs(QBEvents) do

@@ -1,14 +1,5 @@
 local hf = hf
 
---- Sekély másolat (Lua 5.4 `table.clone` helyett – luacheck / környezetfüggetlen).
-local function shallow_copy(t)
-    local out = {}
-    for k, v in pairs(t) do
-        out[k] = v
-    end
-    return out
-end
-
 function checkMetaExists(playerId, category, name)
 
     if not tonumber(playerId) or type(ECO.meta[playerId]) ~= 'table' then
@@ -55,39 +46,53 @@ function getLevel(value)
     return #levels - 1
 end
 
+--- Szintlépcső-index változás: `getLevel` (Config.levels) ugyanarra a skálára vetíti a két pontszámot.
+--- @return boolean changed true, ha az index eltér
+--- @return number|nil baseLevel
+--- @return number|nil newLevel
 function checkLevelChange(baseValue, newValue)
-
-    local levels = Config.levels
-
-    if not hf.isPopulatedTable(levels) or not tonumber(baseValue) or not tonumber(newValue) then
-
+    if not hf.isPopulatedTable(Config.levels) then
         return false
     end
 
-    local baseLevel = getLevel(baseValue)
-    local newLevel = getLevel(newValue)
+    local b = tonumber(baseValue)
+    local n = tonumber(newValue)
+    if b == nil or n == nil then
+        return false
+    end
 
+    local baseLevel = getLevel(b)
+    local newLevel = getLevel(n)
     if baseLevel == newLevel then
-
         return false
     end
 
     return true, baseLevel, newLevel
 end
 
+--- Csak szerver: kliens NUI (`e_core:levelChange`). A fájl shared → `IsDuplicityVersion` kötelező.
 function messageIfLevelChange(playerId, category, name, baseValue, newValue)
-
-    local change, baseLevel, newLevel = checkLevelChange(baseValue, newValue)
-
-    if change then
-
-        TriggerClientEvent('e_core:levelChange', playerId, {
-            category = category,
-            name = name,
-            baseLevel = baseLevel,
-            newLevel = newLevel
-        })
+    if not IsDuplicityVersion() then
+        return
     end
+    if not hf.isValidPlayerSource(playerId) then
+        return
+    end
+    if type(category) ~= 'string' or type(name) ~= 'string' then
+        return
+    end
+
+    local changed, baseLevel, newLevel = checkLevelChange(baseValue, newValue)
+    if not changed then
+        return
+    end
+
+    TriggerClientEvent('e_core:levelChange', playerId, {
+        category = category,
+        name = name,
+        baseLevel = baseLevel,
+        newLevel = newLevel,
+    })
 end
 
 --- @param value number of points achieved in profession
@@ -99,7 +104,7 @@ function getDiscounts(value)
 
     if not hf.isPopulatedTable(levels) then
 
-        return false, 'not_levels_data'
+        return false, eCoreErr.not_levels_data
     end
 
     local discount = {}
@@ -107,7 +112,7 @@ function getDiscounts(value)
 
     if value < levels[1].limit then
 
-        discount = shallow_copy(levels[1])
+        discount = hf.shallowCopy(levels[1])
         discount.level = 0
         discount.progress = value > 0 and math.floor(value / levels[1].limit * 100) or 0
 
@@ -136,7 +141,7 @@ function getDiscounts(value)
         end
     end
 
-    discount = shallow_copy(levels[numberOfLevels])
+    discount = hf.shallowCopy(levels[numberOfLevels])
     discount.level = numberOfLevels - 1
     discount.progress = 100
 

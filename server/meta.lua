@@ -17,76 +17,148 @@ RegisterServerEvent('e_core:loadMeta', function()
     loadMeta(xPlayer)
 end)
 
+--- Gyökér meta kulcsok: `prepareMeta` tölti, mentés kezeli. Nem írhatók `registerMeta` / `setMeta`-val;
+--- jártasság exportok (`getAbility`, `setAbility`, …) nem használják – laborhoz `exports.e_core:*Labor*`.
+local META_SYSTEM_ROOT_KEYS = {
+    login = true,
+    logout = true,
+    labor = true,
+}
+
+--- @return string|nil trimmed
+--- @return string|nil err eCoreErr
+local function meta_trim_non_empty_string(key)
+    if type(key) ~= 'string' then
+        return nil, eCoreErr.no_valid_meta_name
+    end
+    local trimmed = hf.trim(key)
+    if trimmed == '' then
+        return nil, eCoreErr.no_valid_meta_name
+    end
+    return trimmed, nil
+end
+
+--- Olvasási kulcs (`getMeta` egy kategória): `labor` / `login` engedett.
+local function meta_normalize_lookup_key(key)
+    return meta_trim_non_empty_string(key)
+end
+
+--- Írás / `registerMeta` kategória: tiltott rendszer-gyökér név.
+--- @return string|nil
+--- @return string|nil err
+local function meta_normalize_writable_category(key)
+    local trimmed, err = meta_trim_non_empty_string(key)
+    if not trimmed then
+        return nil, err
+    end
+    if META_SYSTEM_ROOT_KEYS[trimmed] then
+        return nil, eCoreErr.reserved_meta_category
+    end
+    return trimmed, nil
+end
+
+--- @return table|nil row ECO.meta[playerId]
+--- @return string|nil err eCoreErr
+local function meta_require_player_row(playerId)
+    if not tonumber(playerId) then
+        return nil, eCoreErr.not_found_metadata
+    end
+    local row = ECO.meta[playerId]
+    if type(row) ~= 'table' then
+        return nil, eCoreErr.not_found_metadata
+    end
+    return row, nil
+end
+
 --- @param playerId number (source)
---- @param meta string eg.: crafting, reputation, harvesting, special, ...
---- @param value table key = value pairs, eg.: {cooking = 4020, weaponry = 200}
---- @return boolean success and, in case of an error, the reason as well
+--- @param meta string pl. crafting, reputation
+--- @param value table kulcs–érték (másolat kerül tárolásra)
+--- @return boolean success, string|nil reason ha false
 function setMeta(playerId, meta, value)
-    if not tonumber(playerId) or not ECO.meta[playerId] then
-        return false, eCoreErr.not_found_metadata
+    local row, err = meta_require_player_row(playerId)
+    if not row then
+        return false, err
     end
 
-    if type(meta) ~= 'string' then
-        return false, eCoreErr.no_valid_meta_name
+    local metaKey, errn = meta_normalize_writable_category(meta)
+    if not metaKey then
+        return false, errn
     end
 
-    ECO.meta[playerId][meta] = value
+    if type(value) ~= 'table' then
+        return false, eCoreErr.meta_value_must_be_table
+    end
+
+    row[metaKey] = hf.shallowCopy(value)
     syncRequest(playerId)
 
     return true
 end
 
 --- @param playerId number (source)
---- @param meta string eg.: crafting, reputation, harvesting, special, ...
---- @return boolean|table success or values
+--- @param meta string|nil opcionális kategória kulcs (trim; rendszer mezők olvashatók)
+--- @return boolean|table false, err | teljes meta | egy kategória értéke (lehet nil ha nincs ilyen kulcs)
 function getMeta(playerId, meta)
-    if not tonumber(playerId) or not ECO.meta[playerId] then
-        return false, eCoreErr.not_found_metadata
+    local row, err = meta_require_player_row(playerId)
+    if not row then
+        return false, err
     end
 
-    if meta then
-        if type(meta) == 'string' then
-            return ECO.meta[playerId][meta]
-        else
-            return false, eCoreErr.no_valid_meta_name
-        end
+    if meta == nil then
+        return row
     end
 
-    return ECO.meta[playerId]
+    local mk, errk = meta_normalize_lookup_key(meta)
+    if not mk then
+        return false, errk
+    end
+
+    return row[mk]
 end
 
---- Register metadata if not exists
+--- Hiányzó kulcsokat tölt ki; meglévő kulcsokat nem írja felül. Új kategória: `defaultValue` másolata kerül tárolásra.
+--- Csak **string** kulcsok a `defaultValue`-ban (numerikus kulcs szándékosan figyelmen kívül).
 --- @param playerId number source
---- @param category string eg.: crafting, reputation, harvesting, special, ...
---- @param defaultValue table key = default value pairs, eg.: {cooking = 0, weaponry = 0}
---- @return boolean success
+--- @param category string pl. harvesting
+--- @param defaultValue table|nil üres tábla ha nil
+--- @return boolean success, string|nil reason ha false
 function registerMeta(playerId, category, defaultValue)
-    if not tonumber(playerId) or not ECO.meta[playerId] then
-        return false, eCoreErr.not_found_metadata
+    local row, err = meta_require_player_row(playerId)
+    if not row then
+        return false, err
     end
 
-    if type(category) ~= 'string' then
-        return false, eCoreErr.no_valid_meta_name
+    local ck, errc = meta_normalize_writable_category(category)
+    if not ck then
+        return false, errc
     end
 
-    if ECO.meta[playerId][category] then
-        if hf.isPopulatedTable(defaultValue) then
-            ECO.meta[playerId][category] = ECO.meta[playerId][category] or {}
+    if defaultValue == nil then
+        defaultValue = {}
+    elseif type(defaultValue) ~= 'table' then
+        return false, eCoreErr.meta_default_must_be_table
+    end
 
-            if hf.isTable(ECO.meta[playerId][category]) then
-                for key, value in pairs(defaultValue) do
-                    if type(key) == 'string' then
-                        if not ECO.meta[playerId][category][key] then
-                            ECO.meta[playerId][category][key] = value
-                            syncRequest(playerId)
-                        end
-                    end
-                end
-            end
+    local slot = rawget(row, ck)
+    if slot == nil then
+        row[ck] = hf.shallowCopy(defaultValue)
+        syncRequest(playerId)
+        return true
+    end
 
+    if type(slot) ~= 'table' then
+        return false, eCoreErr.meta_category_not_table
+    end
+
+    local dirty = false
+    for k, v in pairs(defaultValue) do
+        if type(k) == 'string' and rawget(slot, k) == nil then
+            slot[k] = v
+            dirty = true
         end
-    else
-        ECO.meta[playerId][category] = defaultValue
+    end
+
+    if dirty then
         syncRequest(playerId)
     end
 
@@ -94,43 +166,82 @@ function registerMeta(playerId, category, defaultValue)
 end
 
 --- @param playerId number (source)
---- @param category string eg.: crafting, reputation, harvesting, special, ...
---- @param name string eg.: weaponry
---- @return boolean success and, in case of an error, the reason as well
+--- @param category string pl. crafting
+--- @param name string pl. weaponry
+--- @return boolean|number false, err | érték
 function getAbility(playerId, category, name)
-    if not checkMetaExists(playerId, category, name) then
+    local row, err = meta_require_player_row(playerId)
+    if not row then
+        return false, err
+    end
+
+    local ck, errc = meta_normalize_lookup_key(category)
+    if not ck then
+        return false, errc
+    end
+    if META_SYSTEM_ROOT_KEYS[ck] then
+        return false, eCoreErr.reserved_meta_category
+    end
+
+    local nk, errn = meta_trim_non_empty_string(name)
+    if not nk then
+        return false, errn
+    end
+
+    if not checkMetaExists(playerId, ck, nk) then
         return false, eCoreErr.not_found_metadata
     end
 
-    return ECO.meta[playerId][category][name]
+    return row[ck][nk]
 end
 
 --- @param playerId number (source)
---- @param category string eg.: crafting, reputation, harvesting, special, ...
---- @param name string eg.: weaponry
+--- @param category string
+--- @param name string
 --- @param value
---- @return boolean success and, in case of an error, the reason as well
+--- @return boolean success, string|nil reason ha false
 function addAbility(playerId, category, name, value)
-    if not checkMetaExists(playerId, category, name) then
+    local row, err = meta_require_player_row(playerId)
+    if not row then
+        return false, err
+    end
+
+    local ck, errc = meta_normalize_lookup_key(category)
+    if not ck then
+        return false, errc
+    end
+    if META_SYSTEM_ROOT_KEYS[ck] then
+        return false, eCoreErr.reserved_meta_category
+    end
+
+    local nk, errn = meta_trim_non_empty_string(name)
+    if not nk then
+        return false, errn
+    end
+
+    if not checkMetaExists(playerId, ck, nk) then
         return false, eCoreErr.not_found_metadata
     end
 
-    local metaValue = ECO.meta[playerId][category][name]
+    local delta = tonumber(value)
+    if not delta then
+        return false, eCoreErr.not_valid_amount
+    end
+
+    local metaValue = row[ck][nk]
     local baseValue = metaValue
 
     if metaValue >= Config.abilityLimit then
         return false, eCoreErr.has_already_reached_the_limit
     end
 
-    if tonumber(value) then
-        metaValue = metaValue + value
-    end
+    metaValue = metaValue + delta
 
     local newValue = hf.rangeLimit(metaValue, Config.abilityLimit)
 
     if baseValue ~= newValue then
-        ECO.meta[playerId][category][name] = newValue
-        messageIfLevelChange(playerId, category, name, baseValue, newValue)
+        row[ck][nk] = newValue
+        messageIfLevelChange(playerId, ck, nk, baseValue, newValue)
         syncRequest(playerId)
     end
 
@@ -138,27 +249,48 @@ function addAbility(playerId, category, name, value)
 end
 
 --- @param playerId number (source)
---- @param category string eg.: crafting, reputation, harvesting, special, ...
---- @param name string eg.: weaponry
+--- @param category string
+--- @param name string
 --- @param value
---- @return boolean success and, in case of an error, the reason as well
+--- @return boolean success, string|nil reason ha false
 function removeAbility(playerId, category, name, value)
-    if not checkMetaExists(playerId, category, name) then
+    local row, err = meta_require_player_row(playerId)
+    if not row then
+        return false, err
+    end
+
+    local ck, errc = meta_normalize_lookup_key(category)
+    if not ck then
+        return false, errc
+    end
+    if META_SYSTEM_ROOT_KEYS[ck] then
+        return false, eCoreErr.reserved_meta_category
+    end
+
+    local nk, errn = meta_trim_non_empty_string(name)
+    if not nk then
+        return false, errn
+    end
+
+    if not checkMetaExists(playerId, ck, nk) then
         return false, eCoreErr.not_found_metadata
     end
 
-    local metaValue = ECO.meta[playerId][category][name]
+    local delta = tonumber(value)
+    if not delta then
+        return false, eCoreErr.not_valid_amount
+    end
+
+    local metaValue = row[ck][nk]
     local baseValue = metaValue
 
-    if tonumber(value) then
-        metaValue = metaValue - value
-    end
+    metaValue = metaValue - delta
 
     local newValue = hf.rangeLimit(metaValue, Config.abilityLimit)
 
     if baseValue ~= newValue then
-        ECO.meta[playerId][category][name] = newValue
-        messageIfLevelChange(playerId, category, name, baseValue, newValue)
+        row[ck][nk] = newValue
+        messageIfLevelChange(playerId, ck, nk, baseValue, newValue)
         syncRequest(playerId)
     end
 
@@ -166,26 +298,45 @@ function removeAbility(playerId, category, name, value)
 end
 
 --- @param playerId number (source)
---- @param category string eg.: crafting, reputation, harvesting, special, ...
---- @param name string eg.: weaponry
+--- @param category string
+--- @param name string
 --- @param value
---- @return boolean success and, in case of an error, the reason as well
+--- @return boolean success, string|nil reason ha false
 function setAbility(playerId, category, name, value)
-    if not checkMetaExists(playerId, category, name) then
+    local row, err = meta_require_player_row(playerId)
+    if not row then
+        return false, err
+    end
+
+    local ck, errc = meta_normalize_lookup_key(category)
+    if not ck then
+        return false, errc
+    end
+    if META_SYSTEM_ROOT_KEYS[ck] then
+        return false, eCoreErr.reserved_meta_category
+    end
+
+    local nk, errn = meta_trim_non_empty_string(name)
+    if not nk then
+        return false, errn
+    end
+
+    if not checkMetaExists(playerId, ck, nk) then
         return false, eCoreErr.not_found_metadata
     end
 
-    local metaValue = ECO.meta[playerId][category][name]
-    local baseValue = metaValue
-    local newValue = value
-
-    if tonumber(value) then
-        newValue = hf.rangeLimit(value, Config.abilityLimit)
+    local numValue = tonumber(value)
+    if not numValue then
+        return false, eCoreErr.not_valid_amount
     end
 
+    local metaValue = row[ck][nk]
+    local baseValue = metaValue
+    local newValue = hf.rangeLimit(numValue, Config.abilityLimit)
+
     if baseValue ~= newValue then
-        ECO.meta[playerId][category][name] = newValue
-        messageIfLevelChange(playerId, category, name, baseValue, newValue)
+        row[ck][nk] = newValue
+        messageIfLevelChange(playerId, ck, nk, baseValue, newValue)
         syncRequest(playerId)
     end
 

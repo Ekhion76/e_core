@@ -26,7 +26,8 @@ local function migration_applied(id)
         return MySQL.query.await('SELECT `id` FROM `e_core_migrations` WHERE `id` = ? LIMIT 1', { id })
     end)
     if not ok then
-        return false
+        -- Ne tételezzük fel, hogy a migráció nincs bent: különben ismételt DDL / inkonzisztens állapot.
+        error(('[e_core] migration_applied(%d): DB lekérdezés sikertelen: %s'):format(id, tostring(rows)))
     end
     return rows and rows[1] ~= nil
 end

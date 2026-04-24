@@ -1,3 +1,5 @@
+--- Szerver oldali `exports.e_core:*` névsor = ez a fájl (szerződés: `docs/PUBLIC_API_HU.md` §3).
+--- Nincs üzleti logika: közvetlen hivatkozás a `server/*.lua` függvényekre; `getConfig` / `isReady` / `getDbSchemaVersion` vékony burkoló.
 --- exports ---
 exports("getAbility", getAbility)
 exports("setAbility", setAbility)

@@ -1,11 +1,16 @@
 # CLIENT SIDE exports.e_core
 
 ## getMeta
-Returns the player's entire meta database
+Returns the player's entire meta database, or one category by key.
 
-**@return**: table
+**@param** `meta` (optional): string category key; trimmed like on the server. Non-string or empty after trim → **`false`, `reason`** (`eCoreErr.no_valid_meta_name`).
+
+**@return**: full `ECO.meta` table | one category value | **`nil`** if the key is missing | **`false`, reason`** on invalid `meta` argument
+
 ```lua
-exports.e_core:getMeta()
+local all = exports.e_core:getMeta()
+local crafting = exports.e_core:getMeta('crafting')
+local badMeta, errReason = exports.e_core:getMeta(123) -- false, no_valid_meta_name
 ```
 
 ## getAbility
@@ -20,18 +25,24 @@ exports.e_core:getAbility(category, metaName)
 **metaName**: string (optional) *weaponry, cooking, handicraft, chemist, etc. or none*
 
 **@return**: 
-- result: meta value or if the request failed then false
-- reason: if the request failed, then the reason
+- result: meta value, whole category table, or **`false`** if the request failed
+- reason: if the request failed, then the reason (`category_does_not_exist`, `meta_does_not_exist`, `no_valid_meta_name`)
+
+Category and optional name are **trim**med; whitespace-only or non-string → `no_valid_meta_name`. Stored proficiency **`false`** is returned as-is (not confused with „missing”).
+
 ```lua
 local result, reason = exports.e_core:getAbility('crafting', 'weaponry')
 ```
 
 ## getLabor
-Returns the player's labor points
+Returns the player's labor points.
 
-**@return**: number
+**@return**: **`true`, number** on success (balance may be **0**). **`false`, reason** on error (`eCoreErr`).
+
 ```lua
-exports.e_core:getLabor()
+local ok, laborOrReason = exports.e_core:getLabor()
+if not ok then return end
+-- laborOrReason is the balance
 ```
 
 ## getLevel
@@ -75,7 +86,7 @@ end
 
 ## Helper functions (hf)
 
-There is **no** `exports.e_core:getHelper()` export. Use `getCore()` and read `.helper` (same table as `eCore.helper` inside e_core; see `libs/helper.lua`).
+There is **no** `exports.e_core:getHelper()` export. Use `getCore()` and read `.helper` (same table as `eCore.helper` inside e_core; built from `libs/helper.lua` + `libs/helper_ecore.lua`).
 
 **@return**: table – helper methods on the core object
 

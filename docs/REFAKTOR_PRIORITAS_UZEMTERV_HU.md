@@ -6,7 +6,7 @@ A sorrend a **kockázat / függőség** alapján van felállítva. Állapot: jel
 |---|---------|----------------|---------|
 | **A** | Keretrendszer-config egy belépési pont | `bridge/framework_config.lua`, ConVar `e_core:framework`, explicit 0/2 core; `ESX_CORE` / `QB_CORE` = választott ág | **Kész** – `docs/FRAMEWORK_CONFIG_REFACTOR_TERVEZES_HU.md` |
 | **B** | Publikus API szerződés | `docs/PUBLIC_API_HU.md` v0.3 (+ `eCoreErr` / `eCore.Err`); deprec szabály | **Kész** (opcionális: `PUBLIC_API.json`) |
-| **C** | Item registry indulás | Timeout, `isReady` export, ConVarok | Kész (`libs/helper.lua`, `server/main.lua`, `client/main.lua`) |
+| **C** | Item registry indulás | Timeout, `isReady` export, ConVarok | Kész (`libs/helper_ecore.lua`, `server/main.lua`, `client/main.lua`) |
 | **D** | Inventory / adapter | `docs/SUPPORTED_STACK_MATRIX_HU.md` + `libs/errors.lua` (`eCoreErr`, `eCore.Err`) | **Kész** |
 | **E** | Meta / DB / labor | `server/labor.lua` refaktor (guard, syncRequest), kliens `getLabor` védelem; **labor tick:** online lista (`GetPlayers`) + opc. `e_core:labor_tick_chunk` | **Kész** |
 | **F** | DX (lint, annotáció, CI) | LuaLS + luacheck + GHA; **maradék:** `scripts/validate_fxmanifest.py` a CI-ben (útvonalak / glob) | **Kész** (stub / luacheck további szigorítás opcionális) |

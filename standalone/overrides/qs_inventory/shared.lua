@@ -32,13 +32,6 @@ if QS_INVENTORY then
                 end
 
                 local name = itemKey:lower()
-                local allowW, skipW = hf.itemDefinitionWeightGate(data)
-                if not allowW then
-                    if cLog then
-                        cLog('eCore:convertItems:skip', { framework = 'qs_inventory', item = name, reason = skipW }, 1)
-                    end
-                    return
-                end
                 tmp[name] = data
                 tmp[name].isUnique = data.unique == true
                 tmp[name].isWeapon = not data.useable and string.find(name, "^weapon_") ~= nil

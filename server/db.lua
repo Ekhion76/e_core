@@ -21,6 +21,7 @@ function saveMeta(xPlayer, dropMeta)
             })
         end)
         if not ok then
+            cLog(('[e_core] saveMeta: DB hiba, meta nem mentve (%s)'):format(xPlayer.identifier), 'warning', 2)
             return
         end
         if dropMeta then
@@ -47,6 +48,8 @@ function saveAllMeta()
         end)
         if ok then
             cLog('all metadata', 'saved', 1)
+        else
+            cLog('[e_core] saveAllMeta: DB hiba, kötegelt mentés sikertelen', 'warning', 2)
         end
     end
 end
@@ -58,10 +61,25 @@ function loadMeta(xPlayer)
         return MySQL.scalar.await(SELECT_META, { xPlayer.identifier })
     end)
     if not ok then
+        cLog(('[e_core] loadMeta: DB hiba, meta nem töltődött (%s)'):format(xPlayer.identifier), 'warning', 2)
         return
     end
 
-    local meta = result and json.decode(result) or {}
+    local meta = {}
+    if result ~= nil and result ~= '' then
+        local decodeOk, decoded = pcall(json.decode, result)
+        if not decodeOk or type(decoded) ~= 'table' then
+            cLog(
+                ('[e_core] loadMeta: az e_core oszlop nem érvényes JSON objektum (%s); meta nem állítódik be (DB javítás, különben mentéskor felülírás veszélye)'):format(
+                    xPlayer.identifier
+                ),
+                'error',
+                1
+            )
+            return
+        end
+        meta = decoded
+    end
 
     prepareMeta(playerId, meta)
     addOfflineLabor(playerId)

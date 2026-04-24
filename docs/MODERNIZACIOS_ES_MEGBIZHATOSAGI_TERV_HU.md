@@ -175,7 +175,7 @@ A `standalone/overrides/ox_inventory` (és más) réteg ott kell, ahol a stack *
 
 ### E) Adat és perzisztencia (meta, labor, DB)
 
-**Állapot:** `server/db.lua`, `server/meta.lua`, `server/labor.lua` – kritikus üzleti adat. **Labor (2026):** `server/labor.lua` közös guard + `syncRequest` az auto tickben; kliens `getLabor` nil-védelem – lásd `docs/LABOR_KEZELES_MUNKAFIL_HU.md` fókuszlista. **DB migrációk (Fázis 3):** `server/db_migrations.lua` – `e_core_migrations` tábla + soronkénti migrációk; induláskor `e_core_run_db_migrations()`; export `getDbSchemaVersion` – **`docs/DB_MIGRATIONS_HU.md`**. **MySQL hívások (3E, 2026):** `hf.mysqlAwait` (`libs/helper.lua`) – `pcall` + `cLog`; `server/db.lua` és `server/db_migrations.lua` **oxmysql `.await`** API (`update.await`, `prepare.await`, `scalar.await`, `query.await`).
+**Állapot:** `server/db.lua`, `server/meta.lua`, `server/labor.lua` – kritikus üzleti adat. **Labor (2026):** `server/labor.lua` közös guard + `syncRequest` az auto tickben; kliens `getLabor` nil-védelem – lásd `docs/LABOR_KEZELES_MUNKAFIL_HU.md` fókuszlista. **DB migrációk (Fázis 3):** `server/db_migrations.lua` – `e_core_migrations` tábla + soronkénti migrációk; induláskor `e_core_run_db_migrations()`; export `getDbSchemaVersion` – **`docs/DB_MIGRATIONS_HU.md`**. **MySQL hívások (3E, 2026):** `hf.mysqlAwait` (`libs/helper_ecore.lua`) – `pcall` + `cLog`; `server/db.lua` és `server/db_migrations.lua` **oxmysql `.await`** API (`update.await`, `prepare.await`, `scalar.await`, `query.await`).
 
 **Javasolt irány:**
 
@@ -224,8 +224,8 @@ A `standalone/overrides/ox_inventory` (és más) réteg ott kell, ahol a stack *
 ### Fázis 1 – Megbízható indulás (közepes effort)
 
 - [x] Framework **resolver** + ütközés-kezelés (`bridge/framework_config.lua`, `e_core:framework`; lásd 3A).
-- [x] `REGISTERED_ITEMS` / `CORE_READY` ciklus: **timeout**, hibalog, `isReady` export + `eCore:isReady()` (részletek: `docs/FRAMEWORK_CONFIG_REFACTOR_TERVEZES_HU.md` 5. szakasz, `libs/helper.lua` `awaitItemRegistryReady`).
-- [x] Egységes indulási log sor: `hf.logEcoreStartupSummary` (`libs/helper.lua`) – verzió, `framework`, `inventory`, `items` (ready|timeout|pending); szerver + kliens az item registry szál végén.
+- [x] `REGISTERED_ITEMS` / `CORE_READY` ciklus: **timeout**, hibalog, `isReady` export + `eCore:isReady()` (részletek: `docs/FRAMEWORK_CONFIG_REFACTOR_TERVEZES_HU.md` 5. szakasz, `libs/helper_ecore.lua` `awaitItemRegistryReady`).
+- [x] Egységes indulási log sor: `hf.logEcoreStartupSummary` (`libs/helper_ecore.lua`) – verzió, `framework`, `inventory`, `items` (ready|timeout|pending); szerver + kliens az item registry szál végén.
 
 ### Fázis 2 – Szerződés és dokumentáció (közepes effort)
 
@@ -237,7 +237,7 @@ A `standalone/overrides/ox_inventory` (és más) réteg ott kell, ahol a stack *
 ### Fázis 3 – Adat és biztonság (nagyobb effort, ütemezve)
 
 - [x] DB migrációk + séma verzió (lásd 3E) – `server/db_migrations.lua`, `e_core_migrations`, `exports.e_core:getDbSchemaVersion`, `docs/DB_MIGRATIONS_HU.md`.
-- [x] Kritikus net eventek auditja (lásd 3G) – `docs/NET_EVENTS_AUDIT_HU.md`, `libs/helper.lua` (`isValidPlayerSource`, `netRateLimit`), `server/meta.lua`, callbacks, `bridge/global/events/server.lua`.
+- [x] Kritikus net eventek auditja (lásd 3G) – `docs/NET_EVENTS_AUDIT_HU.md`, `libs/helper_ecore.lua` (`isValidPlayerSource`, `netRateLimit`), `server/meta.lua`, callbacks, `bridge/global/events/server.lua`.
 
 ### Fázis 4 – Modern DX (folyamatos)
 

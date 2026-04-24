@@ -23,26 +23,52 @@ local nuiReady, init
 ------------
 
 --- @param category string category eg.: crafting, reputation, harvesting, special, ...
---- @param name string (optional) subcategory eg.: weaponry, cooking, handicraft, chemist, etc.
---- @return number|table proficiency | all category
+--- @param name string|nil (optional) subcategory eg.: weaponry, cooking, handicraft, chemist, etc.
+--- @return number|table|boolean proficiency | whole category | false + eCoreErr ha hiba
 function getAbility(category, name)
-    if not ECO.meta[category] then
+    if type(category) ~= 'string' then
+        return false, eCoreErr.no_valid_meta_name
+    end
+    local ck = hf.trim(category)
+    if ck == '' then
+        return false, eCoreErr.no_valid_meta_name
+    end
+
+    if not ECO.meta[ck] then
         return false, eCoreErr.category_does_not_exist
     end
 
-    if name then
-        return ECO.meta[category][name] and ECO.meta[category][name] or false, eCoreErr.meta_does_not_exist
+    if name ~= nil then
+        if type(name) ~= 'string' then
+            return false, eCoreErr.no_valid_meta_name
+        end
+        local nk = hf.trim(name)
+        if nk == '' then
+            return false, eCoreErr.no_valid_meta_name
+        end
+        local slot = ECO.meta[ck][nk]
+        if slot == nil then
+            return false, eCoreErr.meta_does_not_exist
+        end
+        return slot
     end
-    return ECO.meta[category]
+    return ECO.meta[ck]
 end
 
---- @param meta string (optional)
---- @return table all metadata
+--- @param meta string|nil opcionális kategória kulcs (ugyanaz a trim, mint szerveren)
+--- @return table|false teljes meta | egy kategória | false, eCoreErr ha a kulcs param érvénytelen
 function getMeta(meta)
-    if meta then
-        return ECO.meta[meta]
+    if meta == nil then
+        return ECO.meta
     end
-    return ECO.meta
+    if type(meta) ~= 'string' then
+        return false, eCoreErr.no_valid_meta_name
+    end
+    local mk = hf.trim(meta)
+    if mk == '' then
+        return false, eCoreErr.no_valid_meta_name
+    end
+    return ECO.meta[mk]
 end
 
 function getLabor()
@@ -52,7 +78,15 @@ function getLabor()
     if not ECO.meta or not ECO.meta.labor then
         return false, eCoreErr.not_found_metadata
     end
-    return ECO.meta.labor.val
+    local labor = ECO.meta.labor
+    if type(labor) ~= 'table' then
+        return false, eCoreErr.not_found_metadata
+    end
+    local n = tonumber(labor.val)
+    if n == nil or n ~= n then
+        return false, eCoreErr.not_found_metadata
+    end
+    return true, n
 end
 
 function nuiInit()
@@ -117,6 +151,10 @@ AddEventHandler('e_core:onPlayerUnload', function()
 end)
 
 RegisterNetEvent('e_core:sync', function(meta)
+    if type(meta) ~= 'table' then
+        cLog('e_core:sync', 'ignored: payload is not a table', 2)
+        return
+    end
     ECO.meta = meta
 
     if not init then
@@ -134,6 +172,9 @@ RegisterNetEvent('e_core:sync', function(meta)
 end)
 
 RegisterNetEvent('e_core:levelChange', function(data)
+    if type(data) ~= 'table' then
+        return
+    end
     SendNUIMessage({ action = 'POPUP', data = data })
 end)
 

@@ -18,8 +18,11 @@ client          Kliens oldal belépés: main.lua, exports.lua (publikus exportok
 server          Szerver oldal: main.lua, exports.lua, db_migrations.lua, db.lua,
                 labor.lua, meta.lua – domain logika és exportok.
 imports         Más resource-ból include-olható segédek: core.lua (FRAMEWORK,
-                eCore, eCoreConfig minta), locale.lua, utils.lua, discordlog.lua.
-libs            Megosztott könyvtár modulok: helper.lua (hf, eCore.helper), meta.lua,
+                eCore, eCoreConfig minta), locale.lua, utils.lua (cLog, print_r),
+                discordlog.lua (createDiscordLog webhook építő, szerver). Részletek:
+                docs/AI_SUPPORT_REFERENCE_HU.txt §1.1.
+libs            Megosztott könyvtár modulok: helper.lua (általános hf) + helper_ecore.lua
+                (e_core kiterjesztés ugyanarra a hf-re), meta.lua,
                 config_check.lua – nem keretrendszer-függő praktikumok.
 locales         Fordítási fájlok (Config.locale és imports/locale.lua).
 standalone      Erőforrás-specifikus, nem ESX/QB adapter: globális config,
@@ -143,6 +146,7 @@ imports\locale.lua
 imports\utils.lua
 libs\config_check.lua
 libs\helper.lua
+libs\helper_ecore.lua
 libs\errors.lua
 libs\meta.lua
 locales\de.lua

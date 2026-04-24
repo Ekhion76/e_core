@@ -39,13 +39,6 @@ if OX_INVENTORY then
                 end
 
                 local name = itemKey:lower()
-                local allowW, skipW = hf.itemDefinitionWeightGate(data)
-                if not allowW then
-                    if cLog then
-                        cLog('eCore:convertItems:skip', { framework = 'ox_inventory', item = name, reason = skipW }, 1)
-                    end
-                    return
-                end
                 tmp[name] = data
                 tmp[name].isUnique = data.stack == false
                 tmp[name].isWeapon = data.weapon == true

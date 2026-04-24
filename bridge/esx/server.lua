@@ -89,14 +89,40 @@ if ESX_CORE then
     end
 
     function eCore:removeItems(xPlayer, items)
+        if not xPlayer then
+            return false, eCoreErr.unknown_error
+        end
+
         if not hf.isPopulatedTable(items) then
             return false, eCoreErr.there_are_no_items_to_remove
+        end
+
+        for _, item in pairs(items) do
+            if type(item) ~= 'table' then
+                return false, eCoreErr.invalid_item_data
+            end
+
+            if not hf.isPopulatedString(item.name) then
+                return false, eCoreErr.invalid_item_data
+            end
+
+            local amt = tonumber(item.amount)
+            if not amt or amt < 1 or amt ~= amt then
+                return false, eCoreErr.invalid_item_data
+            end
         end
 
         cLog('eCore:removeItems', items, 4)
 
         for _, item in pairs(items) do
-            xPlayer.removeInventoryItem(item.name, item.amount)
+            local okRm, errRm = pcall(function()
+                xPlayer.removeInventoryItem(item.name, item.amount)
+            end)
+
+            if not okRm then
+                cLog('eCore:removeItems:pcall', { item = item.name, err = tostring(errRm) }, 1)
+                return false, eCoreErr.unknown_error
+            end
         end
 
         return true, eCoreErr.ok

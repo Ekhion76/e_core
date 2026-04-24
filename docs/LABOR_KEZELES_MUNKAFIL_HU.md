@@ -13,13 +13,40 @@
 
 | Függvény | Szerep |
 |----------|--------|
-| `getLabor(playerId)` | Olvasás; guard: `systemMode.labor`, playerId, `meta.labor` létezik (`laborPlayerRow`) |
+| `getLabor(playerId)` | Olvasás; guard: `systemMode.labor`, playerId, `meta.labor` létezik (`laborPlayerRow`). **Siker: `true`, egyenleg** (a 0 is így jön); **hiba: `false`, `eCoreErr`**. |
 | `setLabor(playerId, amount)` | Abszolút beállítás + `syncRequest` |
 | `addLabor` / `removeLabor` | Relatív változtatás; limit / érvénytelen összeg ágak |
 | `laborIncrease()` | Online automatikus regeneráció: periodikus `SetTimeout`; célok **`GetPlayers()`** + `ECO.meta[id].labor` (nem `pairs(ECO.meta)`); opc. hullám: ConVar **`e_core:labor_tick_chunk`** (0 = mind egyben, >0 = játékos / `SetTimeout(0)` hullám) |
 | `addOfflineLabor(playerId)` | Offline idő alapú jóváírás; **nem** hív `syncRequest`-et (a betöltési sync lefedi) |
 
 **Exportok:** `server/exports.lua` – `getLabor`, `setLabor`, `addLabor`, `removeLabor`.
+
+### Külső consumer – `getLabor` ajánlott hívás (e_core **v0.0.41+**)
+
+A korábbi egyetlen visszatéréses (`csak szám`) forma **eltávolítva**: az első érték **mindig** boolean **`ok`**, a második sikernél az egyenleg (szám, **0 is**), hibánál a **`reason`** string (`eCoreErr`).
+
+**Ne** írj olyat, hogy `if exports.e_core:getLabor(src) then` – 0 egyenlegnél régen is téves volt; most az első érték `true`/`false`, nem a pontszám.
+
+**Szerver:**
+
+```lua
+local ok, laborOrErr = exports.e_core:getLabor(playerId)
+if not ok then
+    -- laborOrErr == 'not_found_metadata' | 'the_system_is_turned_off' | …
+    return
+end
+local balance = laborOrErr  -- number
+```
+
+**Kliens** (saját játékos cache, `export_examples_client.md`):
+
+```lua
+local ok, laborOrErr = exports.e_core:getLabor()
+if not ok then return end
+local balance = laborOrErr
+```
+
+Részletes szerződés: `docs/PUBLIC_API_HU.md` §2–§3 + §5, `export_examples_server.md` / `export_examples_client.md`, `changelog.md` (0.0.41).
 
 **Példa hívás a repóban:** `standalone/usableitem.lua` – `labor_enhancer` → `addLabor`.
 
@@ -32,7 +59,7 @@
 
 | Hely | Szerep |
 |------|--------|
-| `client/main.lua` – `getLabor()` | Cache: `ECO.meta.labor.val`; labor ki → `false, reason`; nincs még `labor` blokk (sync előtt) → `false, not_found_metadata` |
+| `client/main.lua` – `getLabor()` | Cache: siker **`true`, `ECO.meta.labor.val`**; labor ki → `false, reason`; nincs még `labor` blokk (sync előtt) → `false, not_found_metadata` |
 | `client/exports.lua` | `getLabor` export (kliensen nincs labor írás) |
 | `e_core:sync` esemény | Teljes meta; INIT / UPDATE (page vs hud) |
 | `html/js/view.js` – `updateHud()` | Labor szám + progress (`model.laborLimit`) |

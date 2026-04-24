@@ -41,7 +41,7 @@ A **glob** (`bridge/**/config.lua`) helyett **egy belépési pont** (`bridge/fra
 
 ## 5. Kapcsolódó: item registry indulás (kész)
 
-Részletek és ConVarok: ugyanaz a szakasz marad, mint korábban: `e_core:items_ready_timeout_ms`, `e_core:items_ready_poll_ms`; implementáció `libs/helper.lua` → `hf.awaitItemRegistryReady`.
+Részletek és ConVarok: ugyanaz a szakasz marad, mint korábban: `e_core:items_ready_timeout_ms`, `e_core:items_ready_poll_ms`; implementáció `libs/helper_ecore.lua` → `hf.awaitItemRegistryReady`.
 
 ---
 

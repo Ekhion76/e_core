@@ -18,7 +18,8 @@ local function laborPlayerRow(playerId)
 end
 
 --- @param playerId number (source)
---- @return number, nil |boolean, string success and, in case of an error, the reason as well
+--- @return boolean ok siker: `true`, hiba: `false`
+--- @return number|string second siker: labor pont (0 is lehet); hiba: `eCoreErr` string
 function getLabor(playerId)
     local ok, err = laborRequireSystem()
     if not ok then
@@ -29,7 +30,7 @@ function getLabor(playerId)
     if not row then
         return false, err2
     end
-    return row.labor.val
+    return true, row.labor.val
 end
 
 --- @param playerId number (source)
@@ -48,7 +49,7 @@ function setLabor(playerId, amount)
         return false, err2
     end
 
-    if not amount then
+    if amount == nil or amount < 0 or amount ~= amount then
         return false, eCoreErr.not_valid_amount
     end
 
@@ -73,12 +74,13 @@ function removeLabor(playerId, amount)
         return false, err2
     end
 
-    if not tonumber(amount) then
+    amount = tonumber(amount)
+    if amount == nil or amount <= 0 or amount ~= amount then
         return false, eCoreErr.not_valid_amount
     end
 
-    if row.labor.val < 1 then
-        return false, eCoreErr.has_already_reached_the_limit
+    if row.labor.val < amount then
+        return false, eCoreErr.not_enough_labor
     end
 
     row.labor.val = hf.rangeLimit(row.labor.val - amount, Config.laborLimit)
@@ -102,7 +104,8 @@ function addLabor(playerId, amount)
         return false, err2
     end
 
-    if not tonumber(amount) then
+    amount = tonumber(amount)
+    if amount == nil or amount <= 0 or amount ~= amount then
         return false, eCoreErr.not_valid_amount
     end
 
@@ -226,7 +229,7 @@ function addOfflineLabor(playerId)
     local elapsedTime = timeStamp - row.labor.time
 
     if elapsedTime < increaseTime then
-        return 0
+        return true
     end
 
     local multiplier = math.floor(elapsedTime / increaseTime)
@@ -234,4 +237,5 @@ function addOfflineLabor(playerId)
 
     row.labor.time = timeStamp
     row.labor.val = hf.rangeLimit(row.labor.val + offlineLabor, Config.laborLimit)
+    return true
 end

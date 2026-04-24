@@ -75,7 +75,7 @@ Csak **szerver** `TriggerClientEvent`-tel érkeznek (kliens–kliens spoof nem c
 - **Szerver hívás:** `bridge/global/server.lua` – `TriggerClientEvent('e_core:methodCaller', owner, 'setVehiclePropertiesFromNetId', netId, props)` (jármű tulaj tulajdonságai).
 - **Új metódus:** vedd fel a `methodCallerAllowed` táblába (`bridge/global/events/client.lua`), és csak megbízható szerver oldali `TriggerClientEvent`-tel hívd.
 
-## 8. Segédek (`libs/helper.lua`)
+## 8. Segédek (`libs/helper.lua`, `libs/helper_ecore.lua`)
 
 - `hf.isValidPlayerSource(src)` – `GetPlayerName(src)` alapú.
 - `hf.netRateLimit(src, key, cooldownMs)` – játékos + kulcs szerinti egyszerű ablak.

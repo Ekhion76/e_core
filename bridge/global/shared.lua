@@ -3,6 +3,49 @@ local hf = hf
 -- copy it to the standalone/ directory and modify it there!
 -- this way, your changes will not be lost in future e_core updates
 
+---@param itemData any
+---@return boolean ok
+---@return string|nil reason `eCoreErr` ha nem ok
+local function validateCarryItemPayload(itemData)
+    if type(itemData) ~= 'table' then
+        return false, eCoreErr.invalid_item_data
+    end
+    local name = itemData.name
+    if type(name) ~= 'string' then
+        return false, eCoreErr.invalid_item_data
+    end
+    name = hf.trim(name)
+    if type(name) ~= 'string' or name == '' then
+        return false, eCoreErr.invalid_item_data
+    end
+    local amt = tonumber(itemData.amount)
+    if not amt or amt ~= amt or amt <= 0 then
+        return false, eCoreErr.invalid_item_data
+    end
+    return true
+end
+
+---@param swapItem any
+---@return boolean ok
+---@return string|nil reason
+local function validateSwapIngredientRow(swapItem)
+    if type(swapItem) ~= 'table' then
+        return false, eCoreErr.invalid_item_data
+    end
+    if type(swapItem.name) ~= 'string' then
+        return false, eCoreErr.invalid_item_data
+    end
+    local n = hf.trim(swapItem.name)
+    if type(n) ~= 'string' or n == '' then
+        return false, eCoreErr.invalid_item_data
+    end
+    local amt = tonumber(swapItem.amount)
+    if not amt or amt ~= amt or amt <= 0 then
+        return false, eCoreErr.invalid_item_data
+    end
+    return true
+end
+
 ---Determines the weight of items in the inventory
 ---@param playerData table
 ---@return number total weight
@@ -34,6 +77,21 @@ end
 ---@param item table {name: string, amount: number, metadata: table}
 ---@return boolean, string
 function eCore:canSwapItems(swappingItems, itemData, playerData)
+    local okPayload, reasonPayload = validateCarryItemPayload(itemData)
+    if not okPayload then
+        return false, reasonPayload
+    end
+
+    if swappingItems ~= nil and type(swappingItems) ~= 'table' then
+        return false, eCoreErr.invalid_item_data
+    end
+
+    local itemNameKey = hf.trim(itemData.name):lower()
+    local itemReg = REGISTERED_ITEMS[itemNameKey]
+    if not itemReg then
+        return false, eCoreErr.item_not_registered
+    end
+
     local maxInventoryWeight = self:getPlayerMaxWeight(playerData)
     local inventory = self:getInventory(playerData)
     local freeSlots = self:countFreeSlots(inventory)
@@ -48,7 +106,7 @@ function eCore:canSwapItems(swappingItems, itemData, playerData)
         itemWeight = itemWeight
     },4)
 
-    if REGISTERED_ITEMS[itemData.name:lower()].isUnique then
+    if itemReg.isUnique then
         requiredSlot = itemData.amount
     else
         requiredSlot = self:getFirstSlotByItem(inventory, itemData.name) and 0 or 1
@@ -59,31 +117,47 @@ function eCore:canSwapItems(swappingItems, itemData, playerData)
         return true
     end
 
-    -- swapping items calculate
+    -- swapping items calculate (capacity / freeSlots szimuláció — nem módosítjuk a játékos inventory táblát)
     local amountToRemove, weight = 0, 0
     local nameIdx, countIdx = Config.fields.name, Config.fields.count
 
-    for _, swapItem in pairs(swappingItems) do
+    for _, swapItem in pairs(swappingItems or {}) do
+        local okRow, rowReason = validateSwapIngredientRow(swapItem)
+        if not okRow then
+            return false, rowReason
+        end
+
         amountToRemove = swapItem.amount
         weight = self:getItemWeight(swapItem.name, swapItem.metadata)
 
-        if REGISTERED_ITEMS[swapItem.name:lower()].isUnique then
+        local swapNameLower = hf.trim(swapItem.name):lower()
+        local swapReg = REGISTERED_ITEMS[swapNameLower]
+        if not swapReg then
+            return false, eCoreErr.item_not_registered
+        end
+
+        if swapReg.isUnique then
             freeSlots = freeSlots + swapItem.amount
             capacity = capacity + (weight * swapItem.amount)
         else
             for _, item in pairs(inventory) do
-                if item[nameIdx]:lower() == swapItem.name:lower() and item[countIdx] > 0 then
-                    if item[countIdx] >= amountToRemove then
-                        item[countIdx] = item[countIdx] - amountToRemove
+                local inName = item[nameIdx]
+                if type(inName) == 'string' and inName:lower() == swapNameLower
+                    and (item[countIdx] or 0) > 0 then
+                    local slotCount = item[countIdx]
+                    if slotCount >= amountToRemove then
                         capacity = capacity + (weight * amountToRemove)
+                        local newCount = slotCount - amountToRemove
+                        if newCount < 1 then
+                            freeSlots = freeSlots + 1
+                        end
                         amountToRemove = 0
-                    elseif item[countIdx] < amountToRemove then
-                        amountToRemove = amountToRemove - item[countIdx]
-                        capacity = capacity + (weight * item[countIdx])
-                        item[countIdx] = 0
+                    else
+                        capacity = capacity + (weight * slotCount)
+                        freeSlots = freeSlots + 1
+                        amountToRemove = amountToRemove - slotCount
                     end
 
-                    if item[countIdx] < 1 then freeSlots = freeSlots + 1 end
                     if amountToRemove == 0 then break end
                 end
             end
@@ -106,6 +180,17 @@ end
 ---@param itemData table {name: string, amount: number, metadata: table}
 ---@return boolean, string
 function eCore:canCarryItem(itemData, playerData)
+    local okPayload, reasonPayload = validateCarryItemPayload(itemData)
+    if not okPayload then
+        return false, reasonPayload
+    end
+
+    local itemNameKey = hf.trim(itemData.name):lower()
+    local itemReg = REGISTERED_ITEMS[itemNameKey]
+    if not itemReg then
+        return false, eCoreErr.item_not_registered
+    end
+
     local maxInventoryWeight = self:getPlayerMaxWeight(playerData)
     local inventory = self:getInventory(playerData)
     local requiredSlot = 0
@@ -117,7 +202,7 @@ function eCore:canCarryItem(itemData, playerData)
         return false, eCoreErr.too_heavy
     end
 
-    if REGISTERED_ITEMS[itemData.name:lower()].isUnique then
+    if itemReg.isUnique then
         requiredSlot = itemData.amount
     else
         requiredSlot = self:getFirstSlotByItem(inventory, itemData.name) and 0 or 1
@@ -151,6 +236,10 @@ function eCore:countFreeSlots(inventory)
 end
 
 function eCore:getItemWeight(itemName, metadata)
+    if type(itemName) ~= 'string' then
+        return 0
+    end
+
     local item = REGISTERED_ITEMS[itemName:lower()]
 
     if not item then
@@ -199,6 +288,10 @@ end
 ---@param itemName string
 ---@return nil, number slot index
 function eCore:getFirstSlotByItem(inventory, itemName)
+    if type(itemName) ~= 'string' then
+        return nil
+    end
+
     if not hf.isPopulatedTable(inventory) then
         return nil
     end
@@ -206,7 +299,8 @@ function eCore:getFirstSlotByItem(inventory, itemName)
     local slotIdx, countIdx = Config.fields.slot, Config.fields.count
 
     for slot, item in pairs(inventory) do
-        if item.name:lower() == itemName:lower() and item[countIdx] > 0 then
+        local rowName = item.name
+        if type(rowName) == 'string' and rowName:lower() == itemName:lower() and item[countIdx] > 0 then
             return tonumber(item[slotIdx] or slot)
         end
     end

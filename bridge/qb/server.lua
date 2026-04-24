@@ -148,6 +148,25 @@ if QB_CORE then
             return false, eCoreErr.no_items_to_remove
         end
 
+        for _, item in pairs(items) do
+            if type(item) ~= 'table' then
+                return false, eCoreErr.invalid_item_data
+            end
+
+            if not hf.isPopulatedString(item.name) then
+                return false, eCoreErr.invalid_item_data
+            end
+
+            local amt = tonumber(item.amount)
+            if not amt or amt < 1 or amt ~= amt then
+                return false, eCoreErr.invalid_item_data
+            end
+        end
+
+        if not xPlayer then
+            return false, eCoreErr.unknown_error
+        end
+
         local count
         local inventory = xPlayer.items
 

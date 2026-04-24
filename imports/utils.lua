@@ -110,6 +110,18 @@ function cLog(k, v, level)
     end
 
     local vType = type(v)
+    --- Második argumentum szigorúan `error` / `warning` / `info` / `debug` + numerikus szint:
+    --- egy soros, severity-színezett kimenet (pl. DB / MySQL naplók).
+    local severityColor = {
+        error = '^1',
+        warning = '^3',
+        info = '^2',
+        debug = '^5',
+    }
+    if vType == 'string' and severityColor[v] and type(level) == 'number' then
+        print(severityColor[v] .. '[' .. string.upper(v) .. ']^7', tostring(k), '^7')
+        return
+    end
 
     if vType == 'table' or vType == 'function' then
         print('^3DEBUG', k, '^4')

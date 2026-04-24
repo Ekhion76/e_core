@@ -40,13 +40,6 @@ if ESX_CORE then
                 end
                 raw = type(raw) == 'string' and raw or tostring(raw)
                 local name = raw:lower()
-                local allowW, skipW = hf.itemDefinitionWeightGate(data)
-                if not allowW then
-                    if cLog then
-                        cLog('eCore:convertItems:skip', { framework = 'ESX', item = raw, reason = skipW }, 1)
-                    end
-                    return
-                end
                 tmp[name] = data
                 tmp[name].isUnique = false
                 tmp[name].isWeapon = false

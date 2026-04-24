@@ -19,13 +19,6 @@ if QB_CORE then
                     local name = type(item) == 'string' and item:lower()
                         or (type(data.name) == 'string' and data.name:lower())
                         or tostring(item):lower()
-                    local allowW, skipW = hf.itemDefinitionWeightGate(data)
-                    if not allowW then
-                        if cLog then
-                            cLog('eCore:convertItems:skip', { framework = 'QB', item = name, reason = skipW }, 1)
-                        end
-                        return
-                    end
                     temp[name] = data
                     if type(data.label) == 'string' then
                         temp[name].label = data.label:gsub("'", "\\'")

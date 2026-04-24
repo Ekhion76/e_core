@@ -28,13 +28,6 @@ if AVP_GRID_INVENTORY then
                 end
                 local itemKey = type(item) == 'string' and item or tostring(item)
                 local name = itemKey:lower()
-                local allowW, skipW = hf.itemDefinitionWeightGate(data)
-                if not allowW then
-                    if cLog then
-                        cLog('eCore:convertItems:skip', { framework = 'avp_grid_inventory', item = name, reason = skipW }, 1)
-                    end
-                    return
-                end
                 tmp[name] = {}
                 tmp[name].name = name
                 tmp[name].label = data.formatName

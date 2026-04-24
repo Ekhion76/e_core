@@ -5,6 +5,20 @@ if OX_INVENTORY then
     local hf = hf
     local ox_inventory = exports.ox_inventory
 
+    --- ox / qs stack-specifikus második érték → ha nem `eCoreErr` string, `unknown_error` + `cLog`
+    local function asEcoreInventoryReason(reason)
+        if type(reason) ~= 'string' or reason == '' then
+            return eCoreErr.unknown_error
+        end
+        for _, v in pairs(eCoreErr) do
+            if v == reason then
+                return reason
+            end
+        end
+        cLog('ox_inventory: nem eCoreErr ok-string', { reason = reason }, 2)
+        return eCoreErr.unknown_error
+    end
+
     local fallbackGetInventoryWeight = eCore.getInventoryWeight
     local fallbackGetPlayerMaxWeight = eCore.getPlayerMaxWeight
 
@@ -38,16 +52,53 @@ if OX_INVENTORY then
     end
 
     function eCore:removeItem(xPlayer, item, count, metadata, slot)
-        return ox_inventory:RemoveItem(xPlayer.source, item, count)
+        if not xPlayer or not hf.isValidPlayerSource(xPlayer.source) then
+            return false, eCoreErr.unknown_error
+        end
+        local okCall, rmRes = pcall(function()
+            return ox_inventory:RemoveItem(xPlayer.source, item, count)
+        end)
+        if not okCall then
+            cLog('eCore:removeItem:ox', { err = tostring(rmRes) }, 1)
+            return false, eCoreErr.unknown_error
+        end
+        if not rmRes then
+            return false, eCoreErr.unknown_error
+        end
+        return true
     end
 
     function eCore:removeItems(xPlayer, items)
+        if not xPlayer then
+            return false, eCoreErr.unknown_error
+        end
+
         if not hf.isPopulatedTable(items) then
             return false, eCoreErr.there_are_no_items_to_remove
         end
 
         for _, item in pairs(items) do
-            if not ox_inventory:RemoveItem(xPlayer.source, item.name, item.amount) then
+            if type(item) ~= 'table' then
+                return false, eCoreErr.invalid_item_data
+            end
+            if not hf.isPopulatedString(item.name) then
+                return false, eCoreErr.invalid_item_data
+            end
+            local amt = tonumber(item.amount)
+            if not amt or amt < 1 or amt ~= amt then
+                return false, eCoreErr.invalid_item_data
+            end
+        end
+
+        for _, item in pairs(items) do
+            local okCall, rmRes = pcall(function()
+                return ox_inventory:RemoveItem(xPlayer.source, item.name, item.amount)
+            end)
+            if not okCall then
+                cLog('eCore:removeItems:ox', { item = item.name, err = tostring(rmRes) }, 1)
+                return false, eCoreErr.unknown_error
+            end
+            if not rmRes then
                 return false, eCoreErr.unknown_error
             end
         end
@@ -56,9 +107,18 @@ if OX_INVENTORY then
     end
 
     function eCore:addItem(xPlayer, item, count, slot, metadata)
-        local success, response = ox_inventory:AddItem(xPlayer.source, item, count, metadata, slot)
+        if not xPlayer or not hf.isValidPlayerSource(xPlayer.source) then
+            return false, eCoreErr.unknown_error
+        end
+        local okCall, success, response = pcall(function()
+            return ox_inventory:AddItem(xPlayer.source, item, count, metadata, slot)
+        end)
+        if not okCall then
+            cLog('eCore:addItem:ox', { err = tostring(success) }, 1)
+            return false, eCoreErr.unknown_error
+        end
         if not success then
-            return false, response
+            return false, asEcoreInventoryReason(response)
         end
 
         return true

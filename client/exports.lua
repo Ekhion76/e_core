@@ -1,3 +1,5 @@
+--- Kliens oldali `exports.e_core:*` névsor = ez a fájl (szerződés: `docs/PUBLIC_API_HU.md` §2).
+--- Nincs üzleti logika: közvetlen hivatkozás a globális implementációkra; `getConfig` és `isReady` vékony burkoló.
 --- exports ---
 exports("getAbility", getAbility)
 exports("getMeta", getMeta)

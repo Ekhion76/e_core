@@ -47,11 +47,16 @@ Kapcsolódó fájlok a repóban
   minták). Az **AI_SUPPORT_REFERENCE** szekció **1.4** alatt tömör összefoglaló
   + erre a fájlra mutató hivatkozás; részletes narratíva a munkafájlban marad.
 - imports/locale.lua               – translate / translateU (shared)
-- imports/utils.lua                – print_r, blip, loader, cLog (shared)
-- imports/discordlog.lua           – createDiscordLog (server; eCore.helper)
+- imports/utils.lua                – print_r, blip, loader, cLog (shared;
+                                     severity mód: error / warning / info / debug)
+- imports/discordlog.lua           – createDiscordLog (server; webhook builder +
+                                     Discord limit, opts, callback)
 - imports/core.lua                 – consumer belépési minta (files; más
   resource-ból @e_core/… include)
-- libs/helper.lua                  – hf tábla (általános segédek); eCore.helper
+- libs/helper.lua                  – hf általános része (consumer util)
+- libs/helper_ecore.lua            – ugyanarra a hf-re: e_core item/normalize,
+                                     registry várakozás, mysqlAwait, indulási log,
+                                     net rate limit, moneyFormat; eCore.helper = hf
 - libs/errors.lua                  – eCoreErr ok stringek; eCore.Err (bridge/main.lua)
 - libs/meta.lua                    – szint / kedvezmény, checkMetaExists, levelChange
 - libs/config_check.lua            – Config alapértékek normalizálása induláskor
@@ -716,7 +721,8 @@ Mérvadó forrásfájlok (fxmanifest.lua)
                                   után áll; a tényleges szótár: locales/*.lua
     imports/utils.lua           – standalone config + overrides config után,
                                   **közvetlenül a libs/helper.lua előtt**
-                                  (a helper később érhető el más fájloknak).
+                                  (a `hf` tábla a helper.lua + helper_ecore.lua
+                                  után teljes más fájloknak).
   server_scripts:
     imports/discordlog.lua      – a **bridge/main.lua után** töltődik, hogy
                                   eCore.helper (hf) már létezzen a modul
@@ -764,7 +770,20 @@ imports/utils.lua (shared)
     fxLoader(dict)       – RequestNamedPtfxAsset + várakozás (végtelen ciklus
                          amíg nem tölt be – resource stop nélkül óvatosság).
     cLog(k, v, level)    – ha `Config.debugLevel` hiányzik vagy < 1: no-op;
-                         egyébként szint szűrés; tábla/függvény: print_r.
+                         egyébként **szint szűrés** (`level` > `Config.debugLevel`
+                         → no-op).
+                         **Általános ág:** tábla vagy függvény `v` → `print_r(v)`;
+                         egyéb típus → `DEBUG k -> v` sor.
+    cLog – **severity (egy soros) mód**
+      Ha `v` **pontosan** a következő string egyike: `error`, `warning`, `info`,
+      `debug` **és** a harmadik argumentum (`level`) **szám**, akkor egy **színezett
+      egy soros** üzenet jön ki: `[ERROR]`, `[WARNING]` stb. + `k` szöveg
+      (FiveM `^1` / `^3` / `^2` / `^5` színkódok).
+      **Cél:** `server/db.lua`, `hf.mysqlAwait` és hasonló hívások egységes,
+      jól látható konzol kimenete.
+      **Figyelem:** ha a második paramétert **adatként** szeretnéd logolni és
+      véletlenül ezek egyike lenne (`'info'` stb.), válassz más szót (pl.
+      `'info_text'`), különben severity-ként értelmeződik.
   Megjegyzés
     `cLog` a bridge/main.lua-ban is használatos (eseményregisztráció log); a
     `Config.debugLevel` standalone configban állítható.
@@ -773,28 +792,104 @@ imports/utils.lua (shared)
 
 imports/discordlog.lua (server)
   Szerep
-    **Discord webhook** üzenet építő: embed, mezők, `PerformHttpRequest` POST
-    JSON-nel. Jelenleg a repóban nincs belső hívó – újrafelhasználható library
-    minta consumer szerverkódhoz vagy későbbi e_core funkcióhoz.
+    **Discord webhook** üzenet-építő: több embed, mezők, `PerformHttpRequest`
+    POST JSON-nel. **Consumer** resource-ok a manifestben include-olhatják
+    (pl. `@e_core/imports/discordlog.lua` **server_scripts**-ben, az **e_core**
+    utáni ensure mellett). Belső e_core hívó a repóban opcionális; főleg külső
+    eco szerverlog / admin értesítés.
   Függőség
-    `local hf = eCore.helper` – `hf.trim` a webhook üres ellenőrzéséhez; az
-    e_core manifestben a fájl a **bridge/main.lua** után van, így `hf` a
-    chunk betöltésekor érvényes.
-  Név: createDiscordLog
+    `local hf = eCore.helper` – trim; az e_core manifestben a fájl a
+    **bridge/main.lua** után van, így `eCore` / `hf` a chunk betöltésekor érvényes.
+
+  Név: createDiscordLog(webhook, botName?, opts?)
     Oldal: server
-    Keretrendszer: közös (eCore.helper a libs/helper.lua-ból, nem ESX/QB spec.)
+    Keretrendszer: közös (eCore.helper)
+
     Paraméterek
-      webhook: string, nem üres (trim után); különben **false**.
-      botName: opcionális string; alap: `'ECOBOT'`.
+      webhook: string, **https** és tartalmazza az `/api/webhooks/` részt
+               (Discord / canary / régi discordapp host – tipikus webhook URL).
+               Érvénytelen → **false** + opcionális `cLog` egy sorban.
+      botName: opcionális string; alap felhasználónév: `'ECOBOT'` (max hossz
+               csonkolva).
+      opts: opcionális tábla:
+        defaultColor   – szám / név / `#RRGGBB` – új embed alap színe
+        avatar_url     – webhook kérés szintű alap avatar URL (`reset` után is)
+        onError        – `function(statusCode, responseBody)` – HTTP nem 2xx
+
     Visszatérés
-      **self** tábla metódusokkal: `reset()`, `putEmbed()`, `content(s)`,
-      `title(s)`, `description(s)`, `color(s)` – `yellow|green|red` vagy szám,
-      `putField(name, value, inline)`, `footer(s)`, `send()`.
+      **self** tábla (építő), vagy **false** (érvénytelen webhook).
+
+    Metódusok (építő)
+      reset()              – üzenet törlése; embed lista üres; `embedId` nullázva.
+      putEmbed()           – új rich embed a sor végére (több embed lánc).
+      content(s)           – top-level `content` (max ~2000 karakter, csonkolva).
+      username(s)          – webhook felhasználónév felülírás egy küldéshez.
+      avatarUrl(s)         – webhook avatar URL felülírás / törlés (üres → nil).
+      title(s), description(s), footer(s)
+      url(s)               – embed `url` (pl. dokumentum link).
+      color(c)             – név: `yellow`, `green`, `red`, `orange`, `blue`,
+                           `purple`, `grey`/`gray`, `teal`, `white`, `black`;
+                           vagy **decimális** szín; vagy **`#RRGGBB`** / `RRGGBB`.
+      putField(name, value, inline?, codeBlock?)
+                           – alapból érték **kódblokkban** (``` … ```), mint a
+                           korábbi viselkedés; **codeBlock = false** → nyers szöveg
+                           (hosszabb szöveg / URL).
+      timestamp(unix?)     – embed ISO időbélyeg; param nélkül `os.time()`.
+      author(name, url?, iconUrl?)
+      thumbnail(url), image(url)
+      send(doneCb?)        – POST; **üres** `content` és **nincs embed** → nem
+                           küld, `cLog` (2-es szint, ha engedélyezett), callback
+                           ha van: `doneCb(false, 0, 'skipped_empty')`.
+                           Egyébként: `doneCb(ok, statusCode, responseBody)`.
+                           HTTP hiba: `cLog` + opcionális **opts.onError**.
+
+    Automatikus embed
+      Ha `title` / `description` / `putField` / `footer` / `color` / `url` /
+      `timestamp` / `author` / `thumbnail` / `image` hívás **putEmbed nélkül**
+      történik, a modul **létrehoz egy embedet** (korábbi `embedId == 0` nil
+      index elkerülése). A **putEmbed()** továbbra is explicit több embedhez.
+
     Hibák / viselkedés
-      HTTP nem 2xx: konzol `print(statusCode .. ': Discord failed request…')`;
-      nincs lua-szintű return hiba.
+      HTTP nem 2xx: `cLog` a státusz + válasz rövidített szövegével; **onError**
+      callback; **send** callback `ok == false`.
+
     Forrás
       imports/discordlog.lua
+
+---
+
+imports – consumer / eco resource ötletek (következő lépések, nem kötelező)
+  A következők **javasolt irányok** az e_core-ra épülő szkriptekhez; részben
+  a `createDiscordLog` + `cLog` köré szervezhetők, részben külön modul / export.
+
+  Strukturált szerverlog
+    Egységes mezők: `resource`, `event`, `source` / azonosító, `payload` –
+    fájl, külső log szolgáltatás, vagy Discord `send` előtt normalizált JSON.
+
+  Webhook rate-limit / sor
+    Sok embed vagy burst küldés esetén Discord **429** – FIFO várakozás,
+    válasz `retry_after` (ha elérhető) vagy fix backoff.
+
+  Audit export / közös minta
+    Admin események (craft, trade, wipe): ugyanaz a Discord építő + `timestamp`
+    + `author` / `footer` (pl. `/tp` koordináta), egységes színek (`color`).
+
+  Trace / request id
+    Kliens → szerver callback egy rövid **korrelációs id**; `cLog` és Discord
+    mező ugyanazzal – összekapcsolható napló a két oldalon.
+
+  Config-validátor induláskor
+    Kötelező mezők, típus, webhook URL – egy helyen **hiba / figyelmeztetés**,
+    elkerülve a futás közbeni `false` logger objektumot (ha a webhook mégis
+    hibás volt).
+
+  safeCall(tag, fn) jellegű segéd
+    `pcall` + egységes `cLog` + opcionálisan kritikus hibánál Discord
+    **onError** / külön admin webhook.
+
+  Feature flag / ConVar
+    Pl. `e_core:*` vagy saját convar: Discord craft log ki/be prod-ban,
+    extra HTTP nélkül kód deploy.
 
 ---
 
@@ -818,9 +913,11 @@ imports/core.lua (files – consumer include)
 Összefüggés más részekkel
   `translate` / `translateU` – eco resource-ok ugyanazzal a mintával használhatják
   a közös locale fájlokat, ha a `locales` és `Config.locale` egyeztetve van.
-  `cLog`, `print_r` – debug egyeztetés `Config.debugLevel`-lel.
-  `eCore.helper` – libs/helper.lua → részletes felsorolás: „Libs modulok (libs/)”
-  szekció (1.2), `hf` tábla.
+  `cLog`, `print_r` – debug egyeztetés `Config.debugLevel`-lel; `cLog` severity mód
+  és `createDiscordLog` részletes szerződése: fenti **imports/utils** és
+  **imports/discordlog** blokkok, valamint az **imports – consumer ötletek** szekció.
+  `eCore.helper` – `libs/helper.lua` + `libs/helper_ecore.lua` → részletes
+  felsorolás: „Libs modulok (libs/)” szekció (1.2), `hf` tábla.
 
 ================================================================================
 1.2 Libs modulok (libs/)
@@ -835,22 +932,22 @@ Cél
 
 Mérvadó forrásfájlok (fxmanifest.lua, shared_scripts sorrend)
   imports/utils.lua után:
-    libs/helper.lua       – globális `hf = { … }` + metódusok
+    libs/helper.lua       – globális `hf = { … }` + általános metódusok
+    libs/helper_ecore.lua – ugyanarra a `hf`-re: e_core-specifikus metódusok
     libs/meta.lua         – globális `getLevel`, `getDiscounts`, stb.
     locales/*.lua
     libs/config_check.lua – `configCheck()` + azonnali hívás a fájl végén
 
 ---
 
-libs/helper.lua (shared) – `hf`
+libs/helper.lua + libs/helper_ecore.lua (shared) – ugyanaz a globális **`hf`**
+  A manifestben egymás után töltődnek; a bridge végén `eCore.helper = hf`
+  (bridge/main.lua) a **kiterjesztett** táblát adja.
+
+libs/helper.lua
   Szerep
-    Általános **string / tábla / szám** segédek; a bridge végén `eCore.helper =
-    hf` (bridge/main.lua). Inventory és meta kód gyakran `hf.isEmpty`,
-    `hf.isPopulatedTable`, `hf.trim` stb.
-  Megjegyzés
-    `hf.moneyFormat` a **`Config.currency`** mezőket olvassa (`suffix`, `symbol`);
-    üres `currency` tábla esetén híváskor hiba lehet – töltsd a standalone
-    configban vagy hagyatkozz a `config_check` után érvényes alapokra.
+    Általános **string / tábla / szám** segédek consumer szkripteknek és belső
+    kódnak; inventory / meta gyakran `hf.isEmpty`, `hf.isPopulatedTable`, `hf.trim`.
 
   Főbb metódusok (nem teljes lista – grep: `hf\.` a repóban)
     Véletlen / sorozat
@@ -865,17 +962,31 @@ libs/helper.lua (shared) – `hf`
       removeNonAlphaNumeric(inputString)
     Szám / esély
       round(num, numDecimalPlaces?), rangeLimit(v, max), draw(chance) – 1..100
-      százalék szerinti „sorsolás”; numberFormat(number), moneyFormat(amount)
+      százalék szerinti „sorsolás”; numberFormat(number)
     Másolat / vektor
-      copy(t) – sekély másolat táblára; deepCopy(orig, copies?) – mély másolás,
+      shallowCopy(t) – sekély tábla (`copy(t)` ugyanaz); deepCopy(orig, copies?) – mély másolás,
       körkörös hivatkozás kezeléssel; tableToVector(t) – {x,y,z[,w]} → vec vagy
       false
     Egyéb
       shuffle(t) – **sorozatos indexű** táblán (1..#t); hash táblán helytelen
       lehet a `#t`.
-    Szerver – MySQL (3E)
-      `mysqlAwait(tag, fn)` – `fn` belül oxmysql **`.await`**; `pcall` + `cLog`
-      hiba esetén; `server/db.lua`, `server/db_migrations.lua`.
+
+libs/helper_ecore.lua
+  Szerep
+    e_core környezethez kötött segédek ugyanarra a **`hf`**-re.
+  Megjegyzés
+    `hf.moneyFormat` a **`Config.currency`** mezőket olvassa (`suffix`, `symbol`);
+    üres `currency` tábla esetén híváskor hiba lehet – töltsd a standalone
+    configban vagy hagyatkozz a `config_check` után érvényes alapokra.
+  Item registry (convertItems lánc)
+    `getRegisteredItemWeightKeyConfig`, `normalizeRegisteredItemDef`
+  Indulás / diagnosztika
+    `awaitItemRegistryReady`, `logEcoreStartupSummary`, `inventoryIntegrationLabel`
+  Net (szerver)
+    `isValidPlayerSource`, `netRateLimit`
+  Szerver – MySQL (3E)
+    `mysqlAwait(tag, fn)` – `fn` belül oxmysql **`.await`**; `pcall` + `cLog`
+    hiba esetén; `server/db.lua`, `server/db_migrations.lua`.
 
 ---
 
@@ -886,8 +997,7 @@ libs/meta.lua (shared)
     szintváltás értesítés (`messageIfLevelChange` → `e_core:levelChange`).
   Függőség
     `local hf = hf` – a helper már betöltött; `getDiscounts` a szint sorok
-    másolásához helyi **`shallow_copy`** (sekély `pairs` másolat; luacheck /
-    `table.clone` környezetfüggetlen).
+    másolásához **`hf.shallowCopy`** (`libs/helper.lua`).
 
   Név: checkMetaExists
     Oldal: shared fájl; **hívás:** szerver (server/meta.lua), mert `ECO.meta`
@@ -1310,9 +1420,10 @@ getConfig()
   Visszaad: Config tábla (standalone/config + override configok összeolvadása).
 
 Megjegyzés (helper)
-  Nincs `exports.e_core:getHelper()` export. A `libs/helper.lua` **hf** táblája
-  `exports.e_core:getCore().helper` alatt (ugyanaz, mint `eCore.helper` a
-  resourceon belül); részletek: szekció **1.2**, `bridge/main.lua`.
+  Nincs `exports.e_core:getHelper()` export. A **`hf`** tábla (`libs/helper.lua`
+  + `libs/helper_ecore.lua`) `exports.e_core:getCore().helper` alatt (ugyanaz,
+  mint `eCore.helper` a resourceon belül); részletek: szekció **1.2**,
+  `bridge/main.lua`.
 
 --- Client (client/exports.lua) ---
 
@@ -1417,9 +1528,10 @@ Közös / globális jellegű (részlet):
           createVehicle (global server) …
 
 eCore.helper
-  bridge/main.lua végén: eCore.helper = hf (libs/helper.lua). Segédfüggvények
-  inventory és általános ellenőrzésekhez. Részletes felsorolás: szekció **1.2
-  Libs modulok (libs/)**, `hf` tábla.
+  bridge/main.lua végén: `eCore.helper = hf` (`libs/helper.lua` +
+  `libs/helper_ecore.lua`). Segédfüggvények inventoryhoz, induláshoz és
+  általános ellenőrzésekhez. Részletes felsorolás: szekció **1.2 Libs modulok
+  (libs/)**, `hf` tábla.
 
 ================================================================================
 4. Inventory integráció (AI rövid útmutató)
@@ -1455,7 +1567,7 @@ A: A szerver/kliens item registry **nem** töltődött be a ConVar időkorlátig
 K: `exports.e_core:isReady()` mikor `true`?
 A: Csak ha a registry szál sikeresen befejeződött (`CORE_READY == true`). Timeout
   után `false` marad; töltés közben is `false` (vagy belsőleg `eCore:isReady()`
-  lehet `nil`). Lásd `libs/helper.lua` `awaitItemRegistryReady`.
+  lehet `nil`). Lásd `libs/helper_ecore.lua` `awaitItemRegistryReady`.
 
 K: Kliensen `getLabor()` ad `false, not_found_metadata` – hiba?
 A: Nem feltétlenül: **sync előtt** vagy üres kliens meta esetén várható. A szerver

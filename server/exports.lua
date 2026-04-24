@@ -10,6 +10,7 @@ exports("getLabor", getLabor)
 exports("setLabor", setLabor)
 exports("addLabor", addLabor)
 exports("removeLabor", removeLabor)
+exports("getLaborQuote", getLaborQuote)
 
 exports("registerMeta", registerMeta)
 

@@ -57,6 +57,48 @@ local function meta_normalize_writable_category(key)
     return trimmed, nil
 end
 
+--- @param category string|nil
+--- @param name string|nil
+--- @return number resolved ability cap (profession-specific if configured, else Config.abilityLimit)
+function resolveAbilityCap(category, name)
+    local fallback = tonumber(Config.abilityLimit) or 0
+    local progression = Config.progression
+    if type(progression) ~= 'table' then
+        return fallback
+    end
+
+    local byProfession = progression.maxByProfession
+    if type(byProfession) ~= 'table' then
+        return fallback
+    end
+
+    if type(category) ~= 'string' or type(name) ~= 'string' then
+        return fallback
+    end
+
+    local ck = hf.trim(category)
+    local nk = hf.trim(name)
+    if ck == '' or nk == '' then
+        return fallback
+    end
+
+    local bucket = byProfession[ck]
+    if type(bucket) ~= 'table' then
+        return fallback
+    end
+
+    local cap = tonumber(bucket[nk])
+    if not cap or cap ~= cap then
+        return fallback
+    end
+
+    if cap < 0 then
+        cap = 0
+    end
+
+    return math.floor(cap)
+end
+
 --- @return table|nil row ECO.meta[playerId]
 --- @return string|nil err eCoreErr
 local function meta_require_player_row(playerId)
@@ -90,6 +132,9 @@ function setMeta(playerId, meta, value)
     end
 
     row[metaKey] = hf.shallowCopy(value)
+    if type(invalidateLaborQuoteCache) == 'function' then
+        invalidateLaborQuoteCache(playerId)
+    end
     syncRequest(playerId)
 
     return true
@@ -142,6 +187,9 @@ function registerMeta(playerId, category, defaultValue)
     local slot = rawget(row, ck)
     if slot == nil then
         row[ck] = hf.shallowCopy(defaultValue)
+        if type(invalidateLaborQuoteCache) == 'function' then
+            invalidateLaborQuoteCache(playerId)
+        end
         syncRequest(playerId)
         return true
     end
@@ -159,6 +207,9 @@ function registerMeta(playerId, category, defaultValue)
     end
 
     if dirty then
+        if type(invalidateLaborQuoteCache) == 'function' then
+            invalidateLaborQuoteCache(playerId)
+        end
         syncRequest(playerId)
     end
 
@@ -230,18 +281,22 @@ function addAbility(playerId, category, name, value)
 
     local metaValue = row[ck][nk]
     local baseValue = metaValue
+    local abilityCap = resolveAbilityCap(ck, nk)
 
-    if metaValue >= Config.abilityLimit then
+    if metaValue >= abilityCap then
         return false, eCoreErr.has_already_reached_the_limit
     end
 
     metaValue = metaValue + delta
 
-    local newValue = hf.rangeLimit(metaValue, Config.abilityLimit)
+    local newValue = hf.rangeLimit(metaValue, abilityCap)
 
     if baseValue ~= newValue then
         row[ck][nk] = newValue
         messageIfLevelChange(playerId, ck, nk, baseValue, newValue)
+        if type(invalidateLaborQuoteCache) == 'function' then
+            invalidateLaborQuoteCache(playerId)
+        end
         syncRequest(playerId)
     end
 
@@ -283,14 +338,18 @@ function removeAbility(playerId, category, name, value)
 
     local metaValue = row[ck][nk]
     local baseValue = metaValue
+    local abilityCap = resolveAbilityCap(ck, nk)
 
     metaValue = metaValue - delta
 
-    local newValue = hf.rangeLimit(metaValue, Config.abilityLimit)
+    local newValue = hf.rangeLimit(metaValue, abilityCap)
 
     if baseValue ~= newValue then
         row[ck][nk] = newValue
         messageIfLevelChange(playerId, ck, nk, baseValue, newValue)
+        if type(invalidateLaborQuoteCache) == 'function' then
+            invalidateLaborQuoteCache(playerId)
+        end
         syncRequest(playerId)
     end
 
@@ -332,11 +391,15 @@ function setAbility(playerId, category, name, value)
 
     local metaValue = row[ck][nk]
     local baseValue = metaValue
-    local newValue = hf.rangeLimit(numValue, Config.abilityLimit)
+    local abilityCap = resolveAbilityCap(ck, nk)
+    local newValue = hf.rangeLimit(numValue, abilityCap)
 
     if baseValue ~= newValue then
         row[ck][nk] = newValue
         messageIfLevelChange(playerId, ck, nk, baseValue, newValue)
+        if type(invalidateLaborQuoteCache) == 'function' then
+            invalidateLaborQuoteCache(playerId)
+        end
         syncRequest(playerId)
     end
 

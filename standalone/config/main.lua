@@ -65,6 +65,22 @@ Config.defaultLabor = 1000 -- Default labor for new players
 Config.laborLimit = 5000 -- Max labor points
 Config.abilityLimit = 120000 -- if the not set levels (eg.: Max proficiency points)
 
+-- Optional profession-specific progression caps (fallback: Config.abilityLimit)
+-- Example:
+-- Config.progression = {
+--     maxByProfession = {
+--         harvesting = {
+--             gathering = 80000
+--         },
+--         crafting = {
+--             weaponry = 100000
+--         }
+--     }
+-- }
+Config.progression = Config.progression or {
+    maxByProfession = {}
+}
+
 
 Config.laborIncreaseTime = 5 -- Default 5 (min), if 0 then turn off automatic labor
 Config.laborIncrease = 10 -- Every increaseTime minutes grow so much

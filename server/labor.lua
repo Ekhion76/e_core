@@ -55,6 +55,9 @@ function setLabor(playerId, amount)
 
     row.labor.val = hf.rangeLimit(amount, Config.laborLimit)
     row.labor.time = os.time()
+    if type(invalidateLaborQuoteCache) == 'function' then
+        invalidateLaborQuoteCache(playerId)
+    end
 
     syncRequest(playerId)
     return true
@@ -85,6 +88,9 @@ function removeLabor(playerId, amount)
 
     row.labor.val = hf.rangeLimit(row.labor.val - amount, Config.laborLimit)
     row.labor.time = os.time()
+    if type(invalidateLaborQuoteCache) == 'function' then
+        invalidateLaborQuoteCache(playerId)
+    end
 
     syncRequest(playerId)
     return true
@@ -115,6 +121,9 @@ function addLabor(playerId, amount)
 
     row.labor.val = hf.rangeLimit(row.labor.val + amount, Config.laborLimit)
     row.labor.time = os.time()
+    if type(invalidateLaborQuoteCache) == 'function' then
+        invalidateLaborQuoteCache(playerId)
+    end
 
     syncRequest(playerId)
     return true
@@ -157,6 +166,9 @@ local function laborIncreaseApplyChunks(ids, timeStamp, fromIdx, chunkSize, onDo
             meta.labor.time = timeStamp
             if meta.labor.val < limit then
                 meta.labor.val = hf.rangeLimit(meta.labor.val + step, limit)
+                if type(invalidateLaborQuoteCache) == 'function' then
+                    invalidateLaborQuoteCache(playerId)
+                end
                 syncRequest(playerId)
             end
         end
@@ -237,5 +249,8 @@ function addOfflineLabor(playerId)
 
     row.labor.time = timeStamp
     row.labor.val = hf.rangeLimit(row.labor.val + offlineLabor, Config.laborLimit)
+    if type(invalidateLaborQuoteCache) == 'function' then
+        invalidateLaborQuoteCache(playerId)
+    end
     return true
 end

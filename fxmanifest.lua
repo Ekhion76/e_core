@@ -76,6 +76,7 @@ server_scripts {
     'server/main.lua',
     'server/meta.lua',
     'server/labor.lua',
+    'server/quote.lua',
     'server/db_migrations.lua',
     'server/db.lua',
     'server/exports.lua',

@@ -12,6 +12,10 @@ function configCheck()
     Config.defaultLabor = tonumber(Config.defaultLabor) or 0
     Config.laborLimit = tonumber(Config.laborLimit) or 0
     Config.abilityLimit = tonumber(Config.abilityLimit) or 0
+    Config.progression = hf.isPopulatedTable(Config.progression) and Config.progression or {}
+    Config.progression.maxByProfession = hf.isPopulatedTable(Config.progression.maxByProfession)
+        and Config.progression.maxByProfession
+        or {}
 
     Config.laborIncreaseTime = tonumber(Config.laborIncreaseTime) or 0
     Config.laborIncrease = tonumber(Config.laborIncrease) or 0

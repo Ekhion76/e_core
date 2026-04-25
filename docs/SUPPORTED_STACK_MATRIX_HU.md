@@ -5,7 +5,7 @@ Cél: egy helyen látszódjon, **milyen kombinációk** vannak a repóban péld�
 | Szint | Leírás | Példa | Megjegyzés |
 |--------|--------|-------|------------|
 | **Tier 0** | Csak legacy core inventory API (`xPlayer` / `Player.Functions`), nincs (vagy nem használt) külön ox override | Alap ESX / QB | Kevesebb illesztő; súly/slot a core szerint. |
-| **Tier 1** | **ox_inventory** – repóban: `standalone/overrides/ox_inventory/` | ESX + ox vagy QB + ox | Tipikus éles; `getRegisteredItems` / add/remove gyakran override. |
+| **Tier 1** | **ox_inventory** – repóban: `overrides/ox_inventory/` | ESX + ox vagy QB + ox | Tipikus éles; `getRegisteredItems` / add/remove gyakran override. |
 | **Tier 2** | Egyéb inventory override a repóban | `qs_inventory`, `avp_grid_inventory`, `example_custom_inventory` | Mappa szerinti glob sorrend = utolsó nyer ugyanarra az `eCore:` névre. |
 | **Progress / UI** | Nem inventory | `ox_progressbar`, `17_movement`, `inside_scripts` | `eCore:progressbar`, `sendMessage`, stb. |
 
@@ -17,7 +17,7 @@ Cél: egy helyen látszódjon, **milyen kombinációk** vannak a repóban péld�
 
 ## Hibakódok (D – kész)
 
-Közös tábla: **`libs/errors.lua`** → globális **`eCoreErr`**, valamint **`eCore.Err`** a `getCore()` eredményén (`bridge/main.lua`). Inventory / meta / labor return okok innen hivatkozandók új kódban.
+Közös tábla: **`src/libs/errors.lua`** → globális **`eCoreErr`**, valamint **`eCore.Err`** a `getCore()` eredményén (`src/bridge/main.lua`). Inventory / meta / labor return okok innen hivatkozandók új kódban.
 
 ## Kapcsolódó
 

@@ -62,9 +62,9 @@ Részletes szerződés: `docs/PUBLIC_API_HU.md` §2–§3 + §5, `export_example
 | `client/main.lua` – `getLabor()` | Cache: siker **`true`, `ECO.meta.labor.val`**; labor ki → `false, reason`; nincs még `labor` blokk (sync előtt) → `false, not_found_metadata` |
 | `client/exports.lua` | `getLabor` export (kliensen nincs labor írás) |
 | `e_core:sync` esemény | Teljes meta; INIT / UPDATE (page vs hud) |
-| `html/js/view.js` – `updateHud()` | Labor szám + progress (`model.laborLimit`) |
-| `html/js/model.js` | `laborLimit` |
-| `html/ui.html` | `#labor_hud_*` |
+| `src/web/src/lib/LevelPreview.svelte` – `updateHud()` | Labor szám + progress (`model.laborLimit`) |
+| `src/web/src/lib/rankData.ts` | `laborLimit` |
+| `src/web/dist/index.html` | `#labor_hud_*` |
 
 ## Konfiguráció
 

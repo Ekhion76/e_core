@@ -22,8 +22,8 @@ If you have a basic server, no changes are necessary.
 If you use ox_inventory, no changes are needed.
 
 Config files:
-- standalone/config/ - global settings
-- standalone/overrides/custom_inventory/config.lua - Inventory specific settings
+- src/standalone/config/ - global settings
+- overrides/custom_inventory/config.lua - Inventory specific settings
 
 **IMPORTANT!** Start e_core before eco scripts in `server.cfg`. Start the **legacy core** (`es_extended` or `qb-core`) before e_core so framework globals and item registry can initialise.
 
@@ -34,9 +34,9 @@ If both cores are running by mistake, set `setr e_core:framework "esx"` or `"qb"
     ensure e_core
     ensure eco_crafting
 ```
-**IMPORTANT!** Due to the overwriting of later updates, it is advisable to make all changes in the 'standalone' folder!
-The 'standalone' folder is nothing more than a collection of override functions. All functions in the bridge folder can be copied to the 'standalone' folder and overwritten there.
-**IMPORTANT!** Copy the bridge functions to the 'standalone' folder and overwrite them! (of course only if necessary)
+**IMPORTANT!** To keep updates safe, do all customizations in the `overrides/` folder.
+The `overrides/` folder is the customization layer. Functions from `src/bridge/` can be copied there and overridden when needed.
+**IMPORTANT!** Override bridge behavior only inside `overrides/`.
 
 #### For developers / AI and Cursor context
 
@@ -54,28 +54,28 @@ When starting a new chat or refactor, link or attach:
 Example of customization:
 
 ```lua
-    function eCore:sendMessage(message, mType, mSec) -- bridge/esx/client.lua
+    function eCore:sendMessage(message, mType, mSec) -- src/bridge/esx/client.lua
 
         ESX.ShowNotification(message, mSec, mType)
     end
 
-    --- OVERRIDE in the 'standalone/overrides/core' folder:
+    --- OVERRIDE in the 'overrides/core' folder:
     
-    function eCore:sendMessage(message, mType, mSec) -- standalone/overrides/core/client.lua
+    function eCore:sendMessage(message, mType, mSec) -- overrides/core/client.lua
 
         EXAMPLE.MyOwnNotify(message, mSec, mType)
     end
 ```
 Example of overriding an inventory function:
 ```lua
-    function eCore:removeItem(xPlayer, item, count, metadata, slot) -- bridge/esx/server.lua
+    function eCore:removeItem(xPlayer, item, count, metadata, slot) -- src/bridge/esx/server.lua
     
         xPlayer.removeInventoryItem(item, count, metadata, slot)
     end
 
-    --- OVERRIDE in the 'standalone' folder:
+    --- OVERRIDE in the 'overrides/...' folder:
     
-    function eCore:removeItem(xPlayer, item, count, metadata, slot) -- standalone/overrides/avp_grid_inventory/server.lua
+    function eCore:removeItem(xPlayer, item, count, metadata, slot) -- overrides/avp_grid_inventory/server.lua
     
         return exports["avp_grid_inventory"]:RemoveItemBy(xPlayer.source, count, item)
     end

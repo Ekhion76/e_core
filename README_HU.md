@@ -22,8 +22,8 @@ Ha alap szervered van, nincs szükség módosításokra.
 Ha ox_inventoryt használsz, nincs szükség módosításokra.
 
 Konfig fájlok:
-- standalone/config/ - globális beállítások
-- standalone/overrides/custom_inventory/config.lua - Inventory specifikus beállítások
+- src/standalone/config/ - globális beállítások
+- overrides/custom_inventory/config.lua - Inventory specifikus beállítások
 
 **FONTOS!** Az e_core-t az eco scriptek előtt szükséges indítani a server.cfg fájlban! A **legacy core** (`es_extended` vagy `qb-core`) az e_core előtt legyen `ensure`-elve, különben üres maradhat a registry indulásig.
 
@@ -34,10 +34,10 @@ Ha véletlenül **mindkét** core futna: `setr e_core:framework "esx"` vagy `"qb
     ensure e_core
     ensure eco_crafting
 ```
-**FONTOS!** A későbbi frissítések felülírása miatt minden változtatást a 'standalone' mappában célszerű elvégezni!
-A 'standalone' mappa nem más, mint felülírási funkciók gyűjteménye. A bridge mappában lévő összes funkció átmásolható a 'standalone' mappába, és ott felülírható.
+**FONTOS!** A későbbi frissítések felülírása miatt minden testreszabást az `overrides/` mappában célszerű elvégezni!
+Az `overrides/` mappa a felülírási funkciók gyűjteménye. A `src/bridge/` mappában lévő függvények szükség esetén átmásolhatók ide, majd itt felülírhatók.
 
-**FONTOS!** Másold át a bridge függvényeket a 'standalone' mappába és írd felül! (persze csak szükség esetén)
+**FONTOS!** Bridge függvény felülírását csak az `overrides/` mappában végezd.
 
 #### Fejlesztőknek / AI és Cursor kontextus
 
@@ -55,28 +55,28 @@ A 'standalone' mappa nem más, mint felülírási funkciók gyűjteménye. A bri
 Példa a testreszabásra:
 
 ```lua
-    function eCore:sendMessage(message, mType, mSec) -- bridge/esx/client.lua
+    function eCore:sendMessage(message, mType, mSec) -- src/bridge/esx/client.lua
 
         ESX.ShowNotification(message, mSec, mType)
     end
 
-    --- OVERRIDE a 'standalone/overrides/...' mappában:
+    --- OVERRIDE a 'overrides/...' mappában:
     
-    function eCore:sendMessage(message, mType, mSec) -- standalone/overrides/core/client.lua
+    function eCore:sendMessage(message, mType, mSec) -- overrides/core/client.lua
 
         PELDA.SajatUzenom(message, mSec, mType)
     end
 ```
 Példa egy inventory funkció felülírásra:
 ```lua
-    function eCore:removeItem(xPlayer, item, count, metadata, slot) -- bridge/esx/server.lua
+    function eCore:removeItem(xPlayer, item, count, metadata, slot) -- src/bridge/esx/server.lua
     
         xPlayer.removeInventoryItem(item, count, metadata, slot)
     end
 
-    --- OVERRIDE a 'standalone/overrides/...' mappában:
+    --- OVERRIDE a 'overrides/...' mappában:
     
-    function eCore:removeItem(xPlayer, item, count, metadata, slot) -- standalone/overrides/avp_grid_inventory/server.lua
+    function eCore:removeItem(xPlayer, item, count, metadata, slot) -- overrides/avp_grid_inventory/server.lua
     
         return exports["avp_grid_inventory"]:RemoveItemBy(xPlayer.source, count, item)
     end

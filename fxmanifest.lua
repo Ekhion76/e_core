@@ -5,100 +5,98 @@ version '0.0.56'
 
 shared_scripts {
     '@ox_lib/init.lua',
-    'imports/locale.lua',
+    'src/imports/locale.lua',
 
-    'bridge/esx/config_defaults.lua',
-    'bridge/qb/config_defaults.lua',
-    'bridge/framework_config.lua',
-    'standalone/config/main.lua',
-    'standalone/config/levels.lua',
-    'standalone/overrides/**/config.lua',
+    'src/bridge/esx/config_defaults.lua',
+    'src/bridge/qb/config_defaults.lua',
+    'src/bridge/framework_config.lua',
+    'src/standalone/config/main.lua',
+    'src/standalone/config/levels.lua',
+    'overrides/**/config.lua',
 
-    'imports/utils.lua',
-    'libs/helper.lua',
-    'libs/helper_ecore.lua',
-    'libs/errors.lua',
+    'src/imports/utils.lua',
+    'src/libs/helper.lua',
+    'src/libs/helper_ecore.lua',
+    'src/libs/errors.lua',
 
-    'libs/meta.lua',
-    'locales/*.lua',
-    'libs/config_check.lua'
+    'src/libs/meta.lua',
+    'src/locales/*.lua',
+    'src/libs/config_check.lua'
 }
 
 client_scripts {
-    'bridge/global/shared.lua',
-    'bridge/global/client.lua',
+    'src/bridge/global/shared.lua',
+    'src/bridge/global/client.lua',
 
-    'bridge/esx/shared.lua',
-    'bridge/qb/shared.lua',
+    'src/bridge/esx/shared.lua',
+    'src/bridge/qb/shared.lua',
 
-    'bridge/esx/client.lua',
-    'bridge/qb/client.lua',
+    'src/bridge/esx/client.lua',
+    'src/bridge/qb/client.lua',
 
-    'standalone/overrides/**/shared.lua',
-    'standalone/overrides/**/client.lua',
+    'overrides/**/shared.lua',
+    'overrides/**/client.lua',
 
-    'bridge/global/events/client.lua',
-    'bridge/esx/events/client.lua',
-    'bridge/qb/events/client.lua',
+    'src/bridge/global/events/client.lua',
+    'src/bridge/esx/events/client.lua',
+    'src/bridge/qb/events/client.lua',
 
-    'bridge/main.lua',
+    'src/bridge/main.lua',
 
-    'client/main.lua',
-    'client/integrity_check.lua',
-    'client/web.lua',
-    'client/nui_admin_bridge.lua',
-    'client/nui_diagnostics_bridge.lua',
-    'client/exports.lua',
+    'src/client/main.lua',
+    'src/client/integrity_check.lua',
+    'src/client/web.lua',
+    'src/client/nui_admin_bridge.lua',
+    'src/client/nui_diagnostics_bridge.lua',
+    'src/client/exports.lua',
 }
 
 server_scripts {
     '@oxmysql/lib/MySQL.lua',
 
-    'bridge/global/shared.lua',
-    'bridge/global/server.lua',
+    'src/bridge/global/shared.lua',
+    'src/bridge/global/server.lua',
 
-    'bridge/esx/shared.lua',
-    'bridge/qb/shared.lua',
+    'src/bridge/esx/shared.lua',
+    'src/bridge/qb/shared.lua',
 
-    'bridge/esx/server.lua',
-    'bridge/qb/server.lua',
+    'src/bridge/esx/server.lua',
+    'src/bridge/qb/server.lua',
 
-    'standalone/overrides/**/shared.lua',
-    'standalone/overrides/**/server.lua',
+    'overrides/**/shared.lua',
+    'overrides/**/server.lua',
 
-    'bridge/global/events/server.lua',
-    'bridge/esx/events/server.lua',
-    'bridge/qb/events/server.lua',
+    'src/bridge/global/events/server.lua',
+    'src/bridge/esx/events/server.lua',
+    'src/bridge/qb/events/server.lua',
 
-    'bridge/main.lua',
+    'src/bridge/main.lua',
 
-    'imports/discordlog.lua',
+    'src/imports/discordlog.lua',
 
-    'bridge/global/callbacks/server.lua',
+    'src/bridge/global/callbacks/server.lua',
 
-    'server/main.lua',
-    'server/meta.lua',
-    'server/labor.lua',
-    'server/quote.lua',
-    'server/db_migrations.lua',
-    'server/professions.lua',
-    'server/db.lua',
-    'server/exports.lua',
-    'server/integrity_check.lua',
-    'server/diagnostics.lua',
-    'server/web.lua',
-    'server/nui_admin_bridge.lua',
-    'server/nui_diagnostics_bridge.lua',
-    'standalone/usableitem.lua',
+    'src/server/main.lua',
+    'src/server/meta.lua',
+    'src/server/labor.lua',
+    'src/server/quote.lua',
+    'src/server/db_migrations.lua',
+    'src/server/professions.lua',
+    'src/server/db.lua',
+    'src/server/exports.lua',
+    'src/server/integrity_check.lua',
+    'src/server/diagnostics.lua',
+    'src/server/web.lua',
+    'src/server/nui_admin_bridge.lua',
+    'src/server/nui_diagnostics_bridge.lua',
+    'src/standalone/usableitem.lua',
 }
 
-ui_page 'html/web/index.html'
+ui_page 'src/web/dist/index.html'
 
 files {
-    'imports/core.lua',
-    'html/main.css',
-    'html/img/*.png',
-    'html/web/**'
+    'src/imports/core.lua',
+    'src/web/dist/**'
 }
 
 lua54 'yes'

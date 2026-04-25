@@ -34,7 +34,7 @@ Telepítés Linuxon / CI-n: `luarocks install luacheck` vagy csomagkezelő (`apt
 
 ## GitHub Actions
 
-- **Workflow:** `.github/workflows/lua_ci.yml` – push/PR ágak: `main`, `master`, `develop`; Ubuntu + **`python3 scripts/validate_fxmanifest.py`** (lokális fájlok / `*` glob: létező fájlok, `@ox_lib` stb. kihagyva; a `files` blokkban az **`html/img/*.png`** üres találatlistát enged – opcionális NUI ikonok) + `luarocks install luacheck` + `luacheck .`.
+- **Workflow:** `.github/workflows/lua_ci.yml` – push/PR ágak: `main`, `master`, `develop`; Ubuntu + **`python3 scripts/validate_fxmanifest.py`** (lokális fájlok / `*` glob: létező fájlok, `@ox_lib` stb. kihagyva; a `files` blokkban az **`src/web/public/img/*.png`** üres találatlistát enged – opcionális NUI ikonok) + `luarocks install luacheck` + `luacheck .`.
 - **Lokálisan:** a repó gyökeréből `python scripts/validate_fxmanifest.py` (Windows/Linux).
 - Ha a forkban más az alap ág neve, bővítsd az `on.push.branches` listát.
 

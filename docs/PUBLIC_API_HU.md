@@ -93,10 +93,10 @@ A tábla névsora = a fájlban lévő `exports(...)` sorok sorrendje; közvetlen
 
 ### 3.1 Játékbeli web konzol — profession / level-profile admin (NUI bridge)
 
-A **`SetHttpHandler` alapú külső HTTP admin (`/admin/...`) el lett távolítva.** A beépített Svelte admin (`ecore_admin`, `web/src/lib/registry.ts`) a szerver felé **NUI callbacken** (`eCoreAdminApi`) hív: kliens `client/nui_admin_bridge.lua` → szerver `server/nui_admin_bridge.lua`, jogosultság **`hf.webConsoleAccess`** (ugyanaz, mint az admin NUI megnyitásához). Integritás checklist net: `e_core:integrityCheck:*` (`server/integrity_check.lua`).
+A **`SetHttpHandler` alapú külső HTTP admin (`/admin/...`) el lett távolítva.** A beépített Svelte admin (`ecore_admin`, `src/web/src/lib/registry.ts`) a szerver felé **NUI callbacken** (`eCoreAdminApi`) hív: kliens `client/nui_admin_bridge.lua` → szerver `server/nui_admin_bridge.lua`, jogosultság **`hf.webConsoleAccess`** (ugyanaz, mint az admin NUI megnyitásához). Integritás checklist net: `e_core:integrityCheck:*` (`server/integrity_check.lua`).
 
 - Válasz alakja változatlan: `professionAdminList`, `professionAdminCreate`, `levelProfileAdminList`, stb. ugyanazt az `{ ok, code, message, data }` szerződést adják, mint az exportok.
-- **Böngészős `npm run dev`:** valós CRUD nélkül használd a mock registry-t (`VITE_USE_MOCK_REGISTRY=true`, lásd `web/.env.example`).
+- **Böngészős `npm run dev`:** valós CRUD nélkül használd a mock registry-t (`VITE_USE_MOCK_REGISTRY=true`, lásd `src/web/.env.example`).
 
 ---
 

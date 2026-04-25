@@ -1,203 +1,80 @@
 ================================================================================
-e_core – projekt struktúra és mappa szerepek
+e_core – projekt struktura (src kontener + overrides)
 ================================================================================
-Fájl helye: docs/PROJECT_STRUCTURE.txt (a resource gyökérben nincs másolat).
 
-Cél
------
-- Gyors tájékozódás: melyik mappa mit tartalmaz és hol érdemes módosítani.
-- A fa alább fájllista; új fájl vagy mappa felvételekor frissítsd a fát is.
+Cel
+----
+- Gyors tajekozodas: melyik mappa mit tartalmaz.
+- Egyertelmu szerkesztesi hatar:
+  - platform/belso kod: `src/`
+  - ugyfel testreszabas: `overrides/`
 
-Gyökér könyvtárak szerepe
---------------------------
-bridge          Keretrendszer-specifikus réteg: ESX (esx/), QB (qb/), közös
-                logika (global/). Belépés: bridge/main.lua. Ide ne „saját
-                szerver” workaround tömegesen; inkább standalone/overrides/.
-client          Kliens oldal belépés: main.lua, exports.lua (publikus exportok
-                regisztrációja; mérvadó névlista egy része).
-server          Szerver oldal: main.lua, exports.lua, db_migrations.lua, db.lua,
-                labor.lua, meta.lua – domain logika és exportok.
-imports         Más resource-ból include-olható segédek: core.lua (FRAMEWORK,
-                eCore, eCoreConfig minta), locale.lua, utils.lua (cLog, print_r),
-                discordlog.lua (createDiscordLog webhook építő, szerver). Részletek:
-                docs/AI_SUPPORT_REFERENCE_HU.txt §1.1.
-libs            Megosztott könyvtár modulok: helper.lua (általános hf) + helper_ecore.lua
-                (e_core kiterjesztés ugyanarra a hf-re), meta.lua,
-                config_check.lua – nem keretrendszer-függő praktikumok.
-locales         Fordítási fájlok (Config.locale és imports/locale.lua).
-standalone      Erőforrás-specifikus, nem ESX/QB adapter: globális config,
-                overrides (inventory, progress, core viselkedés), usableitem.lua.
-html            NUI (ha a resource UI-t szolgál): ui.html, css, js, img.
-docs            Projekt dokumentáció (checklist, AI referencia, terv, ez a fájl).
-_installation_assist  Opcionális segédek telepítéshez vagy adatokhoz (nem runtime core).
+Gyoker konyvtarak szerepe
+-------------------------
+src/                Belső platform kod (bridge, client, server, libs, imports, locales,
+                    standalone config + usableitem).
+overrides/          Testreszabasi pontok (inventory/progress/core override-ok).
+html/               NUI output (web build + css/img).
+web/                Svelte/TS NUI forraskod.
+docs/               Belső projekt dokumentacio.
+tech_docs/          Docusaurus technikai dokumentacio.
+types/              LuaLS stubok.
+scripts/            CI/dev seged script.
+_installation_assist/ Opcionális telepitesi segedanyag.
 
-Gyökér fájlok (fontosabbak)
-----------------------------
-fxmanifest.lua           Resource manifest (lua54, fájlok, függőségek, verzió).
-.luarc.json              LuaLS (VS Code / Cursor) workspace beállítások.
-.luacheckrc              Luacheck szabályok (CI + lokális futtatás).
-.github/workflows/       Opcionális CI (pl. lua_ci.yml → validate_fxmanifest + luacheck).
-scripts/                 CI / fejlesztői segéd: validate_fxmanifest.py (fxmanifest útvonalak).
-types/                   LuaLS stub fájlok (---@meta; nem runtime).
-changelog.md             Változásnapló; publikus API vagy export változáskor kötelező
-                         frissítés.
-export_examples_*.md     Gyors példák az exports.e_core hívásokra (kiegészíti a doksit).
-README.md, README_HU.md  Emberi bevezető és linkek a Cursor / AI kontextushoz.
-
-bridge/ részletek
------------------
-bridge/esx/       ESX bridge: client.lua, server.lua, shared.lua, config_defaults.lua, events/.
-bridge/qb/        QB (dokumentáció szerint QBox kompatibilitás is): config_defaults.lua,
-                  shared/client/server/events (ugyanilyen felosztás).
-bridge/framework_config.lua  Keretrendszer választás (shared); lásd docs/FRAMEWORK_*.
-bridge/global/    Keretrendszer-független közös rész: callbacks/, events/, client.lua,
-                  server.lua, shared.lua.
-
-standalone/ részletek
----------------------
-standalone/config/       Globális Config és szintek: main.lua, levels.lua.
-standalone/overrides/    Felülírások: inventory, progress, core, mozgás stb. Ide kerüljön
-                         a szerver-specifikus vagy ritka stack illesztés; almappa = egy
-                         integráció (példa: ox_inventory, qs_inventory).
-standalone/usableitem.lua  Használható tárgy / usable item kapcsolódó logika (ha aktív).
-
-client/ és server/ exports
-----------------------------
-Exportnevek és aláírások forrása: client/exports.lua, server/exports.lua, valamint a
-bridge/main.lua exports( sorai; a dokumentációt ezekkel szinkronban tartandó.
-
-================================================================================
-Fájlfa (frissítsd struktúra- vagy fájlváltozáskor)
-================================================================================
-bridge
-client
-docs
-html
-imports
-libs
-locales
-server
-standalone
-_installation_assist
+Fobb gyoker fajlok
+------------------
+fxmanifest.lua      Resource manifest, script betoltesi sorrend.
+README.md
+README_HU.md
 changelog.md
 export_examples_client.md
 export_examples_server.md
+
+Reszletek
+---------
+src/bridge/
+  Keretrendszer-illesztes: esx/, qb/, global/, framework_config.lua, main.lua.
+
+src/client/
+  Kliens oldali runtime: main, exports, web/NUI bridge, integrity bridge.
+
+src/server/
+  Szerver oldali domain: meta, labor, db, exports, diagnostics, admin bridge.
+
+src/libs/
+  Közös helper modulok (`hf`, `errors`, `meta`, `config_check`).
+
+src/imports/
+  Include-olhato segedfajlok kulso resource-oknak (`core.lua`, `locale.lua`, stb.).
+
+src/locales/
+  Forditasok.
+
+src/standalone/config/
+  Globalis Config + levels.
+
+src/standalone/usableitem.lua
+  Pelda usable item logika.
+
+overrides/
+  Felulirasok (ox_inventory, qs_inventory, avp_grid_inventory, progress/UI adapterek).
+  Ezt a mappat szerkeszti elsosorban az uzemelteto/ugyfel.
+
+Fajlfa (roviditett)
+-------------------
+src
+overrides
+html
+web
+docs
+tech_docs
+types
+scripts
+_installation_assist
 fxmanifest.lua
-LICENSE.md
 README.md
 README_HU.md
-bridge\esx
-bridge\global
-bridge\qb
-bridge\main.lua
-bridge\esx\events
-bridge\esx\client.lua
-bridge\esx\config_defaults.lua
-bridge\framework_config.lua
-bridge\esx\server.lua
-bridge\esx\shared.lua
-bridge\esx\events\client.lua
-bridge\esx\events\server.lua
-bridge\global\callbacks
-bridge\global\events
-bridge\global\client.lua
-bridge\global\server.lua
-bridge\global\shared.lua
-bridge\global\callbacks\server.lua
-bridge\global\events\client.lua
-bridge\global\events\server.lua
-bridge\qb\events
-bridge\qb\client.lua
-bridge\qb\config_defaults.lua
-bridge\qb\server.lua
-bridge\qb\shared.lua
-bridge\qb\events\client.lua
-bridge\qb\events\server.lua
-client\exports.lua
-client\main.lua
-docs\PROJECT_STRUCTURE.txt
-docs\AI_EGYUTTMUKODES_CHECKLIST_HU.md
-docs\AI_SUPPORT_REFERENCE_HU.txt
-docs\MODERNIZACIOS_ES_MEGBIZHATOSAGI_TERV_HU.md
-docs\FRAMEWORK_CONFIG_REFACTOR_TERVEZES_HU.md
-docs\REFAKTOR_PRIORITAS_UZEMTERV_HU.md
-docs\PUBLIC_API_HU.md
-docs\SUPPORTED_STACK_MATRIX_HU.md
-docs\NET_EVENTS_AUDIT_HU.md
-docs\SZERVER_OPERATOR_CHECKLIST_HU.md
-docs\DB_MIGRATIONS_HU.md
-docs\LUA_LS_AND_CI_HU.md
-html\img
-html\js
-html\main.css
-html\ui.html
-html\img\chemist.png
-html\img\cooking.png
-html\img\foundry.png
-html\img\handicraft.png
-html\img\logo.png
-html\img\weaponry.png
-html\js\app.js
-html\js\model.js
-html\js\view.js
-imports\core.lua
-imports\discordlog.lua
-imports\locale.lua
-imports\utils.lua
-libs\config_check.lua
-libs\helper.lua
-libs\helper_ecore.lua
-libs\errors.lua
-libs\meta.lua
-locales\de.lua
-locales\en.lua
-locales\hu.lua
-server\db_migrations.lua
-server\db.lua
-server\exports.lua
-server\labor.lua
-server\main.lua
-server\meta.lua
-standalone\config
-standalone\overrides
-standalone\usableitem.lua
-standalone\config\levels.lua
-standalone\config\main.lua
-standalone\overrides\17_movement
-standalone\overrides\avp_grid_inventory
-standalone\overrides\core
-standalone\overrides\example_custom_inventory
-standalone\overrides\inside_scripts
-standalone\overrides\ox_inventory
-standalone\overrides\ox_progressbar
-standalone\overrides\qs_inventory
-standalone\overrides\17_movement\client.lua
-standalone\overrides\17_movement\config.lua
-standalone\overrides\17_movement\server.lua
-standalone\overrides\17_movement\shared.lua
-standalone\overrides\avp_grid_inventory\client.lua
-standalone\overrides\avp_grid_inventory\config.lua
-standalone\overrides\avp_grid_inventory\server.lua
-standalone\overrides\avp_grid_inventory\shared.lua
-standalone\overrides\core\client.lua
-standalone\overrides\core\server.lua
-standalone\overrides\core\shared.lua
-standalone\overrides\example_custom_inventory\client.lua
-standalone\overrides\example_custom_inventory\config.lua
-standalone\overrides\example_custom_inventory\server.lua
-standalone\overrides\example_custom_inventory\shared.lua
-standalone\overrides\inside_scripts\client.lua
-standalone\overrides\inside_scripts\config.lua
-standalone\overrides\inside_scripts\server.lua
-standalone\overrides\inside_scripts\shared.lua
-standalone\overrides\ox_inventory\client.lua
-standalone\overrides\ox_inventory\config.lua
-standalone\overrides\ox_inventory\server.lua
-standalone\overrides\ox_inventory\shared.lua
-standalone\overrides\ox_progressbar\client.lua
-standalone\overrides\qs_inventory\client.lua
-standalone\overrides\qs_inventory\config.lua
-standalone\overrides\qs_inventory\server.lua
-standalone\overrides\qs_inventory\shared.lua
-_installation_assist\itemInsert.lua
-_installation_assist\labor_enhancer.png
+changelog.md
+export_examples_client.md
+export_examples_server.md

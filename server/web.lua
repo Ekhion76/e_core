@@ -1,4 +1,4 @@
---- Admin NUI megnyitás jogosultság (`Config.web` + `hf.webConsoleAccess`).
+--- Admin NUI open permission gate (`Config.web` + `hf.webConsoleAccess`).
 local hf = hf
 
 RegisterNetEvent('e_core:web:requestOpen', function()
@@ -10,6 +10,6 @@ RegisterNetEvent('e_core:web:requestOpen', function()
     if ok then
         TriggerClientEvent('e_core:web:open', src)
     else
-        TriggerClientEvent('e_core:web:deny', src, err or 'Nincs jogosultság.')
+        TriggerClientEvent('e_core:web:deny', src, err or 'Access denied.')
     end
 end)

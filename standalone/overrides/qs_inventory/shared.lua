@@ -46,6 +46,9 @@ if QS_INVENTORY then
         return tmp
     end
 
+    --- Auto-generated annotation. Refine behavior details if needed.
+    --- @param name string
+    --- @return any result
     function eCore:getQBImage(name)
         if QBCore and QBCore.Shared.Items[name] then
             return QBCore.Shared.Items[name].image

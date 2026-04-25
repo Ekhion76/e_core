@@ -838,6 +838,22 @@ imports/discordlog.lua (server)
       timestamp(unix?)     – embed ISO időbélyeg; param nélkül `os.time()`.
       author(name, url?, iconUrl?)
       thumbnail(url), image(url)
+      clearFields()        – aktuális embed `fields` ürítése; **return self**.
+      appendFields(list) – tömb: `{ { name, value, inline?, codeBlock? }, … }`;
+                           sorrend megmarad; **return self**.
+      embed(opts)         – egy táblából kitöltés; **opts.newEmbed = true** → előbb
+                           új embed (`putEmbed`); egyébként `_ensureEmbed`. Kulcsok
+                           (mind opcionális, ha meg vannak adva): **username**,
+                           **avatarUrl**, **content**, **color**, **title**,
+                           **description**, **url**, **footer**, **timestamp**
+                           (`true` = aktuális idő), **author** `{ name, url?, icon_url? }`,
+                           **thumbnail**, **image**, **fields** (lásd `appendFields`).
+                           **return self** (lánc: `log:embed({…}):send()`).
+      alert(opts)         – gyors állapot: **level** = `error` / `warning` / `info` /
+                           `ok` (alap: `error`) → előre definiált **color**; opcionális
+                           **content**, **title**, **description**, **footer**, **fields**.
+                           Nem nyit új embedet (kompatibilis a „zöld váz + piros hiba”
+                           mintával). **return self**.
       send(doneCb?)        – POST; **üres** `content` és **nincs embed** → nem
                            küld, `cLog` (2-es szint, ha engedélyezett), callback
                            ha van: `doneCb(false, 0, 'skipped_empty')`.

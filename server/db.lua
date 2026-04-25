@@ -17,6 +17,10 @@ MySQL.ready(function()
     end
 end)
 
+--- Auto-generated annotation. Refine behavior details if needed.
+--- @param xPlayer table
+--- @param dropMeta any
+--- @return any result
 function saveMeta(xPlayer, dropMeta)
     local playerId = xPlayer.source
 
@@ -38,6 +42,8 @@ function saveMeta(xPlayer, dropMeta)
     end
 end
 
+--- Auto-generated annotation. Refine behavior details if needed.
+--- @return any result
 function saveAllMeta()
     local parameters = {}
 
@@ -61,6 +67,9 @@ function saveAllMeta()
     end
 end
 
+--- Auto-generated annotation. Refine behavior details if needed.
+--- @param xPlayer table
+--- @return any result
 function loadMeta(xPlayer)
     local playerId = xPlayer.source
 

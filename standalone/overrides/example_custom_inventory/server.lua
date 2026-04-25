@@ -20,6 +20,8 @@ if CUSTOM_INVENTORY then
     -- function eCore:getInventory(xPlayer) end
     -- function eCore:getRegisteredItems() end
     -- function eCore:getRegisteredItem(name) end
+    -- function eCore:getItemCount(xPlayer, itemName) end
+    -- function eCore:hasItem(xPlayer, itemName, count) end
 end
 
 

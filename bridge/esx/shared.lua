@@ -5,6 +5,10 @@ if ESX_CORE then
 
     local hf = hf
 
+    --- Auto-generated annotation. Refine behavior details if needed.
+    --- @param playerData any
+    --- @param newJob any
+    --- @return any result
     function eCore:convertPlayer(playerData, newJob)
         if playerData then
             playerData.job = newJob or playerData.job

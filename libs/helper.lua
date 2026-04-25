@@ -1,8 +1,12 @@
---- Általános, keretrendszer-független segédfüggvények: véletlenszám / szöveg, táblakezelés, trim, kerekítés, másolás, stb.
---- Cél: consumer szkriptek és e_core belső kód közös, „szűk” segédkönyvtára ugyanazon a globális `hf` táblán.
+--- General framework-agnostic helper utilities: random/text, table handling, trim,
+--- rounding, copying, and similar generic helpers.
+--- Goal: shared, minimal helper toolkit for consumer scripts and e_core internals,
+--- exposed through the same global `hf` table.
 ---
---- e_core környezethez kötött részek (item definíció normalizálás, registry várakozás, MySQL wrap, indulási log, net rate limit, `moneyFormat`):
---- `libs/helper_ecore.lua` – a manifestben közvetlenül ez a fájl követi ezt; a betöltés után `eCore.helper` továbbra is a teljes `hf`-et jelenti (`bridge/main.lua`).
+--- e_core-specific helpers (item definition normalization, registry waiting, MySQL wrapper,
+--- startup logging, net rate limit, `moneyFormat`) live in `libs/helper_ecore.lua`.
+--- That file is loaded immediately after this one in manifest order; after load,
+--- `eCore.helper` still points to the full merged `hf` table (`bridge/main.lua`).
 
 hf = {}
 hf.stringCharset = {}
@@ -18,6 +22,9 @@ for i = 97, 122 do
     hf.stringCharset[#hf.stringCharset + 1] = string.char(i)
 end
 
+--- Auto-generated annotation. Refine behavior details if needed.
+--- @param length any
+--- @return any result
 function hf.randomStr(length)
     local result = {}
     for i = 1, length do
@@ -26,6 +33,9 @@ function hf.randomStr(length)
     return table.concat(result)
 end
 
+--- Auto-generated annotation. Refine behavior details if needed.
+--- @param length any
+--- @return any result
 function hf.randomInt(length)
     local result = {}
     for i = 1, length do
@@ -34,6 +44,8 @@ function hf.randomInt(length)
     return table.concat(result)
 end
 
+--- Auto-generated annotation. Refine behavior details if needed.
+--- @return any result
 function hf.getSerialNumber()
     return tostring(
         hf.randomInt(2) ..
@@ -93,14 +105,23 @@ function hf.tableToStr(v)
     return table.concat(v, ", ")
 end
 
+--- Auto-generated annotation. Refine behavior details if needed.
+--- @param t any
+--- @return any result
 function hf.isTable(t)
     return type(t) == 'table'
 end
 
+--- Auto-generated annotation. Refine behavior details if needed.
+--- @param t any
+--- @return any result
 function hf.isPopulatedTable(t)
     return type(t) == 'table' and (next(t)) ~= nil
 end
 
+--- Auto-generated annotation. Refine behavior details if needed.
+--- @param s any
+--- @return any result
 function hf.isPopulatedString(s)
     if type(s) ~= 'string' then
         return false
@@ -109,6 +130,9 @@ function hf.isPopulatedString(s)
     return string.gsub(s, '^%s*(.-)%s*$', '%1') ~= ''
 end
 
+--- Auto-generated annotation. Refine behavior details if needed.
+--- @param v any
+--- @return any result
 function hf.isEmpty(v)
     if v == nil then
         return true
@@ -131,6 +155,10 @@ function hf.isEmpty(v)
     return true
 end
 
+--- Auto-generated annotation. Refine behavior details if needed.
+--- @param needs any
+--- @param t any
+--- @return any result
 function hf.inTable(needs, t)
     if needs and type(t) == 'table' and next(t) then
         for _, v in pairs(t) do
@@ -143,10 +171,17 @@ function hf.inTable(needs, t)
     return false
 end
 
+--- Auto-generated annotation. Refine behavior details if needed.
+--- @param v any
+--- @return any result
 function hf.trim(v)
     return type(v) == 'string' and (string.gsub(v, '^%s*(.-)%s*$', '%1')) or v
 end
 
+--- Auto-generated annotation. Refine behavior details if needed.
+--- @param num any
+--- @param numDecimalPlaces any
+--- @return any result
 function hf.round(num, numDecimalPlaces)
     if not numDecimalPlaces then
         return math.floor(num + 0.5)
@@ -155,6 +190,9 @@ function hf.round(num, numDecimalPlaces)
     return math.floor(num * mul + 0.5) / mul
 end
 
+--- Auto-generated annotation. Refine behavior details if needed.
+--- @param t any
+--- @return any result
 function hf.tableToVector(t)
     if type(t) ~= 'table' then
         return t
@@ -172,10 +210,17 @@ function hf.tableToVector(t)
     return w and vec(x, y, z, w) or vec(x, y, z)
 end
 
+--- Auto-generated annotation. Refine behavior details if needed.
+--- @param str any
+--- @param prefix any
+--- @return any result
 function hf.removePrefix(str, prefix)
     return (str:sub(0, #prefix) == prefix) and str:sub(#prefix + 1) or str
 end
 
+--- Auto-generated annotation. Refine behavior details if needed.
+--- @param number any
+--- @return any result
 function hf.numberFormat(number)
     if not tonumber(number) then
         return number
@@ -186,7 +231,8 @@ function hf.numberFormat(number)
     return minus .. int:reverse():gsub("^ ", "") .. fraction
 end
 
---- Sekély táblamásolat (`pairs`); nem tábla → érték változatlan. (`table.clone` helyett, környezetfüggetlen.)
+--- Shallow table copy via `pairs`; non-table input is returned unchanged.
+--- Environment-agnostic alternative to `table.clone`.
 function hf.shallowCopy(t)
     if type(t) ~= 'table' then
         return t
@@ -198,17 +244,24 @@ function hf.shallowCopy(t)
     return out
 end
 
+--- Auto-generated annotation. Refine behavior details if needed.
+--- @param t any
+--- @return any result
 function hf.copy(t)
     return hf.shallowCopy(t)
 end
 
+--- Auto-generated annotation. Refine behavior details if needed.
+--- @param orig any
+--- @param copies any
+--- @return any result
 function hf.deepCopy(orig, copies)
     copies = copies or {}
 
     if type(orig) ~= 'table' then
         return orig
     elseif copies[orig] then
-        return copies[orig] -- körkörös hivatkozás esetén visszatérés
+        return copies[orig] -- return existing copy for cyclic references
     end
 
     local copy = {}
@@ -224,10 +277,17 @@ function hf.deepCopy(orig, copies)
 end
 
 
+--- Auto-generated annotation. Refine behavior details if needed.
+--- @param v any
+--- @param max any
+--- @return any result
 function hf.rangeLimit(v, max)
     return v < 0 and 0 or v > max and max or v
 end
 
+--- Auto-generated annotation. Refine behavior details if needed.
+--- @param chance any
+--- @return any result
 function hf.draw(chance)
     chance = tonumber(chance) or 100
     if chance < 1 then return false end
@@ -235,6 +295,10 @@ function hf.draw(chance)
     return math.random(100) <= chance
 end
 
+--- Auto-generated annotation. Refine behavior details if needed.
+--- @param input any
+--- @param sep any
+--- @return any result
 function hf.stringSplit(input, sep)
     sep = sep or "%s"
     local t = {}
@@ -244,6 +308,9 @@ function hf.stringSplit(input, sep)
     return t
 end
 
+--- Auto-generated annotation. Refine behavior details if needed.
+--- @param t any
+--- @return any result
 function hf.getKeys(t)
     local keys = {}
     for key in pairs(t) do
@@ -252,6 +319,9 @@ function hf.getKeys(t)
     return keys
 end
 
+--- Auto-generated annotation. Refine behavior details if needed.
+--- @param inputString any
+--- @return any result
 function hf.removeNonAlphaNumeric(inputString)
     if type(inputString) ~= "string" or inputString == nil then
         return nil
@@ -259,6 +329,9 @@ function hf.removeNonAlphaNumeric(inputString)
     return inputString:gsub("[^%w]", "")
 end
 
+--- Auto-generated annotation. Refine behavior details if needed.
+--- @param t any
+--- @return any result
 function hf.shuffle(t)
     if type(t) ~= 'table' or not next(t) then
         return false

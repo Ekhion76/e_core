@@ -4,22 +4,26 @@ Config.locale = 'en'
 
 Config.debugLevel = false -- 0-4, false or 0 = off
 
-Config.maxInventoryWeight = 24000 -- bridge/esx|qb/config_defaults.lua + framework_config.lua, vagy standalone/overrides/.../config.lua
-Config.maxInventorySlots = 41 -- ugyanaz
+Config.maxInventoryWeight = 24000 -- bridge/esx|qb/config_defaults.lua + framework_config.lua, or standalone/overrides/.../config.lua
+Config.maxInventorySlots = 41 -- same source as above
 
 Config.versionCheck = true
 
 --[[
-  Operátori beállítások (`Config.operator`):
+  Operator settings (`Config.operator`):
 
-  • `identifiers` — közös lista (`GetPlayerIdentifiers`), pl. `'fivem:…'`, `'license:…'`.
-  • `admin` — játékbeli admin NUI (alap parancs `ecore_admin`, ACE `ecore.admin`). Legacy kulcs: `web`.
-  • `integrityCheck` — integritás checklist + progress (futtatás: admin NUI → Integritás fül); ha `admin.enabled`, ugyanaz a jog mint az admin NUI-nál (`hf.webConsoleAccess`), különben ACE + lista. Legacy kulcs: `diagnostics`. Opc.: `cooldownMs` (két **teljes** futtatás között, min. 1500 ms, alap 1500; egy lépésre kattintva nincs ez a várakozás).
-  • `cleanup` — szerver admin cleanup policy (`Config.adminApi.cleanup`).
-  • `registryDiagnostics` — profession registry admin futások (`Config.adminApi.diagnostics`). Legacy: `adminApi.diagnostics`.
-  • `deniedAudit` — denied audit tároló. Legacy: `adminApi.deniedAudit`.
+  • `identifiers` - shared identifier list (`GetPlayerIdentifiers`), e.g. `'fivem:…'`, `'license:…'`.
+  • `admin` - in-game admin NUI (default command `ecore_admin`, ACE `ecore.admin`). Legacy key: `web`.
+  • `integrityCheck` - integrity checklist + progress (run from admin NUI -> Integrity tab);
+    if `admin.enabled`, uses same access as admin NUI (`hf.webConsoleAccess`), otherwise ACE + list.
+    Legacy key: `diagnostics`. Optional: `cooldownMs` (between two **full** runs, min 1500 ms, default 1500;
+    step-by-step run does not wait for this cooldown).
+  • `cleanup` - server admin cleanup policy (`Config.adminApi.cleanup`).
+  • `registryDiagnostics` - profession registry admin runs (`Config.adminApi.diagnostics`). Legacy: `adminApi.diagnostics`.
+  • `deniedAudit` - denied audit storage. Legacy: `adminApi.deniedAudit`.
 
-  Technikai részletek (cooldown, teszt item, NUI checklist időzítés) a kódban fixek + az admin Integritás fülön állítható teszt-item az interaktív futtatáshoz.
+  Technical details (cooldown, test item, NUI checklist timing) are fixed in code,
+  while interactive test-item values can be changed in the admin Integrity tab.
 ]]
 Config.operator = {
     identifiers = {
@@ -33,7 +37,8 @@ Config.operator = {
     integrityCheck = {
         enabled = true,
         acePermission = 'ecore.diagnostics',
-        --- Két **teljes** integritás futtatás között (ms). Szerver: min 1500; alap 1500. Egy lépés (`onlyStep`) nem használja.
+        --- Time between two **full** integrity runs (ms). Server enforces min 1500; default 1500.
+        --- Single-step (`onlyStep`) runs do not use this cooldown.
         cooldownMs = 1500,
     },
     cleanup = {

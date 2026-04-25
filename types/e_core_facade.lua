@@ -1,6 +1,7 @@
 ---@meta
---- e_core facade – LuaLS stub; a valós metóduslista: `docs/PUBLIC_API_HU.md` §6–10.
---- A keretrendszer (ESX/QB) és oldal (client/server) szerint eltérő kulcsok lehetnek.
+--- e_core facade LuaLS stub.
+--- Canonical method list: `docs/PUBLIC_API_HU.md` §6-10.
+--- Available keys can differ by framework (ESX/QB) and side (client/server).
 
 ---@class eCore
 ---@field helper table

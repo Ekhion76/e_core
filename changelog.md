@@ -1,3 +1,9 @@
+0.0.56
+- **Lua annotációs szabvány + teljes sweep:** új guide `docs/LUA_ANNOTATION_STYLE_EN.md`, új backlog `docs/LUA_ANNOTATION_BACKLOG_EN.md`, valamint `.cursor/rules/lua-annotation-style.mdc` szabály. A teljes `e_core` Lua függvénykészletre egységes, angol nyelvű LuaLS annotáció került (`@param`, `@return`, publikus szerződések elsőbbsége; bridge/domain/override/NUI bridge fájlokkal együtt). Eredmény: audit szerint **451/451** függvény annotált (0 hiányzó blokk).
+
+0.0.55
+- **imports/discordlog.lua (DiscordLog):** **embed(opts)** – egy táblából embed + opcionális top-level mezők, **newEmbed** flag; **appendFields** tömbös mezőlista; **clearFields**; **alert(opts)** – `level` → szín + rövid mezők. Doksi: `docs/AI_SUPPORT_REFERENCE_HU.txt` §1.1 imports/discordlog.
+
 0.0.54
 - **Integritás cooldown egységesítés:** `operator.integrityCheck.cooldownMs` (alap 8000 ms, min. 1500); elírás javítva (`1500` ms helyett értelmes default); szerver merge + `Config.integrityCheck` szinkron (`libs/config_check.lua`, `server/integrity_check.lua`, `standalone/config/main.lua`, `web/src/lib/IntegrityPanel.svelte`).
 - **Admin Integritás fül:** két oszlop (vezérlők + görgethető napló), integritás lépések soronként külön futtatással (`onlyStep`), pipa / X állapot; a szerver `inlineAdmin` NUI üzenetek a modális `LiveDiagnosticsPanel` helyett az admin panelben jelennek meg (`server/integrity_check.lua`, `client/integrity_check.lua`, `web/src/lib/IntegrityPanel.svelte`, `LiveDiagnosticsPanel.svelte`).

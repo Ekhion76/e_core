@@ -28,11 +28,19 @@ local db_single
 local db_query
 local cleanup_job_persist
 
+--- Auto-generated annotation. Refine behavior details if needed.
+--- @return any result
 local function invalidate_profession_registry_cache()
     PROFESSION_REGISTRY_CACHE.data = nil
     PROFESSION_REGISTRY_CACHE.loadedAt = 0
 end
 
+--- Auto-generated annotation. Refine behavior details if needed.
+--- @param ok any
+--- @param code any
+--- @param message any
+--- @param data table
+--- @return any result
 local function admin_response(ok, code, message, data)
     return {
         ok = ok == true,
@@ -42,6 +50,13 @@ local function admin_response(ok, code, message, data)
     }
 end
 
+--- Auto-generated annotation. Refine behavior details if needed.
+--- @param eventType any
+--- @param actor any
+--- @param target any
+--- @param outcome any
+--- @param details any
+--- @return any result
 local function append_cleanup_audit(eventType, actor, target, outcome, details)
     CLEANUP_AUDIT_LOG[#CLEANUP_AUDIT_LOG + 1] = {
         ts = os.time(),
@@ -57,10 +72,16 @@ local function append_cleanup_audit(eventType, actor, target, outcome, details)
     end
 end
 
+--- Auto-generated annotation. Refine behavior details if needed.
+--- @param payload table
+--- @return any result
 local function cleanup_admin_can_access(payload)
     return hf.adminApiCanAccess('cleanup', payload)
 end
 
+--- Auto-generated annotation. Refine behavior details if needed.
+--- @param payload table
+--- @return any result
 local function admin_audit_can_access(payload)
     local okCleanup = hf.adminApiCanAccess('cleanup', payload)
     if okCleanup then
@@ -73,6 +94,11 @@ local function admin_audit_can_access(payload)
     return false, 'Nincs jogosultság (cleanup/diagnostics admin policy).'
 end
 
+--- Auto-generated annotation. Refine behavior details if needed.
+--- @param action any
+--- @param payload table
+--- @param reason string
+--- @return any result
 local function cleanup_access_denied(action, payload, reason)
     if type(hf.auditAdminApiDenied) == 'function' then
         hf.auditAdminApiDenied('cleanup', action, payload, reason)
@@ -95,6 +121,8 @@ local function cleanup_access_denied(action, payload, reason)
     return admin_response(false, eCoreErr.access_denied, reason or 'Nincs jogosultság.')
 end
 
+--- Auto-generated annotation. Refine behavior details if needed.
+--- @return any result
 local function cleanup_meta_storage()
     if QB_CORE then
         return {
@@ -108,11 +136,16 @@ local function cleanup_meta_storage()
     }
 end
 
+--- Auto-generated annotation. Refine behavior details if needed.
+--- @return any result
 local function cleanup_next_job_id()
     CLEANUP_JOB_SEQ = CLEANUP_JOB_SEQ + 1
     return ('cleanup-%08d'):format(CLEANUP_JOB_SEQ)
 end
 
+--- Auto-generated annotation. Refine behavior details if needed.
+--- @param job string
+--- @return any result
 local function cleanup_serialize_job(job)
     return {
         jobId = job.jobId,
@@ -139,6 +172,9 @@ local function cleanup_serialize_job(job)
     }
 end
 
+--- Auto-generated annotation. Refine behavior details if needed.
+--- @param errorsJson any
+--- @return any result
 local function cleanup_decode_errors(errorsJson)
     if type(errorsJson) ~= 'string' or errorsJson == '' then
         return {}
@@ -150,6 +186,9 @@ local function cleanup_decode_errors(errorsJson)
     return decoded
 end
 
+--- Auto-generated annotation. Refine behavior details if needed.
+--- @param errors any
+--- @return any result
 local function cleanup_encode_errors(errors)
     if type(errors) ~= 'table' then
         return '[]'
@@ -161,6 +200,9 @@ local function cleanup_encode_errors(errors)
     return encoded
 end
 
+--- Auto-generated annotation. Refine behavior details if needed.
+--- @param raw any
+--- @return any result
 local function cleanup_parse_timestamp(raw)
     if type(raw) ~= 'string' or raw == '' then
         return nil
@@ -179,6 +221,11 @@ local function cleanup_parse_timestamp(raw)
     })
 end
 
+--- Auto-generated annotation. Refine behavior details if needed.
+--- @param meta table
+--- @param category any
+--- @param name string
+--- @return any result
 local function cleanup_remove_profession_key(meta, category, name)
     if type(meta) ~= 'table' then
         return false, 0
@@ -197,6 +244,9 @@ local function cleanup_remove_profession_key(meta, category, name)
     return true, 1
 end
 
+--- Auto-generated annotation. Refine behavior details if needed.
+--- @param job string
+--- @return any result
 local function cleanup_job_step(job)
     local storage = cleanup_meta_storage()
     local rowsOk, rows = db_query(
@@ -257,6 +307,9 @@ local function cleanup_job_step(job)
     return true, false
 end
 
+--- Auto-generated annotation. Refine behavior details if needed.
+--- @param job string
+--- @return any result
 local function cleanup_job_execute(job)
     job.status = 'running'
     if not job.startedAt then
@@ -345,6 +398,8 @@ local function cleanup_job_execute(job)
     )
 end
 
+--- Auto-generated annotation. Refine behavior details if needed.
+--- @return any result
 local function cleanup_job_schedule()
     if CLEANUP_ACTIVE_RUNS >= CLEANUP_MAX_CONCURRENT then
         return
@@ -370,6 +425,12 @@ local function cleanup_job_schedule()
     end)
 end
 
+--- Auto-generated annotation. Refine behavior details if needed.
+--- @param mode any
+--- @param category any
+--- @param name string
+--- @param payload table
+--- @return any result
 local function cleanup_job_create(mode, category, name, payload)
     local batchSize = math.floor(tonumber((payload or {}).batchSize) or 500)
     batchSize = math.max(100, math.min(2000, batchSize))
@@ -402,6 +463,8 @@ local function cleanup_job_create(mode, category, name, payload)
     return job
 end
 
+--- Auto-generated annotation. Refine behavior details if needed.
+--- @return any result
 function e_core_bootstrap_cleanup_jobs()
     local ok, rows = db_query(
         'professions:cleanup:bootstrap',
@@ -445,6 +508,9 @@ function e_core_bootstrap_cleanup_jobs()
     end
 end
 
+--- Auto-generated annotation. Refine behavior details if needed.
+--- @param jobId number
+--- @return any result
 local function cleanup_job_resolve(jobId)
     local job = CLEANUP_JOBS[jobId]
     if job then
@@ -472,6 +538,9 @@ local function cleanup_job_resolve(jobId)
     return job
 end
 
+--- Auto-generated annotation. Refine behavior details if needed.
+--- @param value any
+--- @return any result
 local function normalize_registry_key(value)
     if type(value) ~= 'string' then
         return nil, eCoreErr.no_valid_meta_name
@@ -483,6 +552,9 @@ local function normalize_registry_key(value)
     return key, nil
 end
 
+--- Auto-generated annotation. Refine behavior details if needed.
+--- @param value any
+--- @return any result
 local function deep_copy(value)
     if type(value) ~= 'table' then
         return value
@@ -494,6 +566,8 @@ local function deep_copy(value)
     return out
 end
 
+--- Auto-generated annotation. Refine behavior details if needed.
+--- @return any result
 local function get_registry_counts()
     local ok, rows = hf.mysqlAwait('professions:bootstrap:counts', function()
         return MySQL.query.await([[
@@ -515,6 +589,9 @@ local function get_registry_counts()
     return tonumber(rows[1].profilesCount) or 0, tonumber(rows[1].professionsCount) or 0
 end
 
+--- Auto-generated annotation. Refine behavior details if needed.
+--- @param levelsJson any
+--- @return any result
 local function ensure_default_profile(levelsJson)
     local okInsert = hf.mysqlAwait('professions:bootstrap:profile:insert', function()
         MySQL.query.await(
@@ -551,6 +628,9 @@ local function ensure_default_profile(levelsJson)
     return tonumber(row.id)
 end
 
+--- Auto-generated annotation. Refine behavior details if needed.
+--- @param profileId number
+--- @return any result
 local function seed_default_professions(profileId)
     for _, profession in ipairs(DEFAULT_PROFESSIONS) do
         local ok = hf.mysqlAwait(
@@ -581,6 +661,8 @@ local function seed_default_professions(profileId)
     return true
 end
 
+--- Auto-generated annotation. Refine behavior details if needed.
+--- @return any result
 function e_core_bootstrap_profession_registry()
     local profilesCount, professionsCount = get_registry_counts()
     if profilesCount == nil or professionsCount == nil then
@@ -614,6 +696,9 @@ function e_core_bootstrap_profession_registry()
     return true
 end
 
+--- Auto-generated annotation. Refine behavior details if needed.
+--- @param rows any
+--- @return any result
 local function build_registry_read_model(rows)
     local data = {
         byCategory = {},
@@ -651,6 +736,8 @@ local function build_registry_read_model(rows)
     return data
 end
 
+--- Auto-generated annotation. Refine behavior details if needed.
+--- @return any result
 local function load_profession_registry_from_db()
     local ok, rows = hf.mysqlAwait('professions:registry:load', function()
         return MySQL.query.await([[
@@ -679,6 +766,9 @@ local function load_profession_registry_from_db()
     return true, PROFESSION_REGISTRY_CACHE.data
 end
 
+--- Auto-generated annotation. Refine behavior details if needed.
+--- @param forceRefresh any
+--- @return any result
 local function get_cached_registry(forceRefresh)
     local now = os.time()
     local cacheAge = now - (PROFESSION_REGISTRY_CACHE.loadedAt or 0)
@@ -761,6 +851,9 @@ cleanup_job_persist = function(job)
     )
 end
 
+--- Auto-generated annotation. Refine behavior details if needed.
+--- @param row any
+--- @return any result
 local function cleanup_job_from_row(row)
     local createdAt = cleanup_parse_timestamp(row.created_at) or os.time()
     local updatedAt = cleanup_parse_timestamp(row.updated_at) or createdAt
@@ -951,6 +1044,9 @@ function validateProfessionKeys(category, keys)
     }
 end
 
+--- Auto-generated annotation. Refine behavior details if needed.
+--- @param value any
+--- @return any result
 local function normalize_enabled_flag(value)
     if type(value) == 'boolean' then
         return value
@@ -965,6 +1061,9 @@ local function normalize_enabled_flag(value)
     return nil
 end
 
+--- Auto-generated annotation. Refine behavior details if needed.
+--- @param profileKey any
+--- @return any result
 local function resolve_profile_id(profileKey)
     local pk, err = normalize_registry_key(profileKey)
     if not pk then
@@ -990,6 +1089,10 @@ local function resolve_profile_id(profileKey)
     }
 end
 
+--- Auto-generated annotation. Refine behavior details if needed.
+--- @param category any
+--- @param name string
+--- @return any result
 local function fetch_profession_admin_row(category, name)
     local ok, row = db_single(
         ('professions:admin:get:%s.%s'):format(category, name),
@@ -1030,7 +1133,7 @@ local function fetch_profession_admin_row(category, name)
     }
 end
 
---- Admin/read API: profession lista rövidített formában.
+--- Admin/read API: profession list in compact shape.
 --- @return table { ok, code, message, data = { items = {...} } }
 function professionAdminList()
     local ok, registryOrErr = getProfessionRegistry()
@@ -1268,6 +1371,12 @@ function professionAdminDelete(category, name)
     return admin_response(true, eCoreErr.ok, 'Profession törölve.', { category = ck, name = nk })
 end
 
+--- Auto-generated annotation. Refine behavior details if needed.
+--- @param mode any
+--- @param category any
+--- @param name string
+--- @param payload table
+--- @return any result
 local function profession_admin_cleanup_start(mode, category, name, payload)
     local accessOk, accessErr = cleanup_admin_can_access(payload)
     if not accessOk then
@@ -1304,14 +1413,28 @@ local function profession_admin_cleanup_start(mode, category, name, payload)
     return admin_response(true, eCoreErr.ok, 'Cleanup job sorba állítva.', { job = cleanup_serialize_job(job) })
 end
 
+--- Auto-generated annotation. Refine behavior details if needed.
+--- @param category any
+--- @param name string
+--- @param payload table
+--- @return any result
 function professionAdminDeleteDryRun(category, name, payload)
     return profession_admin_cleanup_start('dry_run', category, name, payload)
 end
 
+--- Auto-generated annotation. Refine behavior details if needed.
+--- @param category any
+--- @param name string
+--- @param payload table
+--- @return any result
 function professionAdminDeleteApply(category, name, payload)
     return profession_admin_cleanup_start('apply', category, name, payload)
 end
 
+--- Auto-generated annotation. Refine behavior details if needed.
+--- @param jobId number
+--- @param payload table
+--- @return any result
 function professionAdminCleanupJobGet(jobId, payload)
     local accessOk, accessErr = cleanup_admin_can_access(payload)
     if not accessOk then
@@ -1330,6 +1453,9 @@ function professionAdminCleanupJobGet(jobId, payload)
     return admin_response(true, eCoreErr.ok, 'Cleanup job lekérve.', { job = cleanup_serialize_job(job) })
 end
 
+--- Auto-generated annotation. Refine behavior details if needed.
+--- @param filters any
+--- @return any result
 function professionAdminCleanupJobList(filters)
     local accessOk, accessErr = cleanup_admin_can_access(filters)
     if not accessOk then
@@ -1416,6 +1542,10 @@ function professionAdminCleanupJobList(filters)
     })
 end
 
+--- Auto-generated annotation. Refine behavior details if needed.
+--- @param jobId number
+--- @param payload table
+--- @return any result
 function professionAdminCleanupJobAbort(jobId, payload)
     local accessOk, accessErr = cleanup_admin_can_access(payload)
     if not accessOk then
@@ -1454,6 +1584,10 @@ function professionAdminCleanupJobAbort(jobId, payload)
     })
 end
 
+--- Auto-generated annotation. Refine behavior details if needed.
+--- @param jobId number
+--- @param payload table
+--- @return any result
 function professionAdminCleanupJobResume(jobId, payload)
     local accessOk, accessErr = cleanup_admin_can_access(payload)
     if not accessOk then
@@ -1488,6 +1622,10 @@ function professionAdminCleanupJobResume(jobId, payload)
     })
 end
 
+--- Auto-generated annotation. Refine behavior details if needed.
+--- @param limit number
+--- @param payload table
+--- @return any result
 function professionAdminAuditList(limit, payload)
     local accessOk, accessErr = cleanup_admin_can_access(payload)
     if not accessOk then
@@ -1503,6 +1641,9 @@ function professionAdminAuditList(limit, payload)
     return admin_response(true, eCoreErr.ok, 'Admin audit lista lekérve.', { items = items })
 end
 
+--- Auto-generated annotation. Refine behavior details if needed.
+--- @param row any
+--- @return any result
 local function build_denied_audit_item(row)
     local section = tostring(row.section or ((type(row.target) == 'table' and row.target.scope) or 'unknown'))
     local action = tostring(row.action or ((type(row.target) == 'table' and row.target.action) or 'unknown'))
@@ -1537,6 +1678,9 @@ local function build_denied_audit_item(row)
     }
 end
 
+--- Auto-generated annotation. Refine behavior details if needed.
+--- @param filters any
+--- @return any result
 function adminApiDeniedAuditList(filters)
     local f = type(filters) == 'table' and filters or {}
     local accessOk, accessErr = admin_audit_can_access(f)
@@ -1623,6 +1767,11 @@ function adminApiDeniedAuditList(filters)
     })
 end
 
+--- Auto-generated annotation. Refine behavior details if needed.
+--- @param action any
+--- @param payload table
+--- @param reason string
+--- @return any result
 local function denied_audit_access_denied(action, payload, reason)
     if type(hf.auditAdminApiDenied) == 'function' then
         hf.auditAdminApiDenied('deniedAudit', action, payload, reason)
@@ -1630,6 +1779,8 @@ local function denied_audit_access_denied(action, payload, reason)
     return admin_response(false, eCoreErr.access_denied, reason or 'Nincs jogosultság.')
 end
 
+--- Auto-generated annotation. Refine behavior details if needed.
+--- @return any result
 local function denied_audit_config()
     local cfg = (((Config or {}).adminApi or {}).deniedAudit or {})
     local enabled = cfg.enabled ~= false
@@ -1647,6 +1798,8 @@ local function denied_audit_config()
     }
 end
 
+--- Auto-generated annotation. Refine behavior details if needed.
+--- @return any result
 function e_core_purge_admin_denied_audit_once()
     local cfg = denied_audit_config()
     if not cfg.enabled then
@@ -1683,6 +1836,8 @@ function e_core_purge_admin_denied_audit_once()
     return true, deleted
 end
 
+--- Auto-generated annotation. Refine behavior details if needed.
+--- @return any result
 local function e_core_count_admin_denied_audit_candidates()
     local cfg = denied_audit_config()
     if not cfg.enabled then
@@ -1705,6 +1860,9 @@ local function e_core_count_admin_denied_audit_candidates()
     return true, tonumber((rows and rows[1] or {}).count) or 0
 end
 
+--- Auto-generated annotation. Refine behavior details if needed.
+--- @param payload table
+--- @return any result
 function adminApiDeniedAuditPurge(payload)
     local p = type(payload) == 'table' and payload or {}
     local accessOk, accessErr = admin_audit_can_access(p)
@@ -1736,12 +1894,16 @@ function adminApiDeniedAuditPurge(payload)
     })
 end
 
+--- Auto-generated annotation. Refine behavior details if needed.
+--- @return any result
 function e_core_schedule_admin_denied_audit_purge()
     local cfg = denied_audit_config()
     if not cfg.enabled then
         return
     end
 
+    --- Auto-generated annotation. Refine behavior details if needed.
+    --- @return any result
     local function tick()
         e_core_purge_admin_denied_audit_once()
         SetTimeout(cfg.intervalMinutes * 60000, tick)
@@ -1752,6 +1914,11 @@ end
 
 local LEVEL_MODIFIERS = { 'labor', 'time', 'price', 'chance', 'speed' }
 
+--- Auto-generated annotation. Refine behavior details if needed.
+--- @param value any
+--- @param minValue any
+--- @param maxValue any
+--- @return any result
 local function clamp(value, minValue, maxValue)
     if value < minValue then
         return minValue
@@ -1762,6 +1929,11 @@ local function clamp(value, minValue, maxValue)
     return value
 end
 
+--- Auto-generated annotation. Refine behavior details if needed.
+--- @param index number
+--- @param total any
+--- @param curveType any
+--- @return any result
 local function easing_factor(index, total, curveType)
     if total <= 1 then
         return 1
@@ -1777,6 +1949,9 @@ local function easing_factor(index, total, curveType)
     return t
 end
 
+--- Auto-generated annotation. Refine behavior details if needed.
+--- @param settings any
+--- @return any result
 local function generate_easy_levels(settings)
     if type(settings) ~= 'table' then
         return false, eCoreErr.invalid_item_data
@@ -1817,6 +1992,9 @@ local function generate_easy_levels(settings)
     return true, levels
 end
 
+--- Auto-generated annotation. Refine behavior details if needed.
+--- @param levels any
+--- @return any result
 local function normalize_levels_table(levels)
     if type(levels) ~= 'table' or #levels == 0 then
         return false, eCoreErr.not_levels_data
@@ -1861,6 +2039,10 @@ local function normalize_levels_table(levels)
     return true, normalized
 end
 
+--- Auto-generated annotation. Refine behavior details if needed.
+--- @param payload table
+--- @param fallbackLevels any
+--- @return any result
 local function resolve_profile_levels_from_payload(payload, fallbackLevels)
     if payload.easyGenerator ~= nil then
         return generate_easy_levels(payload.easyGenerator)
@@ -1877,6 +2059,9 @@ local function resolve_profile_levels_from_payload(payload, fallbackLevels)
     return false, eCoreErr.not_levels_data
 end
 
+--- Auto-generated annotation. Refine behavior details if needed.
+--- @param levelsJson any
+--- @return any result
 local function decode_levels_json(levelsJson)
     if type(levelsJson) ~= 'string' or levelsJson == '' then
         return {}
@@ -1888,6 +2073,9 @@ local function decode_levels_json(levelsJson)
     return decoded
 end
 
+--- Auto-generated annotation. Refine behavior details if needed.
+--- @param profileKey any
+--- @return any result
 local function fetch_level_profile_row(profileKey)
     local ok, row = db_single(
         ('profiles:admin:get:%s'):format(profileKey),
@@ -1921,6 +2109,9 @@ local function fetch_level_profile_row(profileKey)
     }
 end
 
+--- Auto-generated annotation. Refine behavior details if needed.
+--- @param mode any
+--- @return any result
 local function normalize_profile_mode(mode)
     if mode == nil then
         return nil
@@ -1932,6 +2123,8 @@ local function normalize_profile_mode(mode)
     return m
 end
 
+--- Auto-generated annotation. Refine behavior details if needed.
+--- @return any result
 function levelProfileAdminList()
     local ok, rows = db_query(
         'profiles:admin:list',
@@ -1972,6 +2165,9 @@ function levelProfileAdminList()
     return admin_response(true, eCoreErr.ok, 'Level profile lista lekérve.', { items = items })
 end
 
+--- Auto-generated annotation. Refine behavior details if needed.
+--- @param payload table
+--- @return any result
 function levelProfileAdminCreate(payload)
     if type(payload) ~= 'table' then
         return admin_response(false, eCoreErr.invalid_item_data, 'Érvénytelen payload.')
@@ -2022,6 +2218,10 @@ function levelProfileAdminCreate(payload)
     return admin_response(true, eCoreErr.ok, 'Level profile létrehozva.', { profile = profileOrErr })
 end
 
+--- Auto-generated annotation. Refine behavior details if needed.
+--- @param profileKey any
+--- @param payload table
+--- @return any result
 function levelProfileAdminUpdate(profileKey, payload)
     if type(payload) ~= 'table' then
         return admin_response(false, eCoreErr.invalid_item_data, 'Érvénytelen payload.')
@@ -2081,6 +2281,9 @@ function levelProfileAdminUpdate(profileKey, payload)
     return admin_response(true, eCoreErr.ok, 'Level profile frissítve.', { profile = profileOrErr })
 end
 
+--- Auto-generated annotation. Refine behavior details if needed.
+--- @param profileKey any
+--- @return any result
 function levelProfileAdminDelete(profileKey)
     local pk, err = normalize_registry_key(profileKey)
     if not pk then

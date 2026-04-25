@@ -1,5 +1,26 @@
 local hf = hf
 
+--- Auto-generated annotation. Refine behavior details if needed.
+--- @param name string
+--- @param cb function
+--- @return any result
+function eCore:createCallback(name, cb)
+    lib.callback.register(name, cb)
+end
+
+--- Auto-generated annotation. Refine behavior details if needed.
+--- @param name string
+--- @param source number
+--- @param timeout number
+--- @param ... any
+--- @return any result
+function eCore:triggerClientCallback(name, source, timeout, ...)
+    return lib.callback.await(name, source, ...)
+end
+
+--- Auto-generated annotation. Refine behavior details if needed.
+--- @param v any
+--- @return any result
 local function coordNum(v)
     local n = tonumber(v)
     if n == nil or n ~= n then
@@ -8,6 +29,12 @@ local function coordNum(v)
     return n
 end
 
+--- Auto-generated annotation. Refine behavior details if needed.
+--- @param pos table
+--- @param model string
+--- @param vType any
+--- @param props table
+--- @return any result
 function eCore:createVehicle(pos, model, vType, props)
     local owner = -1
     local plate = ''

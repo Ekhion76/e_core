@@ -1,11 +1,11 @@
 -- luacheck: push ignore 131
---- Globális nyelvi táblák: `locales/<kód>.lua` tölti (`locales["en"]` stb.).
+--- Global locale tables loaded by `locales/<code>.lua` files (`locales["en"]`, etc.).
 locales = {}
 
 local fmt = string.format
 local unpack = table.unpack
 
---- @return table|nil locale A használható fordítótábla, vagy nil ha sem a kért, sem az `en` nincs betöltve.
+--- @return table|nil locale Resolved translation table, or nil if neither selected locale nor `en` is loaded.
 local function resolveLocale()
     local cfg = Config
     local code = (cfg and type(cfg.locale) == "string" and cfg.locale ~= "") and cfg.locale or "en"
@@ -19,8 +19,8 @@ local function resolveLocale()
     return nil
 end
 
---- Kulcs alapján fordítás. Hiányzó nyelvi fájl esetén `en`-re esik vissza (ha elérhető).
---- `string.format` helykitöltők: csak akkor fut, ha a szöveg tartalmaz `%` mintát és van variadikus argumentum.
+--- Translates by key. Falls back to `en` when selected locale is missing (if available).
+--- `string.format` placeholders are applied only when text contains `%` and variadic arguments are provided.
 function translate(str, ...)
     if str == nil then
         return ""
@@ -57,7 +57,7 @@ function translate(str, ...)
     return translation
 end
 
---- Első karakter nagybetű (ASCII `%l`); UTF-8 több bájtos kezdőbetűt nem normalizál.
+--- Uppercases first character (ASCII `%l`); does not normalize multi-byte UTF-8 initials.
 function translateU(str, ...)
     local translated = translate(str, ...)
     if translated == "" then

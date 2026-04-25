@@ -3,8 +3,15 @@
 --    print(json.encode(data, { indent = true }))
 --end
 
+--- Recursively prints table/function values to console for debug sessions.
+--- @param t table|function|any Value to dump.
+--- @return nil
 function print_r(t)
     local print_r_cache = {}
+    --- Internal recursive walker with cycle protection.
+    --- @param tbl table|any Current node.
+    --- @param indent string Current indentation prefix.
+    --- @return nil
     local function sub_print_r(tbl, indent)
         if (print_r_cache[tostring(tbl)]) then
             print(indent .. "*" .. tostring(tbl))
@@ -29,6 +36,13 @@ function print_r(t)
     sub_print_r(t, "  ")
 end
 
+--- Creates a map blip and returns the created handle.
+--- @param coords table Vector-like table with x, y, z.
+--- @param sprite number Blip sprite ID.
+--- @param color number Blip color ID.
+--- @param scale number Blip scale.
+--- @param name string Blip display name.
+--- @return number blip Created blip handle.
 function createBlip(coords, sprite, color, scale, name)
     local blip = AddBlipForCoord(coords.x, coords.y, coords.z)
     SetBlipSprite(blip, sprite)
@@ -42,6 +56,9 @@ function createBlip(coords, sprite, color, scale, name)
     return blip
 end
 
+--- Loads an animation dictionary with bounded retries.
+--- @param dict string Animation dictionary name.
+--- @return string|false loadedDict Dictionary name when loaded, otherwise false.
 function animDictLoader(dict)
     if not dict or not DoesAnimDictExist(dict) then
         print('Animation dictionary does not exist!', dict)
@@ -67,6 +84,9 @@ function animDictLoader(dict)
     return false
 end
 
+--- Loads a model with bounded retries.
+--- @param model number|string Model hash or model name.
+--- @return number|string|false loadedModel Model identifier when loaded, otherwise false.
 function modelLoader(model)
     if not model or not IsModelValid(model) then
         print('Model it does not exist!', model)
@@ -92,6 +112,9 @@ function modelLoader(model)
     return false
 end
 
+--- Requests and waits until a particle FX dictionary is loaded.
+--- @param dict string Particle FX dictionary name.
+--- @return nil
 function fxLoader(dict)
     RequestNamedPtfxAsset(dict)
     while not HasNamedPtfxAssetLoaded(dict) do
@@ -99,6 +122,13 @@ function fxLoader(dict)
     end
 end
 
+--- Debug console logger filtered by `Config.debugLevel`.
+--- Supports compact severity mode when `v` is one of:
+--- `error`, `warning`, `info`, `debug` and `level` is numeric.
+--- @param k string|number|any Log key/title.
+--- @param v any Value payload or severity string.
+--- @param level number|nil Log verbosity level.
+--- @return nil
 function cLog(k, v, level)
     -- console log for debug
     if not Config.debugLevel or Config.debugLevel < 1 then
@@ -110,8 +140,7 @@ function cLog(k, v, level)
     end
 
     local vType = type(v)
-    --- Második argumentum szigorúan `error` / `warning` / `info` / `debug` + numerikus szint:
-    --- egy soros, severity-színezett kimenet (pl. DB / MySQL naplók).
+    --- Severity shortcut for one-line structured messages.
     local severityColor = {
         error = '^1',
         warning = '^3',

@@ -1,5 +1,6 @@
 ---@meta
---- e_core resource globális állapot – LuaLS; runtime a bridge / server / client fájlokban töltődik.
+--- e_core resource global runtime state for LuaLS.
+--- Values are populated at runtime by bridge/server/client modules.
 
 ---@type table
 ECO = {}

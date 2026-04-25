@@ -1,6 +1,6 @@
---- Rendszer be van-e kapcsolva a labor modul.
---- @return boolean|nil ok true ha mehet
---- @return string|nil err eCoreErr érték, ha kikapcsolva
+--- Checks whether labor subsystem is enabled.
+--- @return boolean|nil ok True when labor operations are allowed.
+--- @return string|nil err eCoreErr value when system is disabled.
 local function laborRequireSystem()
     if not Config.systemMode.labor then
         return nil, eCoreErr.the_system_is_turned_off
@@ -8,8 +8,10 @@ local function laborRequireSystem()
     return true, nil
 end
 
---- @return table|nil row ECO.meta[playerId]
---- @return string|nil err ha nincs meta / labor
+--- Resolves player meta row that contains the labor block.
+--- @param playerId number Player source id.
+--- @return table|nil row ECO.meta[playerId] row.
+--- @return string|nil err eCoreErr when metadata/labor is missing.
 local function laborPlayerRow(playerId)
     if not tonumber(playerId) or not ECO.meta[playerId] or not ECO.meta[playerId].labor then
         return nil, eCoreErr.not_found_metadata
@@ -18,8 +20,8 @@ local function laborPlayerRow(playerId)
 end
 
 --- @param playerId number (source)
---- @return boolean ok siker: `true`, hiba: `false`
---- @return number|string second siker: labor pont (0 is lehet); hiba: `eCoreErr` string
+--- @return boolean ok Success flag.
+--- @return number|string second Labor points on success (can be 0); eCoreErr string on failure.
 function getLabor(playerId)
     local ok, err = laborRequireSystem()
     if not ok then
@@ -133,7 +135,8 @@ end
 --- AUTO LABOR INCREASE
 -----------------------
 
---- Online játékosok, akiknek van betöltött meta + labor blokk (GetPlayers, nem teljes ECO.meta bejárás).
+--- Collects online player ids that currently have loaded `meta.labor`.
+--- Uses `GetPlayers()` to avoid scanning the whole ECO.meta table.
 local function laborIncreaseCollectTargets()
     local ids = {}
     for _, sid in ipairs(GetPlayers()) do
@@ -148,11 +151,12 @@ local function laborIncreaseCollectTargets()
     return ids
 end
 
---- @param ids number[] játékos source lista
---- @param timeStamp number os.time a tickhez
---- @param fromIdx number első index az ids-ben (1-based)
---- @param chunkSize number <=0: mind egyben; >0: legfeljebb ennyi fő / hullám
---- @param onDone fun() következő periodikus `laborIncrease` ütemezése
+--- Applies one labor increase tick in chunks and schedules follow-up chunks if needed.
+--- @param ids number[] Player source id list.
+--- @param timeStamp number Tick timestamp (`os.time()`).
+--- @param fromIdx number First index inside ids (1-based).
+--- @param chunkSize number <=0 means all at once; >0 means max players per chunk.
+--- @param onDone fun() Callback that schedules next periodic `laborIncrease` cycle.
 local function laborIncreaseApplyChunks(ids, timeStamp, fromIdx, chunkSize, onDone)
     local n = #ids
     local limit = Config.laborLimit
@@ -183,6 +187,10 @@ local function laborIncreaseApplyChunks(ids, timeStamp, fromIdx, chunkSize, onDo
     end
 end
 
+--- Schedules periodic labor regeneration for online players.
+--- Tick interval is `Config.laborIncreaseTime` minutes and can be chunked via
+--- convar `e_core:labor_tick_chunk`.
+--- @return nil
 function laborIncrease()
     SetTimeout(Config.laborIncreaseTime * 60000, function()
         if not Config.systemMode.labor then
@@ -218,6 +226,9 @@ end
 -----------------
 --- OFFLINE LABOR
 -----------------
+--- Applies offline labor regeneration based on elapsed time since last labor timestamp.
+--- @param playerId number Player source id.
+--- @return boolean ok True when operation completed/ignored successfully, false on validation failure.
 function addOfflineLabor(playerId)
     if not Config.systemMode.labor then
         return false

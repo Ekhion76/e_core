@@ -1,5 +1,10 @@
 local hf = hf
 
+--- Auto-generated annotation. Refine behavior details if needed.
+--- @param playerId number
+--- @param category any
+--- @param name string
+--- @return any result
 function checkMetaExists(playerId, category, name)
 
     if not tonumber(playerId) or type(ECO.meta[playerId]) ~= 'table' then
@@ -46,8 +51,8 @@ function getLevel(value)
     return #levels - 1
 end
 
---- Szintlépcső-index változás: `getLevel` (Config.levels) ugyanarra a skálára vetíti a két pontszámot.
---- @return boolean changed true, ha az index eltér
+--- Detects level-step index change by mapping both values through `getLevel` (Config.levels).
+--- @return boolean changed True when resolved level index differs.
 --- @return number|nil baseLevel
 --- @return number|nil newLevel
 function checkLevelChange(baseValue, newValue)
@@ -70,7 +75,8 @@ function checkLevelChange(baseValue, newValue)
     return true, baseLevel, newLevel
 end
 
---- Csak szerver: kliens NUI (`e_core:levelChange`). A fájl shared → `IsDuplicityVersion` kötelező.
+--- Server-only notifier for client NUI (`e_core:levelChange`).
+--- This file is shared, so `IsDuplicityVersion()` guard is mandatory.
 function messageIfLevelChange(playerId, category, name, baseValue, newValue)
     if not IsDuplicityVersion() then
         return

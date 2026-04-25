@@ -47,6 +47,11 @@ if QB_CORE then
         return self:convertItems(QBCore.Shared.Items)
     end
 
+    --- Auto-generated annotation. Refine behavior details if needed.
+    --- @param playerData any
+    --- @param newJob any
+    --- @param newGang any
+    --- @return any result
     function eCore:convertPlayer(playerData, newJob, newGang)
 
         if playerData then

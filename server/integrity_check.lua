@@ -1,18 +1,18 @@
---- Szerver: integritás checklist (súly, registry, canCarry, opc. add/remove) + kliens progress; NUI lépések.
---- Net: `e_core:integrityCheck:*` — ne keverd a registry **admin diagnostics** exportokkal (`server/diagnostics.lua`).
+--- Server-side integrity checklist (weight, registry, canCarry, optional add/remove) with client progress/NUI steps.
+--- Net scope: `e_core:integrityCheck:*` — keep separate from registry admin diagnostics exports (`server/diagnostics.lua`).
 local hf = hf
 
 local lastRun = {}
 local awaitingProgress = {}
 local awaitingClearToken = {}
---- Progress fázis admin-inline mód (opts már nil lehet `progressResult`-nál).
+--- Progress phase inline-admin mode (`opts` can already be nil for `progressResult`).
 local integrityAwaitingInline = {}
 
---- Két **teljes** futtatás között (`onlyStep` nélkül); NUI opts felülírhatja, min. `INTEGRITY_COOLDOWN_MIN_MS`.
+--- Cooldown between two **full** runs (without `onlyStep`); NUI opts can override, min is `INTEGRITY_COOLDOWN_MIN_MS`.
 local INTEGRITY_COOLDOWN_MIN_MS = 1500
---- Ha `Config.integrityCheck.cooldownMs` nincs: ez (config_check alapértelmezésével egyeztetve).
+--- Fallback when `Config.integrityCheck.cooldownMs` is missing (aligned with config_check defaults).
 local INTEGRITY_COOLDOWN_DEFAULT_MS = 1500
---- Lépésenkénti (`onlyStep`) kérések net burst: csak a végtelen ciklus ellen, ne várakoztassa az admint.
+--- Net burst guard for step-by-step (`onlyStep`) requests: prevents loops without slowing down admin flow.
 local INTEGRITY_STEP_BURST_MS = 320
 
 local INTEGRITY_FIELD_DEFAULTS = {
@@ -27,6 +27,8 @@ local INTEGRITY_FIELD_DEFAULTS = {
     onlyStep = nil,
 }
 
+--- Auto-generated annotation. Refine behavior details if needed.
+--- @return any result
 local function integrityCooldownFromConfig()
     local ic = type(Config) == 'table' and Config.integrityCheck or {}
     local v = tonumber(ic.cooldownMs)
@@ -38,6 +40,9 @@ end
 
 local integrityOptsBySrc = {}
 
+--- Auto-generated annotation. Refine behavior details if needed.
+--- @param opts table
+--- @return any result
 local function mergeIntegrityOptsFromPayload(opts)
     opts = type(opts) == 'table' and opts or {}
     local ic = type(Config) == 'table' and Config.integrityCheck or {}
@@ -91,6 +96,9 @@ local function mergeIntegrityOptsFromPayload(opts)
     return o
 end
 
+--- Auto-generated annotation. Refine behavior details if needed.
+--- @param src any
+--- @return any result
 local function activeIntegrityOpts(src)
     if type(src) == 'number' and integrityOptsBySrc[src] then
         return integrityOptsBySrc[src]
@@ -111,6 +119,9 @@ local function activeIntegrityOpts(src)
     }
 end
 
+--- Auto-generated annotation. Refine behavior details if needed.
+--- @param src any
+--- @return any result
 local function integrityAllowedIdentifiers(src)
     local list = Config.integrityCheck and Config.integrityCheck.allowedIdentifiers
     if not hf.isPopulatedTable(list) then
@@ -128,6 +139,9 @@ local function integrityAllowedIdentifiers(src)
     return false
 end
 
+--- Auto-generated annotation. Refine behavior details if needed.
+--- @param src any
+--- @return any result
 local function integrityPolicyAccess(src)
     --- Nyilvános kapcsoló: `Config.operator.admin.enabled` → `Config.web.enabled` (`libs/config_check.lua`).
     local w = type(Config) == 'table' and Config.web or {}
@@ -150,6 +164,9 @@ local function integrityPolicyAccess(src)
     return true, nil
 end
 
+--- Auto-generated annotation. Refine behavior details if needed.
+--- @param src any
+--- @return any result
 local function integrityCanRun(src)
     if not hf.isValidPlayerSource(src) then
         return false, 'Érvénytelen játékos.'
@@ -181,10 +198,17 @@ local function integrityCanRun(src)
     return true, nil
 end
 
+--- Auto-generated annotation. Refine behavior details if needed.
+--- @param lines any
+--- @param text any
+--- @return any result
 local function appendLine(lines, text)
     lines[#lines + 1] = text
 end
 
+--- Auto-generated annotation. Refine behavior details if needed.
+--- @param lines any
+--- @return any result
 local function runProfessionRegistryChecks(lines)
     appendLine(lines, '--- Profession registry ellenőrzés ---')
 
@@ -259,6 +283,11 @@ local function runProfessionRegistryChecks(lines)
     return true
 end
 
+--- Auto-generated annotation. Refine behavior details if needed.
+--- @param xPlayer table
+--- @param lines any
+--- @param io any
+--- @return any result
 local function runInventoryChecks(xPlayer, lines, io)
     io = io or activeIntegrityOpts(nil)
     local testItem = io.testItem
@@ -320,6 +349,9 @@ local function runInventoryChecks(xPlayer, lines, io)
     end
 end
 
+--- Auto-generated annotation. Refine behavior details if needed.
+--- @param io any
+--- @return any result
 local function diagUiPause(io)
     local ms = tonumber(io and io.uiStepMs) or 55
     ms = math.max(0, math.min(400, ms))
@@ -328,6 +360,11 @@ local function diagUiPause(io)
     end
 end
 
+--- Auto-generated annotation. Refine behavior details if needed.
+--- @param src any
+--- @param data table
+--- @param io any
+--- @return any result
 local function diagNuiPush(src, data, io)
     io = io or activeIntegrityOpts(src)
     if io.useNui == false then
@@ -341,6 +378,9 @@ local function diagNuiPush(src, data, io)
     end
 end
 
+--- Auto-generated annotation. Refine behavior details if needed.
+--- @param io any
+--- @return any result
 local function buildIntegrityChecklistItems(io)
     io = io or activeIntegrityOpts(nil)
     local testItem = io.testItem
@@ -359,7 +399,7 @@ local function buildIntegrityChecklistItems(io)
     return items
 end
 
---- Egyetlen checklist lépés (admin Integritás fül, `onlyStep` opció).
+--- Executes one checklist step (admin Integrity tab, `onlyStep` option).
 local function runIntegrityOnlyStep(runSrc, xPlayer, io)
     local testItem = io.testItem
     local testAmt = io.testItemAmount
@@ -367,13 +407,22 @@ local function runIntegrityOnlyStep(runSrc, xPlayer, io)
     local lines = {}
     local ready = eCore:isReady() == true
 
+    --- Auto-generated annotation. Refine behavior details if needed.
+    --- @param data table
+    --- @return any result
     local function push(data)
         diagNuiPush(runSrc, data, io)
     end
+    --- Auto-generated annotation. Refine behavior details if needed.
+    --- @return any result
     local function pause()
         diagUiPause(io)
     end
 
+    --- Auto-generated annotation. Refine behavior details if needed.
+    --- @param errLines any
+    --- @param section any
+    --- @return any result
     local function startClientPrint(errLines, section)
         section = type(section) == 'string' and section or 'error'
         local meta = io.inlineAdmin and { adminInline = true } or nil
@@ -549,6 +598,10 @@ local function runIntegrityOnlyStep(runSrc, xPlayer, io)
     integrityOptsBySrc[runSrc] = nil
 end
 
+--- Auto-generated annotation. Refine behavior details if needed.
+--- @param src any
+--- @param xPlayer table
+--- @return any result
 local function runIntegrityServerSequence(src, xPlayer)
     CreateThread(function()
         local runSrc = src
@@ -563,9 +616,14 @@ local function runIntegrityServerSequence(src, xPlayer)
         local lines = {}
         appendLine(lines, '--- e_core integritás (szerver) ---')
 
+        --- Auto-generated annotation. Refine behavior details if needed.
+        --- @param data table
+        --- @return any result
         local function push(data)
             diagNuiPush(runSrc, data, io)
         end
+        --- Auto-generated annotation. Refine behavior details if needed.
+        --- @return any result
         local function pause()
             diagUiPause(io)
         end
@@ -823,6 +881,8 @@ end
 RegisterNetEvent('e_core:integrityCheck:request', function(opts)
     local src = source
 
+    --- Auto-generated annotation. Refine behavior details if needed.
+    --- @return any result
     local function clearOpts()
         integrityOptsBySrc[src] = nil
     end

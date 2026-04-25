@@ -4,22 +4,33 @@ if ESX_CORE then
     -- this way, your changes will not be lost in future e_core updates
     local hf = hf
 
-    function eCore:triggerCallback(name, callback, ...)
-        ESX.TriggerServerCallback(name, callback, ...)
-    end
-
+    --- Auto-generated annotation. Refine behavior details if needed.
+    --- @param message any
+    --- @param mType any
+    --- @param mSec any
+    --- @return any result
     function eCore:sendMessage(message, mType, mSec)
         ESX.ShowNotification(message, mSec, mType)
     end
 
+    --- Auto-generated annotation. Refine behavior details if needed.
+    --- @param message any
+    --- @param position any
+    --- @param mType any
+    --- @return any result
     function eCore:drawText(message, position, mType)
         ESX.TextUI(message, mType)
     end
 
+    --- Auto-generated annotation. Refine behavior details if needed.
+    --- @return any result
     function eCore:hideText()
         ESX.HideUI()
     end
 
+    --- Auto-generated annotation. Refine behavior details if needed.
+    --- @param params table
+    --- @return any result
     function eCore:progressbar(params)
         if params.animation then
             params.animation = {
@@ -36,10 +47,14 @@ if ESX_CORE then
         })
     end
 
+    --- Auto-generated annotation. Refine behavior details if needed.
+    --- @return any result
     function eCore:cancelProgressbar()
         ExecuteCommand("cancelprog")
     end
 
+    --- Auto-generated annotation. Refine behavior details if needed.
+    --- @return any result
     function eCore:isLoggedIn()
         return ESX.PlayerLoaded
     end
@@ -52,6 +67,9 @@ if ESX_CORE then
         return playerData.inventory
     end
 
+    --- Auto-generated annotation. Refine behavior details if needed.
+    --- @param playerData any
+    --- @return any result
     function eCore:getPlayerMaxWeight(playerData)
         return Config.maxInventoryWeight
     end
@@ -74,6 +92,10 @@ if ESX_CORE then
         return self:convertPlayer(ESX.GetPlayerData(), newJob)
     end
 
+    --- Auto-generated annotation. Refine behavior details if needed.
+    --- @param playerData any
+    --- @param account any
+    --- @return any result
     function eCore:getAccounts(playerData, account)
         for i = 1, #(playerData.accounts) do
             if playerData.accounts[i].name == account then
@@ -84,6 +106,9 @@ if ESX_CORE then
         return 0
     end
 
+    --- Auto-generated annotation. Refine behavior details if needed.
+    --- @param playerData any
+    --- @return any result
     function eCore:canInteract(playerData)
         _PlayerPedId = PlayerPedId()
         -- isLoaded
@@ -99,6 +124,10 @@ if ESX_CORE then
                 and IsPedOnFoot(_PlayerPedId)
     end
 
+    --- Auto-generated annotation. Refine behavior details if needed.
+    --- @param vehicle any
+    --- @param amount number
+    --- @return any result
     function eCore:setFuelLevel(vehicle, amount)
         if not tonumber(amount) or not DoesEntityExist(vehicle) then
             return false
@@ -106,6 +135,10 @@ if ESX_CORE then
         -- exports['LegacyFuel']:SetFuel(vehicle, amount + 0.0)
     end
 
+    --- Auto-generated annotation. Refine behavior details if needed.
+    --- @param rawPlate any
+    --- @param vehicle any
+    --- @return any result
     function eCore:vehicleKeys(rawPlate, vehicle)
         if not hf.isPopulatedString(rawPlate) then
             return false
@@ -114,6 +147,10 @@ if ESX_CORE then
         -- TriggerEvent("vehiclekeys:client:SetOwner", plate)
     end
 
+    --- Auto-generated annotation. Refine behavior details if needed.
+    --- @param vehicle any
+    --- @param props table
+    --- @return any result
     function eCore:setVehicleProperties(vehicle, props)
         if not hf.isPopulatedTable(props) or not DoesEntityExist(vehicle) then
             return
@@ -121,6 +158,10 @@ if ESX_CORE then
         ESX.Game.SetVehicleProperties(vehicle, props)
     end
 
+    --- Auto-generated annotation. Refine behavior details if needed.
+    --- @param netId number
+    --- @param props table
+    --- @return any result
     function eCore:setVehiclePropertiesFromNetId(netId, props)
         if not hf.isPopulatedTable(props) then
             return
@@ -144,10 +185,16 @@ if ESX_CORE then
         end
     end
 
+    --- Auto-generated annotation. Refine behavior details if needed.
+    --- @param vehicle any
+    --- @return any result
     function eCore:deleteVehicle(vehicle)
         ESX.Game.DeleteVehicle(vehicle)
     end
 
+    --- Auto-generated annotation. Refine behavior details if needed.
+    --- @param coords any
+    --- @return any result
     function eCore:getClosestVehicle(coords)
         return ESX.Game.GetClosestVehicle(coords)
     end

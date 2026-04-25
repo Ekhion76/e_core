@@ -1,5 +1,5 @@
---- Szerver: registry diagnostics admin (`diagnosticsAdmin*`, sorba állított futások).
---- Integritás checklist: `server/integrity_check.lua` (`e_core:integrityCheck:*`).
+--- Server-side registry diagnostics admin (`diagnosticsAdmin*`, queued runs).
+--- Integrity checklist lives in `server/integrity_check.lua` (`e_core:integrityCheck:*`).
 local hf = hf
 
 local diagnosticsRuns = {}
@@ -31,6 +31,12 @@ local DIAGNOSTICS_ADMIN_TESTS = {
     },
 }
 
+--- Auto-generated annotation. Refine behavior details if needed.
+--- @param ok any
+--- @param code any
+--- @param message any
+--- @param data table
+--- @return any result
 local function diagnostics_admin_response(ok, code, message, data)
     return {
         ok = ok == true,
@@ -40,6 +46,9 @@ local function diagnostics_admin_response(ok, code, message, data)
     }
 end
 
+--- Auto-generated annotation. Refine behavior details if needed.
+--- @param hints any
+--- @return any result
 local function clone_doc_hints(hints)
     local out = {}
     for _, hint in ipairs(hints or {}) do
@@ -54,10 +63,18 @@ local function clone_doc_hints(hints)
     return out
 end
 
+--- Auto-generated annotation. Refine behavior details if needed.
+--- @param payload table
+--- @return any result
 local function diagnostics_admin_can_access(payload)
     return hf.adminApiCanAccess('diagnostics', payload)
 end
 
+--- Auto-generated annotation. Refine behavior details if needed.
+--- @param action any
+--- @param payload table
+--- @param reason string
+--- @return any result
 local function diagnostics_access_denied(action, payload, reason)
     if type(hf.auditAdminApiDenied) == 'function' then
         hf.auditAdminApiDenied('diagnostics', action, payload, reason)
@@ -65,10 +82,16 @@ local function diagnostics_access_denied(action, payload, reason)
     return diagnostics_admin_response(false, eCoreErr.access_denied, reason or 'Nincs jogosultság.')
 end
 
+--- Auto-generated annotation. Refine behavior details if needed.
+--- @param lines any
+--- @param text any
+--- @return any result
 local function appendLine(lines, text)
     lines[#lines + 1] = text
 end
 
+--- Auto-generated annotation. Refine behavior details if needed.
+--- @return any result
 local function runProfessionRegistryAudit()
     local lines = {}
     appendLine(lines, '--- Profession registry ellenőrzés ---')
@@ -172,6 +195,9 @@ local function runProfessionRegistryAudit()
     }
 end
 
+--- Auto-generated annotation. Refine behavior details if needed.
+--- @param run any
+--- @return any result
 local function runProfessionKeyValidationAudit(run)
     local lines = {}
     appendLine(lines, '--- Profession kulcs validacio ---')
@@ -275,6 +301,9 @@ local function runProfessionKeyValidationAudit(run)
     }
 end
 
+--- Auto-generated annotation. Refine behavior details if needed.
+--- @param run any
+--- @return any result
 local function serialize_run_view(run)
     return {
         runId = run.runId,
@@ -292,6 +321,9 @@ local function serialize_run_view(run)
     }
 end
 
+--- Auto-generated annotation. Refine behavior details if needed.
+--- @param run any
+--- @return any result
 local function diagnostics_execute_run(run)
     run.status = 'running'
     run.startedAt = os.time()
@@ -343,6 +375,8 @@ local function diagnostics_execute_run(run)
     }
 end
 
+--- Auto-generated annotation. Refine behavior details if needed.
+--- @return any result
 local function diagnostics_schedule_queued_runs()
     if diagnosticsActiveRuns >= DIAGNOSTICS_MAX_CONCURRENT then
         return
@@ -369,6 +403,9 @@ local function diagnostics_schedule_queued_runs()
     end)
 end
 
+--- Auto-generated annotation. Refine behavior details if needed.
+--- @param payload table
+--- @return any result
 function diagnosticsAdminListTests(payload)
     local accessOk, accessErr = diagnostics_admin_can_access(payload)
     if not accessOk then
@@ -392,6 +429,9 @@ function diagnosticsAdminListTests(payload)
     return diagnostics_admin_response(true, eCoreErr.ok, 'Diagnostics tesztlista lekérve.', { items = items })
 end
 
+--- Auto-generated annotation. Refine behavior details if needed.
+--- @param payload table
+--- @return any result
 function diagnosticsAdminListRuns(payload)
     local accessOk, accessErr = diagnostics_admin_can_access(payload)
     if not accessOk then
@@ -409,6 +449,9 @@ function diagnosticsAdminListRuns(payload)
     return diagnostics_admin_response(true, eCoreErr.ok, 'Diagnostics futások listája.', { items = items })
 end
 
+--- Auto-generated annotation. Refine behavior details if needed.
+--- @param payload table
+--- @return any result
 function diagnosticsAdminRun(payload)
     if type(payload) ~= 'table' then
         return diagnostics_admin_response(false, eCoreErr.invalid_item_data, 'Érvénytelen payload.')
@@ -461,6 +504,10 @@ function diagnosticsAdminRun(payload)
     })
 end
 
+--- Auto-generated annotation. Refine behavior details if needed.
+--- @param runId number
+--- @param payload table
+--- @return any result
 function diagnosticsAdminGetRun(runId, payload)
     local accessOk, accessErr = diagnostics_admin_can_access(payload)
     if not accessOk then
@@ -482,6 +529,10 @@ function diagnosticsAdminGetRun(runId, payload)
     })
 end
 
+--- Auto-generated annotation. Refine behavior details if needed.
+--- @param runId number
+--- @param payload table
+--- @return any result
 function diagnosticsAdminCancelRun(runId, payload)
     local accessOk, accessErr = diagnostics_admin_can_access(payload)
     if not accessOk then

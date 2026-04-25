@@ -235,6 +235,10 @@ function eCore:countFreeSlots(inventory)
     return free < 0 and 0 or free
 end
 
+--- Auto-generated annotation. Refine behavior details if needed.
+--- @param itemName any
+--- @param metadata any
+--- @return any result
 function eCore:getItemWeight(itemName, metadata)
     if type(itemName) ~= 'string' then
         return 0
@@ -321,7 +325,7 @@ function eCore:getAmountOfItems(inventory)
     end
 
     for _, item in pairs(inventory) do
-        name, amount = item[nameIdx], item[countIdx]
+        name, amount = item[nameIdx]:lower(), item[countIdx]
 
         if not playerItems[name] then
             playerItems[name] = 0
@@ -333,10 +337,37 @@ function eCore:getAmountOfItems(inventory)
     return playerItems
 end
 
+--- Meghatározza, hogy a játékos rendelkezik-e a megadott tárgyból elegendő mennyiséggel.
+--- @param playerData table xPlayer objektum vagy playerData
+--- @param itemName string tárgy neve
+--- @param count number|nil minimálisan szükséges mennyiség (alap: 1)
+--- @return boolean
+function eCore:hasItem(playerData, itemName, count)
+    if type(itemName) ~= 'string' then return false end
+    local amounts = self:getAmountOfItems(self:getInventory(playerData))
+    return (amounts[itemName:lower()] or 0) >= (count or 1)
+end
+
+--- Visszaadja a játékos inventoryjában lévő tárgy teljes mennyiségét.
+--- Több slotban lévő azonos tárgyak összege.
+--- @param playerData table xPlayer objektum vagy playerData
+--- @param itemName string tárgy neve
+--- @return number mennyiség (0 ha nincs)
+function eCore:getItemCount(playerData, itemName)
+    if type(itemName) ~= 'string' then return 0 end
+    local amounts = self:getAmountOfItems(self:getInventory(playerData))
+    return amounts[itemName:lower()] or 0
+end
+
+--- Auto-generated annotation. Refine behavior details if needed.
+--- @param name string
+--- @return any result
 function eCore:getRegisteredItem(name)
     return REGISTERED_ITEMS[name]
 end
 
+--- Auto-generated annotation. Refine behavior details if needed.
+--- @return any result
 function eCore:isReady()
     return CORE_READY
 end

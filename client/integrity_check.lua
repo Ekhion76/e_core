@@ -1,10 +1,16 @@
---- Integritás NUI / progress (`Config.integrityCheck`); net: `e_core:integrityCheck:*` (futtatás: admin Integritás fül → `integrityDiagnosticsRun`).
+--- Integrity NUI/progress client side (`Config.integrityCheck`);
+--- net events: `e_core:integrityCheck:*` (run from admin Integrity tab -> `integrityDiagnosticsRun`).
 local hf = hf
 
+--- Returns true when integrity checks should use NUI output.
+--- @return boolean result
 local function integrityUseNui()
     return Config.integrityCheck and Config.integrityCheck.useNui ~= false
 end
 
+--- Prints integrity log lines to console depending on current config.
+--- @param lines any
+--- @return nil
 local function integrityPrintConsole(lines)
     if not Config.integrityCheck then
         return
@@ -62,7 +68,7 @@ RegisterNetEvent('e_core:integrityCheck:clientPrint', function(lines, section, m
         return
     end
 
-    --- Standalone NUI modál nincs: nem inline futás (pl. régi trigger) → F8.
+    --- Standalone NUI modal is not active: non-inline run (for example legacy trigger) -> F8 fallback.
     for _, line in ipairs(lines) do
         print(('[e_core] %s'):format(tostring(line)))
     end
@@ -78,20 +84,20 @@ RegisterNetEvent('e_core:integrityCheck:progressTest', function(opts)
             action = 'DIAGNOSTICS_CHECKLIST_SET',
             id = 'progress',
             status = 'running',
-            detail = 'Nézd a játék UI-t (ox / qs / egyéb progress)',
+            detail = 'Check in-game UI (ox / qs / other progress resource)',
             adminInline = adminInline or nil,
         })
         SendNUIMessage({
             action = 'DIAGNOSTICS_LIVE_HINT',
-            text = adminInline and 'Fut: kliens progress sáv (az admin Integritás fülön követhető).'
-                or 'Fut: kliens progress sáv (állapot: F8 konzol).',
+            text = adminInline and 'Running: client progress bar (tracked on admin Integrity tab).'
+                or 'Running: client progress bar (status in F8 console).',
             adminInline = adminInline or nil,
         })
     end
 
     eCore:progressbar({
         name = 'ecore_integrity_check',
-        label = opts.label or 'e_core – integritás (progress)',
+        label = opts.label or 'e_core - integrity (progress)',
         duration = duration,
         useWhileDead = false,
         canCancel = true,
@@ -106,7 +112,7 @@ RegisterNetEvent('e_core:integrityCheck:progressTest', function(opts)
                 })
                 SendNUIMessage({
                     action = 'DIAGNOSTICS_LIVE_HINT',
-                    text = 'Progress: kész (sikeres onFinish).',
+                    text = 'Progress: done (successful onFinish).',
                     adminInline = adminInline or nil,
                 })
             end
@@ -123,7 +129,7 @@ RegisterNetEvent('e_core:integrityCheck:progressTest', function(opts)
                 })
                 SendNUIMessage({
                     action = 'DIAGNOSTICS_LIVE_HINT',
-                    text = 'Progress: megszakítva (onCancel) – narancs a checklisten.',
+                    text = 'Progress: cancelled (onCancel) - marked orange in checklist.',
                     adminInline = adminInline or nil,
                 })
             end

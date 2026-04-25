@@ -24,7 +24,7 @@ local nuiReady, init
 
 --- @param category string category eg.: crafting, reputation, harvesting, special, ...
 --- @param name string|nil (optional) subcategory eg.: weaponry, cooking, handicraft, chemist, etc.
---- @return number|table|boolean proficiency | whole category | false + eCoreErr ha hiba
+--- @return number|table|boolean proficiency | whole category | false + eCoreErr on failure
 function getAbility(category, name)
     if type(category) ~= 'string' then
         return false, eCoreErr.no_valid_meta_name
@@ -55,8 +55,8 @@ function getAbility(category, name)
     return ECO.meta[ck]
 end
 
---- @param meta string|nil opcionális kategória kulcs (ugyanaz a trim, mint szerveren)
---- @return table|false teljes meta | egy kategória | false, eCoreErr ha a kulcs param érvénytelen
+--- @param meta string|nil optional category key (same trim contract as server-side)
+--- @return table|false full meta | one category | false, eCoreErr when key parameter is invalid
 function getMeta(meta)
     if meta == nil then
         return ECO.meta
@@ -71,6 +71,8 @@ function getMeta(meta)
     return ECO.meta[mk]
 end
 
+--- Returns current client-side labor value if available.
+--- @return boolean|number ok, laborValue or false, eCoreErr
 function getLabor()
     if not Config.systemMode.labor then
         return false, eCoreErr.the_system_is_turned_off
@@ -89,6 +91,8 @@ function getLabor()
     return true, n
 end
 
+--- Waits for NUI readiness and sends initial payload.
+--- @return nil
 function nuiInit()
     cLog('NUI INIT', 'Loading', 2)
 

@@ -1,10 +1,15 @@
 -- Check setting values
--- `Config.operator` → szintetizált `Config.web` (admin NUI), `Config.integrityCheck` (integritás / admin Integritás fül), `Config.adminApi`.
+-- `Config.operator` -> synthesized `Config.web` (admin NUI),
+-- `Config.integrityCheck` (integrity/admin Integrity tab), and `Config.adminApi`.
 
---- Két **teljes** futtatás között (integritás, `onlyStep` nélkül); `operator.integrityCheck.cooldownMs` felülírható.
+--- Cooldown between two **full** integrity runs (without `onlyStep`);
+--- can be overridden by `operator.integrityCheck.cooldownMs`.
 local INTEGRITY_COOLDOWN_MIN_MS = 1500
 local INTEGRITY_COOLDOWN_DEFAULT_MS = 1500
 
+--- Auto-generated annotation. Refine behavior details if needed.
+--- @param list any
+--- @return any result
 local function copyIdList(list)
     if not hf.isPopulatedTable(list) then
         return {}
@@ -18,6 +23,8 @@ local function copyIdList(list)
     return out
 end
 
+--- Auto-generated annotation. Refine behavior details if needed.
+--- @return any result
 local function applyOperatorConfig()
     local op = hf.isPopulatedTable(Config.operator) and Config.operator or nil
     if not op then
@@ -25,12 +32,12 @@ local function applyOperatorConfig()
     end
 
     local ids = copyIdList(op.identifiers)
-    --- Admin NUI (`ecore_admin`): új `operator.admin`, legacy `operator.web`.
+    --- Admin NUI (`ecore_admin`): new `operator.admin`, legacy `operator.web`.
     local admin = hf.isPopulatedTable(op.admin) and op.admin or hf.isPopulatedTable(op.web) and op.web or nil
     if not hf.isPopulatedTable(admin) then
         admin = { enabled = true, command = 'ecore_admin', acePermission = 'ecore.admin' }
     end
-    --- Integritás: új `operator.integrityCheck`, legacy `operator.diagnostics`.
+    --- Integrity: new `operator.integrityCheck`, legacy `operator.diagnostics`.
     local integ = hf.isPopulatedTable(op.integrityCheck) and op.integrityCheck
         or hf.isPopulatedTable(op.diagnostics) and op.diagnostics
         or nil
@@ -89,7 +96,8 @@ local function applyOperatorConfig()
     return true
 end
 
---- Kliens / szerver: integritás futtatás fix alapértelmezései (`Config.integrityCheck`, NUI-ból felülírható mezők).
+--- Client/server shared fixed defaults for integrity runs
+--- (`Config.integrityCheck`, with NUI-overridable runtime fields).
 local function applyIntegrityCheckFixedDefaults()
     local cd = tonumber(Config.integrityCheck.cooldownMs)
     if cd == nil then
@@ -106,6 +114,8 @@ local function applyIntegrityCheckFixedDefaults()
     Config.integrityCheck.uiStepMs = 55
 end
 
+--- Auto-generated annotation. Refine behavior details if needed.
+--- @return any result
 function configCheck()
     Config.debugLevel = tonumber(Config.debugLevel) or false
     Config.maxInventoryWeight = tonumber(Config.maxInventoryWeight) or 24000
@@ -134,7 +144,8 @@ function configCheck()
     Config.discordWebHook = hf.isPopulatedTable(Config.discordWebHook) and Config.discordWebHook or {}
 
     if not applyOperatorConfig() then
-        --- Legacy: `Config.diagnostics` → `Config.integrityCheck` (breaking átmenet egy override ciklusra).
+        --- Legacy mapping: `Config.diagnostics` -> `Config.integrityCheck`
+        --- (temporary breaking transition for one override cycle).
         local legacyDiag = hf.isPopulatedTable(Config.diagnostics) and Config.diagnostics or {}
         Config.integrityCheck = hf.isPopulatedTable(Config.integrityCheck) and Config.integrityCheck or {}
         for k, v in pairs(legacyDiag) do
@@ -142,7 +153,8 @@ function configCheck()
                 Config.integrityCheck[k] = v
             end
         end
-        --- Régi `command` (pl. ecore_diag) már nem regisztrál parancsot; futtatás admin NUI Integritás fül.
+        --- Legacy `command` (e.g. ecore_diag) no longer registers a command;
+        --- execution moved to admin NUI Integrity tab.
         Config.integrityCheck.command = nil
         Config.integrityCheck.acePermission = type(Config.integrityCheck.acePermission) == 'string' and Config.integrityCheck.acePermission or ''
         Config.integrityCheck.allowedIdentifiers = hf.isPopulatedTable(Config.integrityCheck.allowedIdentifiers)

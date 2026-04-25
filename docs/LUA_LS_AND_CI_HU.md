@@ -41,3 +41,6 @@ Telepítés Linuxon / CI-n: `luarocks install luacheck` vagy csomagkezelő (`apt
 ## Kapcsolódó
 
 - `docs/MODERNIZACIOS_ES_MEGBIZHATOSAGI_TERV_HU.md` → 3F, Fázis 4.
+- `docs/LUA_ANNOTATION_STYLE_EN.md` – kötelező angol LuaLS annotációs stílus (`@param`, `@return`, options shape).
+- `docs/LUA_ANNOTATION_BACKLOG_EN.md` – aktuális annotációs backlog és fázisbontás.
+- `.cursor/rules/lua-annotation-style.mdc` – AI szabály a következetes annotációs enforce-hoz.

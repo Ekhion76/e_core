@@ -1,6 +1,9 @@
---- NUI → szerver diagnostics admin (`eCoreDiagnosticsApi`), `hf.webConsoleAccess` (web konzol jog).
+--- NUI -> server diagnostics admin bridge (`eCoreDiagnosticsApi`), guarded by `hf.webConsoleAccess`.
 local hf = hf
 
+--- Auto-generated annotation. Refine behavior details if needed.
+--- @param value any
+--- @return any result
 local function trim(value)
     return tostring(value or ''):gsub('^%s+', ''):gsub('%s+$', '')
 end

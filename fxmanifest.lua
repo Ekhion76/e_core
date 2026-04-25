@@ -1,7 +1,7 @@
 fx_version 'cerulean'
 game 'gta5'
 description 'ECO CORE'
-version '0.0.54'
+version '0.0.56'
 
 shared_scripts {
     '@ox_lib/init.lua',
@@ -104,5 +104,6 @@ files {
 lua54 'yes'
 
 dependencies {
+    'ox_lib',
     'oxmysql'
 }

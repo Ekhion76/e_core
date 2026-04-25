@@ -1,10 +1,11 @@
---- Kliens oldali `exports.e_core:*` névsor = ez a fájl (szerződés: `docs/PUBLIC_API_HU.md` §2).
---- Nincs üzleti logika: közvetlen hivatkozás a globális implementációkra; `getConfig` és `isReady` vékony burkoló.
+--- Client-side `exports.e_core:*` registry (contract source: `docs/PUBLIC_API_HU.md` §2).
+--- This file intentionally contains thin export bindings only.
 --- exports ---
 exports("getAbility", getAbility)
 exports("getMeta", getMeta)
 
---- @return number labor points
+--- Returns current labor points on client cache.
+--- @return number labor Current labor points.
 exports("getLabor", getLabor)
 
 
@@ -13,13 +14,15 @@ exports("getLabor", getLabor)
 exports('getLevel', getLevel)
 exports('getDiscounts', getDiscounts)
 
---- @return table returns the e_core config file
+--- Returns e_core runtime configuration table.
+--- @return table config Current merged `Config` table.
 exports("getConfig", function()
 
     return Config
 end)
 
---- @return boolean true only when item registry finished loading successfully
+--- Returns true when item registry load has completed successfully.
+--- @return boolean ready True if core is fully ready for consumers.
 exports('isReady', function()
 
     return eCore:isReady() == true

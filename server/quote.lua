@@ -1,9 +1,14 @@
 local LABOR_QUOTE_CACHE_BY_PLAYER = {}
 
+--- Auto-generated annotation. Refine behavior details if needed.
+--- @return any result
 local function getNowMs()
     return GetGameTimer()
 end
 
+--- Auto-generated annotation. Refine behavior details if needed.
+--- @param context table
+--- @return any result
 local function resolveQuoteTtlMs(context)
     local ttlMs = GetConvarInt('e_core:labor_quote_ttl_ms', 1500)
     if type(context) == 'table' and tonumber(context.ttlMs) then
@@ -17,6 +22,9 @@ local function resolveQuoteTtlMs(context)
     return math.floor(ttlMs)
 end
 
+--- Auto-generated annotation. Refine behavior details if needed.
+--- @param context table
+--- @return any result
 local function buildQuoteCacheKey(context)
     if type(context) ~= 'table' then
         return '__default'
@@ -35,6 +43,11 @@ local function buildQuoteCacheKey(context)
     }, '|')
 end
 
+--- Auto-generated annotation. Refine behavior details if needed.
+--- @param payload table
+--- @param isCacheHit boolean
+--- @param ttlLeftMs any
+--- @return any result
 local function withCacheMetadata(payload, isCacheHit, ttlLeftMs)
     local quote = hf.deepCopy(payload)
     quote.cache = {
@@ -44,6 +57,10 @@ local function withCacheMetadata(payload, isCacheHit, ttlLeftMs)
     return quote
 end
 
+--- Auto-generated annotation. Refine behavior details if needed.
+--- @param playerId number
+--- @param cacheKey any
+--- @return any result
 local function getCachedQuote(playerId, cacheKey)
     local playerCache = LABOR_QUOTE_CACHE_BY_PLAYER[playerId]
     if type(playerCache) ~= 'table' then
@@ -64,6 +81,12 @@ local function getCachedQuote(playerId, cacheKey)
     return withCacheMetadata(cacheEntry.payload, true, cacheEntry.expiresAtMs - nowMs)
 end
 
+--- Auto-generated annotation. Refine behavior details if needed.
+--- @param playerId number
+--- @param cacheKey any
+--- @param payload table
+--- @param ttlMs any
+--- @return any result
 local function storeQuoteInCache(playerId, cacheKey, payload, ttlMs)
     local playerCache = LABOR_QUOTE_CACHE_BY_PLAYER[playerId]
     if type(playerCache) ~= 'table' then
@@ -78,6 +101,9 @@ local function storeQuoteInCache(playerId, cacheKey, payload, ttlMs)
     }
 end
 
+--- Auto-generated annotation. Refine behavior details if needed.
+--- @param playerId number
+--- @return any result
 function invalidateLaborQuoteCache(playerId)
     playerId = tonumber(playerId)
     if not playerId then

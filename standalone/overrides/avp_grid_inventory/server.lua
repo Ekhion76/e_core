@@ -4,7 +4,8 @@ if AVP_GRID_INVENTORY then
 
     local hf = hf
 
-    --- avp egyedi string → ha nem `eCoreErr` érték, `unknown_error` + `cLog`
+--- AVP may return custom reason strings; if not an `eCoreErr` value,
+--- normalize to `unknown_error` and log via `cLog`.
     local function asEcoreInventoryReason(reason)
         if type(reason) ~= 'string' or reason == '' then
             return eCoreErr.unknown_error
@@ -14,10 +15,17 @@ if AVP_GRID_INVENTORY then
                 return reason
             end
         end
-        cLog('avp_grid_inventory: nem eCoreErr ok-string', { reason = reason }, 2)
+        cLog('avp_grid_inventory: reason is not a valid eCoreErr string', { reason = reason }, 2)
         return eCoreErr.unknown_error
     end
 
+    --- Auto-generated annotation. Refine behavior details if needed.
+    --- @param xPlayer table
+    --- @param item table
+    --- @param count number
+    --- @param metadata any
+    --- @param slot number
+    --- @return any result
     function eCore:removeItem(xPlayer, item, count, metadata, slot)
         if not xPlayer or not hf.isValidPlayerSource(xPlayer.source) then
             return false, eCoreErr.unknown_error
@@ -44,6 +52,10 @@ if AVP_GRID_INVENTORY then
         return true
     end
 
+    --- Auto-generated annotation. Refine behavior details if needed.
+    --- @param xPlayer table
+    --- @param items table
+    --- @return any result
     function eCore:removeItems(xPlayer, items)
         if not xPlayer or not hf.isValidPlayerSource(xPlayer.source) then
             return false, eCoreErr.unknown_error
@@ -84,6 +96,13 @@ if AVP_GRID_INVENTORY then
         return true, eCoreErr.ok
     end
 
+    --- Auto-generated annotation. Refine behavior details if needed.
+    --- @param xPlayer table
+    --- @param item table
+    --- @param count number
+    --- @param slot number
+    --- @param metadata any
+    --- @return any result
     function eCore:addItem(xPlayer, item, count, slot, metadata)
         if not xPlayer or not hf.isValidPlayerSource(xPlayer.source) then
             return false, eCoreErr.unknown_error
@@ -110,7 +129,8 @@ if AVP_GRID_INVENTORY then
         return true
     end
 
-    --- avp nem ad részletes okot: csak boolean — „nem fér” ág: `too_heavy` (kliens override ugyanígy).
+--- AVP does not provide detailed reason here (boolean only).
+--- Map the "cannot carry" branch to `too_heavy` (same as client override).
     function eCore:canSwapItems(swappingItems, itemData, playerData)
         if swappingItems ~= nil and type(swappingItems) ~= 'table' then
             return false, eCoreErr.invalid_item_data

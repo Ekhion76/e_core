@@ -53,6 +53,9 @@ if OX_INVENTORY then
         return tmp
     end
 
+    --- Auto-generated annotation. Refine behavior details if needed.
+    --- @param name string
+    --- @return any result
     function eCore:getQBImage(name)
         if QBCore and QBCore.Shared and QBCore.Shared.Items and QBCore.Shared.Items[name] then
             local image = QBCore.Shared.Items[name].image

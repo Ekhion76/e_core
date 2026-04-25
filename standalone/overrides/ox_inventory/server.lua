@@ -5,7 +5,8 @@ if OX_INVENTORY then
     local hf = hf
     local ox_inventory = exports.ox_inventory
 
-    --- ox / qs stack-specifikus második érték → ha nem `eCoreErr` string, `unknown_error` + `cLog`
+--- ox/qs stack-specific second return normalization:
+--- if value is not an `eCoreErr` string, map to `unknown_error` and log via `cLog`.
     local function asEcoreInventoryReason(reason)
         if type(reason) ~= 'string' or reason == '' then
             return eCoreErr.unknown_error
@@ -15,13 +16,16 @@ if OX_INVENTORY then
                 return reason
             end
         end
-        cLog('ox_inventory: nem eCoreErr ok-string', { reason = reason }, 2)
+        cLog('ox_inventory: reason is not a valid eCoreErr string', { reason = reason }, 2)
         return eCoreErr.unknown_error
     end
 
     local fallbackGetInventoryWeight = eCore.getInventoryWeight
     local fallbackGetPlayerMaxWeight = eCore.getPlayerMaxWeight
 
+    --- Auto-generated annotation. Refine behavior details if needed.
+    --- @param xPlayer table
+    --- @return any result
     local function oxPlayerInventory(xPlayer)
         if not xPlayer or not xPlayer.source then
             return nil
@@ -35,6 +39,9 @@ if OX_INVENTORY then
         return nil
     end
 
+    --- Auto-generated annotation. Refine behavior details if needed.
+    --- @param xPlayer table
+    --- @return any result
     function eCore:getInventoryWeight(xPlayer)
         local inv = oxPlayerInventory(xPlayer)
         if inv then
@@ -43,6 +50,9 @@ if OX_INVENTORY then
         return fallbackGetInventoryWeight(self, xPlayer)
     end
 
+    --- Auto-generated annotation. Refine behavior details if needed.
+    --- @param xPlayer table
+    --- @return any result
     function eCore:getPlayerMaxWeight(xPlayer)
         local inv = oxPlayerInventory(xPlayer)
         if inv and type(inv.maxWeight) == 'number' and inv.maxWeight > 0 then
@@ -51,6 +61,13 @@ if OX_INVENTORY then
         return fallbackGetPlayerMaxWeight(self, xPlayer)
     end
 
+    --- Auto-generated annotation. Refine behavior details if needed.
+    --- @param xPlayer table
+    --- @param item table
+    --- @param count number
+    --- @param metadata any
+    --- @param slot number
+    --- @return any result
     function eCore:removeItem(xPlayer, item, count, metadata, slot)
         if not xPlayer or not hf.isValidPlayerSource(xPlayer.source) then
             return false, eCoreErr.unknown_error
@@ -68,6 +85,10 @@ if OX_INVENTORY then
         return true
     end
 
+    --- Auto-generated annotation. Refine behavior details if needed.
+    --- @param xPlayer table
+    --- @param items table
+    --- @return any result
     function eCore:removeItems(xPlayer, items)
         if not xPlayer then
             return false, eCoreErr.unknown_error
@@ -106,6 +127,13 @@ if OX_INVENTORY then
         return true, eCoreErr.ok
     end
 
+    --- Auto-generated annotation. Refine behavior details if needed.
+    --- @param xPlayer table
+    --- @param item table
+    --- @param count number
+    --- @param slot number
+    --- @param metadata any
+    --- @return any result
     function eCore:addItem(xPlayer, item, count, slot, metadata)
         if not xPlayer or not hf.isValidPlayerSource(xPlayer.source) then
             return false, eCoreErr.unknown_error
@@ -122,5 +150,26 @@ if OX_INVENTORY then
         end
 
         return true
+    end
+
+    --- Auto-generated annotation. Refine behavior details if needed.
+    --- @param xPlayer table
+    --- @param itemName any
+    --- @return any result
+    function eCore:getItemCount(xPlayer, itemName)
+        if type(itemName) ~= 'string' then return 0 end
+        local ok, count = pcall(function()
+            return ox_inventory:GetItemCount(xPlayer.source, itemName)
+        end)
+        return (ok and count) or 0
+    end
+
+    --- Auto-generated annotation. Refine behavior details if needed.
+    --- @param xPlayer table
+    --- @param itemName any
+    --- @param count number
+    --- @return any result
+    function eCore:hasItem(xPlayer, itemName, count)
+        return eCore:getItemCount(xPlayer, itemName) >= (count or 1)
     end
 end

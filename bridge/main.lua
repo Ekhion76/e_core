@@ -1,5 +1,6 @@
---- Mindkét kontextusban (kliens + szerver): `getFrameWork` / `getCore` exportok; `eCore.helper` = `hf` (`libs/helper.lua` + `libs/helper_ecore.lua`), `eCore.Err` = `eCoreErr`.
---- A QB/ESX ciklusok csak netesemény-regisztrációt végeznek, nem váltanak export ágat.
+--- Shared bootstrap for both client and server contexts.
+--- Exposes `getFrameWork` and `getCore` exports and binds helper/error tables.
+--- QB/ESX loops below only register framework events and do not alter export contracts.
 if QB_CORE then
 
     for _, event in ipairs(QBEvents) do
@@ -20,11 +21,15 @@ end
 eCore.helper = hf
 eCore.Err = eCoreErr
 
+--- Returns detected framework key (`esx`, `qb`, ...).
+--- @return string framework Active framework identifier.
 exports("getFrameWork", function()
 
     return FRAMEWORK
 end)
 
+--- Returns the runtime core facade table.
+--- @return table core eCore facade object.
 exports("getCore", function()
 
     return eCore

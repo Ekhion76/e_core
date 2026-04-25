@@ -1,6 +1,6 @@
---- e_core – séma migrációk (Fázis 3).
---- Sorrend: növekvő `id`; alkalmazás után sor kerül az `e_core_migrations` táblába.
---- Új migráció: bővítsd a `ECORE_DB_MIGRATIONS` tömböt; növeld `ECORE_DB_SCHEMA_TARGET` (export / doksi).
+--- e_core schema migrations (Phase 3).
+--- Order: ascending `id`; each applied migration is stored in `e_core_migrations`.
+--- Add new migration by extending `ECORE_DB_MIGRATIONS` and bumping `ECORE_DB_SCHEMA_TARGET` (export/docs).
 
 ECORE_DB_SCHEMA_TARGET = 4
 
@@ -12,6 +12,8 @@ CREATE TABLE IF NOT EXISTS `e_core_migrations` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 ]]
 
+--- Auto-generated annotation. Refine behavior details if needed.
+--- @return any result
 local function ensure_migrations_table()
     local ok, err = hf.mysqlAwait('migration:ensure_table', function()
         MySQL.query.await(MIGRATIONS_DDL)
@@ -21,6 +23,9 @@ local function ensure_migrations_table()
     end
 end
 
+--- Auto-generated annotation. Refine behavior details if needed.
+--- @param id number
+--- @return any result
 local function migration_applied(id)
     local ok, rows = hf.mysqlAwait(('migration:has_%d'):format(id), function()
         return MySQL.query.await('SELECT `id` FROM `e_core_migrations` WHERE `id` = ? LIMIT 1', { id })
@@ -32,6 +37,10 @@ local function migration_applied(id)
     return rows and rows[1] ~= nil
 end
 
+--- Auto-generated annotation. Refine behavior details if needed.
+--- @param id number
+--- @param name string
+--- @return any result
 local function mark_migration_applied(id, name)
     local ok, err = hf.mysqlAwait(('migration:mark_%d'):format(id), function()
         MySQL.query.await(
@@ -44,6 +53,8 @@ local function mark_migration_applied(id, name)
     end
 end
 
+--- Auto-generated annotation. Refine behavior details if needed.
+--- @return any result
 local function migration_001_add_e_core_column()
     local sql
     if QB_CORE then
@@ -59,6 +70,8 @@ local function migration_001_add_e_core_column()
     end
 end
 
+--- Auto-generated annotation. Refine behavior details if needed.
+--- @return any result
 local function migration_002_create_profession_registry_tables()
     local createLevelProfilesSql = [[
 CREATE TABLE IF NOT EXISTS `e_core_level_profiles` (
@@ -110,6 +123,8 @@ CREATE TABLE IF NOT EXISTS `e_core_professions` (
     end
 end
 
+--- Auto-generated annotation. Refine behavior details if needed.
+--- @return any result
 local function migration_003_create_cleanup_jobs_table()
     local createCleanupJobsSql = [[
 CREATE TABLE IF NOT EXISTS `e_core_cleanup_jobs` (
@@ -146,6 +161,8 @@ CREATE TABLE IF NOT EXISTS `e_core_cleanup_jobs` (
     end
 end
 
+--- Auto-generated annotation. Refine behavior details if needed.
+--- @return any result
 local function migration_004_create_admin_denied_audit_table()
     local createDeniedAuditSql = [[
 CREATE TABLE IF NOT EXISTS `e_core_admin_denied_audit` (
@@ -170,7 +187,7 @@ CREATE TABLE IF NOT EXISTS `e_core_admin_denied_audit` (
     end
 end
 
---- @return number legmagasabb alkalmazott migráció `id`, vagy 0 ha üres / hiba
+--- @return number Highest applied migration `id`, or 0 when empty/error.
 function e_core_get_applied_migration_id()
     local ok, rows = hf.mysqlAwait('migration:max_id', function()
         return MySQL.query.await('SELECT MAX(`id`) AS `m` FROM `e_core_migrations`', {})
@@ -192,6 +209,8 @@ function e_core_get_applied_migration_id()
     return maxId
 end
 
+--- Auto-generated annotation. Refine behavior details if needed.
+--- @return any result
 function e_core_run_db_migrations()
     local ok, err = pcall(function()
         ensure_migrations_table()

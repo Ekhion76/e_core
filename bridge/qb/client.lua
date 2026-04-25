@@ -4,25 +4,37 @@ if QB_CORE then
     -- this way, your changes will not be lost in future e_core updates
     local hf = hf
 
-    function eCore:triggerCallback(name, callback, ...)
-        QBCore.Functions.TriggerCallback(name, callback, ...)
-    end
-
+    --- Auto-generated annotation. Refine behavior details if needed.
+    --- @param message any
+    --- @param mType any
+    --- @param mSec any
+    --- @param image any
+    --- @return any result
     function eCore:sendMessage(message, mType, mSec, image)
         --TriggerEvent('QBCore:Notify', message, mType, mSec)
         if mType == 'info' then mType = 'primary' end
         QBCore.Functions.Notify(message, mType, mSec) -- CHANGE ME
     end
 
+    --- Auto-generated annotation. Refine behavior details if needed.
+    --- @param message any
+    --- @param position any
+    --- @param mType any
+    --- @return any result
     function eCore:drawText(message, position, mType)
         if mType == 'info' then mType = 'primary' end
         TriggerEvent('qb-core:client:DrawText', message, position) -- CHANGE ME
     end
 
+    --- Auto-generated annotation. Refine behavior details if needed.
+    --- @return any result
     function eCore:hideText()
         TriggerEvent('qb-core:client:HideText') -- CHANGE ME
     end
 
+    --- Auto-generated annotation. Refine behavior details if needed.
+    --- @param params table
+    --- @return any result
     function eCore:progressbar(params)
         if params.animation then
             params.animation = {
@@ -57,10 +69,14 @@ if QB_CORE then
             end)
     end
 
+    --- Auto-generated annotation. Refine behavior details if needed.
+    --- @return any result
     function eCore:cancelProgressbar()
         TriggerEvent("progressbar:client:cancel")
     end
 
+    --- Auto-generated annotation. Refine behavior details if needed.
+    --- @return any result
     function eCore:isLoggedIn()
         return LocalPlayer.state['isLoggedIn']
     end
@@ -73,6 +89,9 @@ if QB_CORE then
         return playerData.items
     end
 
+    --- Auto-generated annotation. Refine behavior details if needed.
+    --- @param playerData any
+    --- @return any result
     function eCore:getPlayerMaxWeight(playerData)
         return Config.maxInventoryWeight
     end
@@ -85,6 +104,10 @@ if QB_CORE then
         return eCore:convertPlayer(QBCore.Functions.GetPlayerData(), newJob, newGang)
     end
 
+    --- Auto-generated annotation. Refine behavior details if needed.
+    --- @param playerData any
+    --- @param account any
+    --- @return any result
     function eCore:getAccounts(playerData, account)
         local convert = { -- ESX2QB
             money = 'cash',
@@ -95,6 +118,9 @@ if QB_CORE then
         return playerData.money[account]
     end
 
+    --- Auto-generated annotation. Refine behavior details if needed.
+    --- @param playerData any
+    --- @return any result
     function eCore:canInteract(playerData)
         _PlayerPedId = PlayerPedId()
         -- isLoaded
@@ -110,6 +136,10 @@ if QB_CORE then
             and IsPedOnFoot(_PlayerPedId)
     end
 
+    --- Auto-generated annotation. Refine behavior details if needed.
+    --- @param vehicle any
+    --- @param amount number
+    --- @return any result
     function eCore:setFuelLevel(vehicle, amount)
         if not tonumber(amount) or not DoesEntityExist(vehicle) then
             return false
@@ -118,6 +148,10 @@ if QB_CORE then
         exports['qb-fuel']:SetFuel(vehicle, amount + 0.0)
     end
 
+    --- Auto-generated annotation. Refine behavior details if needed.
+    --- @param rawPlate any
+    --- @param vehicle any
+    --- @return any result
     function eCore:vehicleKeys(rawPlate, vehicle)
         if not hf.isPopulatedString(rawPlate) then
             return false
@@ -126,6 +160,10 @@ if QB_CORE then
         TriggerEvent("vehiclekeys:client:SetOwner", plate)
     end
 
+    --- Auto-generated annotation. Refine behavior details if needed.
+    --- @param vehicle any
+    --- @param props table
+    --- @return any result
     function eCore:setVehicleProperties(vehicle, props)
         if not hf.isPopulatedTable(props) or not DoesEntityExist(vehicle) then
             return
@@ -133,6 +171,10 @@ if QB_CORE then
         QBCore.Functions.SetVehicleProperties(vehicle, props)
     end
 
+    --- Auto-generated annotation. Refine behavior details if needed.
+    --- @param netId number
+    --- @param props table
+    --- @return any result
     function eCore:setVehiclePropertiesFromNetId(netId, props)
         if not hf.isPopulatedTable(props) then
             return
@@ -160,10 +202,16 @@ if QB_CORE then
         end
     end
 
+    --- Auto-generated annotation. Refine behavior details if needed.
+    --- @param vehicle any
+    --- @return any result
     function eCore:deleteVehicle(vehicle)
         QBCore.Functions.DeleteVehicle(vehicle)
     end
 
+    --- Auto-generated annotation. Refine behavior details if needed.
+    --- @param coords any
+    --- @return any result
     function eCore:getClosestVehicle(coords)
         return QBCore.Functions.GetClosestVehicle(coords)
     end

@@ -21,6 +21,9 @@ RegisterNUICallback('eCoreDiagnosticsApi', function(data, cb)
     seq = seq + 1
     local requestId = ('%d-%d'):format(seq, GetGameTimer())
     local finished = false
+    --- Auto-generated annotation. Refine behavior details if needed.
+    --- @param payload table
+    --- @return any result
     local function done(payload)
         if finished then
             return

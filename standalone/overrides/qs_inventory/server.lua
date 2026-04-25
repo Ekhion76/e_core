@@ -5,6 +5,9 @@ if QS_INVENTORY then
     local hf = hf
     local qs_inventory = exports['qs-inventory']
 
+    --- Auto-generated annotation. Refine behavior details if needed.
+    --- @param reason string
+    --- @return any result
     local function asEcoreInventoryReason(reason)
         if type(reason) ~= 'string' or reason == '' then
             return eCoreErr.unknown_error
@@ -18,6 +21,13 @@ if QS_INVENTORY then
         return eCoreErr.unknown_error
     end
 
+    --- Auto-generated annotation. Refine behavior details if needed.
+    --- @param xPlayer table
+    --- @param item table
+    --- @param count number
+    --- @param metadata any
+    --- @param slot number
+    --- @return any result
     function eCore:removeItem(xPlayer, item, count, metadata, slot)
         if not xPlayer or not hf.isValidPlayerSource(xPlayer.source) then
             return false, eCoreErr.unknown_error
@@ -35,6 +45,10 @@ if QS_INVENTORY then
         return true
     end
 
+    --- Auto-generated annotation. Refine behavior details if needed.
+    --- @param xPlayer table
+    --- @param items table
+    --- @return any result
     function eCore:removeItems(xPlayer, items)
         if not xPlayer then
             return false, eCoreErr.unknown_error
@@ -73,6 +87,13 @@ if QS_INVENTORY then
         return true, eCoreErr.ok
     end
 
+    --- Auto-generated annotation. Refine behavior details if needed.
+    --- @param xPlayer table
+    --- @param item table
+    --- @param count number
+    --- @param slot number
+    --- @param metadata any
+    --- @return any result
     function eCore:addItem(xPlayer, item, count, slot, metadata)
         if not xPlayer or not hf.isValidPlayerSource(xPlayer.source) then
             return false, eCoreErr.unknown_error
@@ -91,7 +112,34 @@ if QS_INVENTORY then
         return true
     end
 
+    --- Auto-generated annotation. Refine behavior details if needed.
+    --- @param xPlayer table
+    --- @return any result
     function eCore:getPlayerMaxWeight(xPlayer)
         return Config.maxInventoryWeight
+    end
+
+    --- qs-inventory: `GetItemTotalAmount(source, itemName)` (Quasar API).
+    function eCore:getItemCount(xPlayer, itemName)
+        if type(itemName) ~= 'string' then return 0 end
+        if not xPlayer or not hf.isValidPlayerSource(xPlayer.source) then return 0 end
+        local okCall, n = pcall(function()
+            return qs_inventory:GetItemTotalAmount(xPlayer.source, itemName)
+        end)
+        if not okCall then
+            cLog('eCore:getItemCount:qs', { err = tostring(n) }, 1)
+            return 0
+        end
+        if type(n) ~= 'number' or n ~= n then return 0 end
+        return n
+    end
+
+    --- Auto-generated annotation. Refine behavior details if needed.
+    --- @param xPlayer table
+    --- @param itemName any
+    --- @param count number
+    --- @return any result
+    function eCore:hasItem(xPlayer, itemName, count)
+        return eCore:getItemCount(xPlayer, itemName) >= (count or 1)
     end
 end

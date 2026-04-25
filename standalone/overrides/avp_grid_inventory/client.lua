@@ -4,6 +4,11 @@ if AVP_GRID_INVENTORY then
 
     local hf = hf
 
+    --- Auto-generated annotation. Refine behavior details if needed.
+    --- @param swappingItems table
+    --- @param itemData any
+    --- @param playerData any
+    --- @return any result
     function eCore:canSwapItems(swappingItems, itemData, playerData)
 
         -- only canCarry check

@@ -5,28 +5,49 @@ if QB_CORE then
 
     local hf = hf
 
-    function eCore:createCallback(name, callback)
-        QBCore.Functions.CreateCallback(name, callback)
-    end
-
+    --- Auto-generated annotation. Refine behavior details if needed.
+    --- @param item table
+    --- @param cb function
+    --- @return any result
     function eCore:createUsableItem(item, cb)
         QBCore.Functions.CreateUseableItem(item, cb)
     end
 
+    --- Auto-generated annotation. Refine behavior details if needed.
+    --- @param source number
+    --- @param message any
+    --- @param mType any
+    --- @param mSec any
+    --- @return any result
     function eCore:sendMessage(source, message, mType, mSec)
         if mType == 'info' then mType = 'primary' end
         TriggerClientEvent('QBCore:Notify', source, message, mType, mSec) -- CHANGE ME
     end
 
+    --- Auto-generated annotation. Refine behavior details if needed.
+    --- @param source number
+    --- @param message any
+    --- @param position any
+    --- @param mType any
+    --- @return any result
     function eCore:drawText(source, message, position, mType)
         if mType == 'info' then mType = 'primary' end
         TriggerClientEvent('qb-core:client:DrawText', source, message, position) -- CHANGE ME
     end
 
+    --- Auto-generated annotation. Refine behavior details if needed.
+    --- @param source number
+    --- @return any result
     function eCore:hideText(source)
         TriggerClientEvent('qb-core:client:HideText', source) -- CHANGE ME
     end
 
+    --- Auto-generated annotation. Refine behavior details if needed.
+    --- @param xPlayer table
+    --- @param account any
+    --- @param amount number
+    --- @param reason string
+    --- @return any result
     function eCore:addMoney(xPlayer, account, amount, reason)
         if type(xPlayer) == 'number' then
             xPlayer = QBCore.Functions.GetPlayer(xPlayer)
@@ -41,6 +62,12 @@ if QB_CORE then
         return xPlayer.Functions.AddMoney(account, amount, reason)
     end
 
+    --- Auto-generated annotation. Refine behavior details if needed.
+    --- @param xPlayer table
+    --- @param account any
+    --- @param amount number
+    --- @param reason string
+    --- @return any result
     function eCore:removeMoney(xPlayer, account, amount, reason)
         if type(xPlayer) == 'number' then
             xPlayer = QBCore.Functions.GetPlayer(xPlayer)
@@ -55,6 +82,10 @@ if QB_CORE then
         return xPlayer.Functions.RemoveMoney(account, amount, reason)
     end
 
+    --- Auto-generated annotation. Refine behavior details if needed.
+    --- @param xPlayer table
+    --- @param account any
+    --- @return any result
     function eCore:getAccounts(xPlayer, account)
         local convert = { -- ESX2QB
             money = 'cash',
@@ -73,6 +104,13 @@ if QB_CORE then
         return xPlayer.items
     end
 
+    --- Auto-generated annotation. Refine behavior details if needed.
+    --- @param xPlayer table
+    --- @param item table
+    --- @param count number
+    --- @param slot number
+    --- @param metadata any
+    --- @return any result
     function eCore:addItem(xPlayer, item, count, slot, metadata)
         if not xPlayer.Functions.AddItem(item, count, slot, metadata) then
             return false, eCoreErr.inventory_full
@@ -81,10 +119,20 @@ if QB_CORE then
         return true
     end
 
+    --- Auto-generated annotation. Refine behavior details if needed.
+    --- @param xPlayer table
+    --- @return any result
     function eCore:getPlayerMaxWeight(xPlayer)
         return Config.maxInventoryWeight
     end
 
+    --- Auto-generated annotation. Refine behavior details if needed.
+    --- @param xPlayer table
+    --- @param itemName any
+    --- @param count number
+    --- @param metadata any
+    --- @param slot number
+    --- @return any result
     function eCore:removeItem(xPlayer, itemName, count, metadata, slot)
         count = tonumber(count)
         if not hf.isPopulatedString(itemName) or not count or count < 1 then
@@ -143,6 +191,10 @@ if QB_CORE then
         return true, eCoreErr.ok
     end
 
+    --- Auto-generated annotation. Refine behavior details if needed.
+    --- @param xPlayer table
+    --- @param items table
+    --- @return any result
     function eCore:removeItems(xPlayer, items)
         if not hf.isPopulatedTable(items) then
             return false, eCoreErr.no_items_to_remove
@@ -226,10 +278,19 @@ if QB_CORE then
         return true, eCoreErr.ok
     end
 
+    --- Auto-generated annotation. Refine behavior details if needed.
+    --- @param playerId number
+    --- @return any result
     function eCore:getPlayer(playerId)
         return eCore:convertPlayer(QBCore.Functions.GetPlayer(playerId))
     end
 
+    --- Auto-generated annotation. Refine behavior details if needed.
+    --- @param playerId number
+    --- @param productInfo any
+    --- @param event string
+    --- @param amount number
+    --- @return any result
     function eCore:itemBox(playerId, productInfo, event, amount)
         if Config.itemBox then
             TriggerClientEvent('inventory:client:ItemBox', playerId, productInfo, event, amount)

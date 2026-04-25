@@ -8,7 +8,8 @@ if OX_INVENTORY then
     local fallbackGetPlayerMaxWeight = eCore.getPlayerMaxWeight
     local fallbackGetInventoryWeight = eCore.getInventoryWeight
 
-    --- Kliensen az ox exportjai (ha vannak) adnak élő max / súly értéket; különben bridge + `playerData.weight`.
+--- Client-side, ox exports (when available) provide live max/weight values;
+--- otherwise fallback to bridge and `playerData.weight`.
     function eCore:getPlayerMaxWeight(playerData)
         local ok, mw = pcall(function()
             return ox_inventory:GetPlayerMaxWeight()
@@ -19,6 +20,9 @@ if OX_INVENTORY then
         return fallbackGetPlayerMaxWeight(self, playerData)
     end
 
+    --- Auto-generated annotation. Refine behavior details if needed.
+    --- @param playerData any
+    --- @return any result
     function eCore:getInventoryWeight(playerData)
         local ok, w = pcall(function()
             return ox_inventory:GetPlayerWeight()
@@ -27,5 +31,26 @@ if OX_INVENTORY then
             return w
         end
         return fallbackGetInventoryWeight(self, playerData)
+    end
+
+    --- Auto-generated annotation. Refine behavior details if needed.
+    --- @param playerData any
+    --- @param itemName any
+    --- @return any result
+    function eCore:getItemCount(playerData, itemName)
+        if type(itemName) ~= 'string' then return 0 end
+        local ok, count = pcall(function()
+            return ox_inventory:Search('count', itemName)
+        end)
+        return (ok and count) or 0
+    end
+
+    --- Auto-generated annotation. Refine behavior details if needed.
+    --- @param playerData any
+    --- @param itemName any
+    --- @param count number
+    --- @return any result
+    function eCore:hasItem(playerData, itemName, count)
+        return eCore:getItemCount(playerData, itemName) >= (count or 1)
     end
 end

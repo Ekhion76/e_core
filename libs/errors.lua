@@ -1,14 +1,17 @@
---- Központi ok / hiba stringek: `return false, eCoreErr.xyz` – az értékek backward compatible-ek maradnak.
---- Consumer resource-ok továbbra is ezekkel a literálokkal összehasonlíthatnak (lásd `docs/PUBLIC_API_HU.md`).
+--- Central reason/error string table: `return false, eCoreErr.xyz`.
+--- Keep values backward-compatible so consumer resources can keep literal comparisons
+--- (see `docs/PUBLIC_API_HU.md`).
 eCoreErr = {
     ok = 'ok',
 
     too_heavy = 'too_heavy',
     not_enough_space = 'not_enough_space',
 
-    --- `canCarryItem` / `canSwapItems`: `itemData` vagy swap sor nem tábla, hiányzó / üres név (trim után), `amount` nem pozitív szám.
+    --- `canCarryItem` / `canSwapItems`: `itemData` or swap row is not table,
+    --- missing/empty name (after trim), or `amount` is not a positive number.
     invalid_item_data = 'invalid_item_data',
-    --- `canCarryItem` / `canSwapItems`: az item név nincs a `REGISTERED_ITEMS` listában (a súly/slot logika nem értelmezhető).
+    --- `canCarryItem` / `canSwapItems`: item name is not present in `REGISTERED_ITEMS`
+    --- (weight/slot logic cannot be resolved).
     item_not_registered = 'item_not_registered',
 
     inventory_full = 'inventory_full',
@@ -26,23 +29,23 @@ eCoreErr = {
     not_found_metadata = 'not_found_metadata',
     no_valid_meta_name = 'no_valid_meta_name',
     not_valid_amount = 'not_valid_amount',
-    --- `removeLabor`: a levonandó mennyiség nagyobb, mint az aktuális egyenleg.
+    --- `removeLabor`: requested deduction is greater than current balance.
     not_enough_labor = 'not_enough_labor',
     has_already_reached_the_limit = 'has_already_reached_the_limit',
 
-    --- `getDiscounts` / `getLevel`: üres vagy hiányzó `Config.levels` (shared `libs/meta.lua`).
+    --- `getDiscounts` / `getLevel`: empty or missing `Config.levels` (shared `libs/meta.lua`).
     not_levels_data = 'not_levels_data',
 
     category_does_not_exist = 'category_does_not_exist',
     meta_does_not_exist = 'meta_does_not_exist',
 
-    -- login / logout / labor: core gyökér; nem registerMeta / setMeta / jártasság export.
+    -- login / logout / labor: core root keys; not writable via registerMeta / setMeta / ability exports.
     reserved_meta_category = 'reserved_meta_category',
-    -- registerMeta 3. param: csak nil vagy tábla.
+    -- registerMeta 3rd param must be nil or table.
     meta_default_must_be_table = 'meta_default_must_be_table',
-    -- setMeta érték: csak tábla.
+    -- setMeta value must be table.
     meta_value_must_be_table = 'meta_value_must_be_table',
-    -- Meglévő kategória slot nem tábla (sérült adat).
+    -- Existing category slot is not table (corrupted payload).
     meta_category_not_table = 'meta_category_not_table',
 
     profession_registry_unavailable = 'profession_registry_unavailable',

@@ -1,4 +1,4 @@
---- Játékbeli admin NUI megnyitása (`Config.web`, alap parancs `ecore_admin`).
+--- Opens in-game admin NUI (`Config.web`, default command `ecore_admin`).
 local hf = hf
 
 RegisterNetEvent('e_core:web:open', function()
@@ -10,7 +10,7 @@ RegisterNetEvent('e_core:web:open', function()
 end)
 
 RegisterNetEvent('e_core:web:deny', function(message)
-    local msg = type(message) == 'string' and message or 'Nincs jogosultság.'
+    local msg = type(message) == 'string' and message or 'Access denied.'
     print(('[e_core] Admin: %s'):format(msg))
 end)
 
@@ -20,9 +20,11 @@ RegisterNUICallback('webAdminExit', function(_, cb)
     cb('ok')
 end)
 
+--- Registers the local admin command that requests web console open on server.
+--- @return nil
 local function registerWebCommand()
-    --- Mindig regisztráljuk a parancsot, különben az F8 „invalid command” (mintha nem létezne).
-    --- Ha az admin NUI ki van kapcsolva (`Config.operator.admin.enabled` → szintetizált `Config.web.enabled`), egyértelmű üzenet megy a konzolra.
+    --- Command stays registered even when admin UI is disabled to avoid F8 "invalid command".
+    --- If disabled (`Config.operator.admin.enabled` -> synthesized `Config.web.enabled`), print clear console guidance.
     local w = type(Config) == 'table' and Config.web or {}
     local cmd = tostring(w.command or 'ecore_admin'):gsub('^%s+', ''):gsub('%s+$', '')
     if cmd == '' then
@@ -31,12 +33,12 @@ local function registerWebCommand()
     RegisterCommand(cmd, function()
         if not Config.web or Config.web.enabled ~= true then
             print(
-                '[e_core] Admin konzol ki van kapcsolva (Config.operator.admin.enabled = false). Állítsd true-ra (standalone/config/main.lua → operator.admin, vagy override), majd indítsd újra az e_core-t.'
+                '[e_core] Admin console is disabled (Config.operator.admin.enabled = false). Set it to true (standalone/config/main.lua -> operator.admin, or override), then restart e_core.'
             )
             return
         end
         if not eCore or not eCore.isLoggedIn or not eCore:isLoggedIn() then
-            print('[e_core] Admin: előbb járj be a karakterrel.')
+            print('[e_core] Admin: join with a character first.')
             return
         end
         TriggerServerEvent('e_core:web:requestOpen')

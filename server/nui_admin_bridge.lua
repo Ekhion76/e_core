@@ -1,13 +1,16 @@
---- Profession / level-profile admin a játékbeli NUI-ból (`eCoreAdminApi` callback), `hf.webConsoleAccess` joggal.
---- A korábbi `SetHttpHandler` / `Config.adminHttp` helyett (külső HTTP nélkül).
+--- Profession / level-profile admin bridge from in-game NUI (`eCoreAdminApi` callback), guarded by `hf.webConsoleAccess`.
+--- Replaces legacy `SetHttpHandler` / `Config.adminHttp` flow (no external HTTP endpoint).
 local hf = hf
 
+--- Auto-generated annotation. Refine behavior details if needed.
+--- @param value any
+--- @return any result
 local function trim(value)
     return tostring(value or ''):gsub('^%s+', ''):gsub('%s+$', '')
 end
 
 --- @param data table|nil
---- @return table válasz (admin_response formátum)
+--- @return table response in `admin_response` format.
 local function dispatchNuiAdmin(src, data)
     data = type(data) == 'table' and data or {}
     local action = trim(data.action)

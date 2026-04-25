@@ -17,8 +17,9 @@ RegisterServerEvent('e_core:loadMeta', function()
     loadMeta(xPlayer)
 end)
 
---- Gyökér meta kulcsok: `prepareMeta` tölti, mentés kezeli. Nem írhatók `registerMeta` / `setMeta`-val;
---- jártasság exportok (`getAbility`, `setAbility`, …) nem használják – laborhoz `exports.e_core:*Labor*`.
+--- Reserved root meta keys managed by lifecycle/save flow (`prepareMeta`, persistence).
+--- They are read-only for `registerMeta` / `setMeta` and excluded from ability APIs.
+--- Use `exports.e_core:*Labor*` for labor operations.
 local META_SYSTEM_ROOT_KEYS = {
     login = true,
     logout = true,
@@ -38,12 +39,14 @@ local function meta_trim_non_empty_string(key)
     return trimmed, nil
 end
 
---- Olvasási kulcs (`getMeta` egy kategória): `labor` / `login` engedett.
+--- Lookup key normalizer for read access (`getMeta` category mode).
+--- Reserved keys like `labor` / `login` are allowed for reads.
 local function meta_normalize_lookup_key(key)
     return meta_trim_non_empty_string(key)
 end
 
---- Írás / `registerMeta` kategória: tiltott rendszer-gyökér név.
+--- Writable category normalizer for `registerMeta` / `setMeta`.
+--- Reserved system root keys are rejected.
 --- @return string|nil
 --- @return string|nil err
 local function meta_normalize_writable_category(key)
@@ -113,9 +116,10 @@ local function meta_require_player_row(playerId)
 end
 
 --- @param playerId number (source)
---- @param meta string pl. crafting, reputation
---- @param value table kulcs–érték (másolat kerül tárolásra)
---- @return boolean success, string|nil reason ha false
+--- @param meta string Category key (for example: crafting, reputation).
+--- @param value table Key-value payload (stored as a shallow copy).
+--- @return boolean success
+--- @return string|nil reason eCoreErr when success is false.
 function setMeta(playerId, meta, value)
     local row, err = meta_require_player_row(playerId)
     if not row then
@@ -141,8 +145,8 @@ function setMeta(playerId, meta, value)
 end
 
 --- @param playerId number (source)
---- @param meta string|nil opcionális kategória kulcs (trim; rendszer mezők olvashatók)
---- @return boolean|table false, err | teljes meta | egy kategória értéke (lehet nil ha nincs ilyen kulcs)
+--- @param meta string|nil Optional category key (trimmed; reserved keys are readable).
+--- @return boolean|table false, err | full meta table | category value (can be nil if key does not exist).
 function getMeta(playerId, meta)
     local row, err = meta_require_player_row(playerId)
     if not row then
@@ -161,12 +165,14 @@ function getMeta(playerId, meta)
     return row[mk]
 end
 
---- Hiányzó kulcsokat tölt ki; meglévő kulcsokat nem írja felül. Új kategória: `defaultValue` másolata kerül tárolásra.
---- Csak **string** kulcsok a `defaultValue`-ban (numerikus kulcs szándékosan figyelmen kívül).
+--- Fills missing keys while keeping existing keys untouched.
+--- New categories store a shallow copy of `defaultValue`.
+--- Only **string** keys from `defaultValue` are applied (numeric keys are intentionally ignored).
 --- @param playerId number source
---- @param category string pl. harvesting
---- @param defaultValue table|nil üres tábla ha nil
---- @return boolean success, string|nil reason ha false
+--- @param category string Category key (for example: harvesting).
+--- @param defaultValue table|nil Defaults payload (nil becomes empty table).
+--- @return boolean success
+--- @return string|nil reason eCoreErr when success is false.
 function registerMeta(playerId, category, defaultValue)
     local row, err = meta_require_player_row(playerId)
     if not row then
@@ -217,9 +223,9 @@ function registerMeta(playerId, category, defaultValue)
 end
 
 --- @param playerId number (source)
---- @param category string pl. crafting
---- @param name string pl. weaponry
---- @return boolean|number false, err | érték
+--- @param category string Category key (for example: crafting).
+--- @param name string Ability key (for example: weaponry).
+--- @return boolean|number false, err | current ability value.
 function getAbility(playerId, category, name)
     local row, err = meta_require_player_row(playerId)
     if not row then
@@ -249,8 +255,9 @@ end
 --- @param playerId number (source)
 --- @param category string
 --- @param name string
---- @param value
---- @return boolean success, string|nil reason ha false
+--- @param value number|string Delta value to add.
+--- @return boolean success
+--- @return string|nil reason eCoreErr when success is false.
 function addAbility(playerId, category, name, value)
     local row, err = meta_require_player_row(playerId)
     if not row then
@@ -306,8 +313,9 @@ end
 --- @param playerId number (source)
 --- @param category string
 --- @param name string
---- @param value
---- @return boolean success, string|nil reason ha false
+--- @param value number|string Delta value to subtract.
+--- @return boolean success
+--- @return string|nil reason eCoreErr when success is false.
 function removeAbility(playerId, category, name, value)
     local row, err = meta_require_player_row(playerId)
     if not row then
@@ -359,8 +367,9 @@ end
 --- @param playerId number (source)
 --- @param category string
 --- @param name string
---- @param value
---- @return boolean success, string|nil reason ha false
+--- @param value number|string Absolute value to set.
+--- @return boolean success
+--- @return string|nil reason eCoreErr when success is false.
 function setAbility(playerId, category, name, value)
     local row, err = meta_require_player_row(playerId)
     if not row then
@@ -406,6 +415,9 @@ function setAbility(playerId, category, name, value)
     return true
 end
 
+--- Queues meta sync for player and flushes batched sync events in next tick.
+--- @param playerId number
+--- @return nil
 function syncRequest(playerId)
     ECO.idsToSync[playerId] = true
 
@@ -424,6 +436,10 @@ function syncRequest(playerId)
     end
 end
 
+--- Initializes runtime meta structure for a player from persisted payload.
+--- @param playerId number
+--- @param meta table
+--- @return nil
 function prepareMeta(playerId, meta)
     if type(meta) ~= 'table' then
         meta = {}
@@ -447,7 +463,8 @@ end
 ---
 --- SAVE AND LOAD EVENTS
 ---
---- Csak szerver oldali TriggerEvent (bridge); ne RegisterServerEvent – különben a kliens is küldhetne hamis xPlayer-t.
+--- Server-side bridge events only (TriggerEvent). Do not expose as RegisterServerEvent,
+--- otherwise clients could inject forged xPlayer payloads.
 AddEventHandler('e_core:playerLoaded', function(xPlayer)
     if not xPlayer or not xPlayer.source then
         return
@@ -455,6 +472,10 @@ AddEventHandler('e_core:playerLoaded', function(xPlayer)
     loadMeta(xPlayer)
 end)
 
+--- Persists player metadata if save cooldown allows it.
+--- @param playerId number
+--- @param event string
+--- @return nil
 function saveRequest(playerId, event)
     local xPlayer = eCore:getPlayer(playerId)
 
@@ -497,6 +518,8 @@ AddEventHandler('txAdmin:events:serverShuttingDown', function()
     saveAllMeta()
 end)
 
+--- Periodic save loop (10-minute interval).
+--- @return nil
 local function scheduledSave()
     SetTimeout(60000 * 10, function()
         saveAllMeta()

@@ -3,6 +3,9 @@ if HUD17 then
     -- if you want to rewrite any function, copy it here and modify it here
     local progressCancelRequired
 
+    --- Auto-generated annotation. Refine behavior details if needed.
+    --- @param params table
+    --- @return any result
     function eCore:progressbar(params)
         progressCancelRequired = false
 
@@ -37,19 +40,33 @@ if HUD17 then
         end)
     end
 
+    --- Auto-generated annotation. Refine behavior details if needed.
+    --- @return any result
     function eCore:cancelProgressbar()
         progressCancelRequired = true
         TriggerEvent("17mov_Hud:StopProgress")
     end
 
+    --- Auto-generated annotation. Refine behavior details if needed.
+    --- @param message any
+    --- @param mType any
+    --- @param mSec any
+    --- @return any result
     function eCore:sendMessage(message, mType, mSec)
         TriggerEvent("17mov_Hud:ShowNotification", message, mType, '', mSec)
     end
 
+    --- Auto-generated annotation. Refine behavior details if needed.
+    --- @param message any
+    --- @param position any
+    --- @param mType any
+    --- @return any result
     function eCore:drawText(message, position, mType)
 		TriggerEvent("17mov_Hud:ShowHelpNotification", message)
     end
 
+    --- Auto-generated annotation. Refine behavior details if needed.
+    --- @return any result
     function eCore:hideText()
         TriggerEvent("17mov_Hud:HideHelpNotification")
     end

@@ -1,4 +1,4 @@
---- NUI → szerver bridge profession / level-profile adminhoz (`registry.ts` → `eCoreAdminApi`).
+--- NUI -> server bridge for profession / level-profile admin (`registry.ts` -> `eCoreAdminApi`).
 local pending = {}
 local seq = 0
 
@@ -21,6 +21,9 @@ RegisterNUICallback('eCoreAdminApi', function(data, cb)
     seq = seq + 1
     local requestId = ('%d-%d'):format(seq, GetGameTimer())
     local finished = false
+    --- Auto-generated annotation. Refine behavior details if needed.
+    --- @param payload table
+    --- @return any result
     local function done(payload)
         if finished then
             return

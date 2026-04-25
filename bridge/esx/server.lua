@@ -5,26 +5,47 @@ if ESX_CORE then
 
     local hf = hf
 
-    function eCore:createCallback(name, callback)
-        ESX.RegisterServerCallback(name, callback)
-    end
-
+    --- Auto-generated annotation. Refine behavior details if needed.
+    --- @param item table
+    --- @param cb function
+    --- @return any result
     function eCore:createUsableItem(item, cb)
         ESX.RegisterUsableItem(item, cb)
     end
 
+    --- Auto-generated annotation. Refine behavior details if needed.
+    --- @param source number
+    --- @param message any
+    --- @param mType any
+    --- @param mSec any
+    --- @return any result
     function eCore:sendMessage(source, message, mType, mSec)
         TriggerClientEvent("esx:showNotification", source, message, mType, mSec)
     end
 
+    --- Auto-generated annotation. Refine behavior details if needed.
+    --- @param source number
+    --- @param message any
+    --- @param position any
+    --- @param mType any
+    --- @return any result
     function eCore:drawText(source, message, position, mType)
         TriggerClientEvent("ESX:TextUI", source, message, mType)
     end
 
+    --- Auto-generated annotation. Refine behavior details if needed.
+    --- @param source number
+    --- @return any result
     function eCore:hideText(source)
         TriggerClientEvent("ESX:HideUI", source)
     end
 
+    --- Auto-generated annotation. Refine behavior details if needed.
+    --- @param xPlayer table
+    --- @param account any
+    --- @param amount number
+    --- @param reason string
+    --- @return any result
     function eCore:addMoney(xPlayer, account, amount, reason)
         if type(xPlayer) == 'number' then
             xPlayer = ESX.GetPlayerFromId(xPlayer)
@@ -38,6 +59,12 @@ if ESX_CORE then
         return false
     end
 
+    --- Auto-generated annotation. Refine behavior details if needed.
+    --- @param xPlayer table
+    --- @param accountName any
+    --- @param amount number
+    --- @param reason string
+    --- @return any result
     function eCore:removeMoney(xPlayer, accountName, amount, reason)
         if type(xPlayer) == 'number' then
             xPlayer = ESX.GetPlayerFromId(xPlayer)
@@ -51,6 +78,10 @@ if ESX_CORE then
         return false
     end
 
+    --- Auto-generated annotation. Refine behavior details if needed.
+    --- @param xPlayer table
+    --- @param account any
+    --- @return any result
     function eCore:getAccounts(xPlayer, account)
         for i = 1, #(xPlayer.accounts) do
             if xPlayer.accounts[i].name == account then
@@ -69,25 +100,49 @@ if ESX_CORE then
         return xPlayer.getInventory()
     end
 
+    --- Auto-generated annotation. Refine behavior details if needed.
+    --- @param xPlayer table
+    --- @return any result
     function eCore:getInventoryWeight(xPlayer)
         return xPlayer.getWeight()
     end
 
+    --- Auto-generated annotation. Refine behavior details if needed.
+    --- @param xPlayer table
+    --- @return any result
     function eCore:getPlayerMaxWeight(xPlayer)
         return Config.maxInventoryWeight
     end
 
+    --- Auto-generated annotation. Refine behavior details if needed.
+    --- @param xPlayer table
+    --- @param item table
+    --- @param count number
+    --- @param slot number
+    --- @param metadata any
+    --- @return any result
     function eCore:addItem(xPlayer, item, count, slot, metadata)
         xPlayer.addInventoryItem(item, count)
         return true
     end
 
+    --- Auto-generated annotation. Refine behavior details if needed.
+    --- @param xPlayer table
+    --- @param item table
+    --- @param count number
+    --- @param metadata any
+    --- @param slot number
+    --- @return any result
     function eCore:removeItem(xPlayer, item, count, metadata, slot)
         cLog('eCore:removeItem', {item = item, count = count}, 4)
         xPlayer.removeInventoryItem(item, count, metadata, slot)
         return true
     end
 
+    --- Auto-generated annotation. Refine behavior details if needed.
+    --- @param xPlayer table
+    --- @param items table
+    --- @return any result
     function eCore:removeItems(xPlayer, items)
         if not xPlayer then
             return false, eCoreErr.unknown_error
@@ -139,10 +194,19 @@ if ESX_CORE then
         return self:convertItems(ESX.Items)
     end
 
+    --- Auto-generated annotation. Refine behavior details if needed.
+    --- @param playerId number
+    --- @return any result
     function eCore:getPlayer(playerId)
         return self:convertPlayer(ESX.GetPlayerFromId(playerId))
     end
 
+    --- Auto-generated annotation. Refine behavior details if needed.
+    --- @param playerId number
+    --- @param productInfo any
+    --- @param event string
+    --- @param amount number
+    --- @return any result
     function eCore:itemBox(playerId, productInfo, event, amount)
         if Config.itemBox then
             TriggerClientEvent('inventory:client:ItemBox', playerId, productInfo, event, amount)

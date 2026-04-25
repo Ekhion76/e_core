@@ -4,6 +4,9 @@ if OX_LIB then
     -- these functions override the bridge/global/ and bridge/esx/qb/ functions
     -- if you want to rewrite any function, copy it here and modify it here
 
+    --- Auto-generated annotation. Refine behavior details if needed.
+    --- @param params table
+    --- @return any result
     function eCore:progressbar(params)
         if params.animation then
             params.animation = {
@@ -33,6 +36,8 @@ if OX_LIB then
         end
     end
 
+    --- Auto-generated annotation. Refine behavior details if needed.
+    --- @return any result
     function eCore:cancelProgressbar()
         lib.cancelProgress()
     end

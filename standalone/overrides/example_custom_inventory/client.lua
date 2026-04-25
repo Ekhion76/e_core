@@ -12,4 +12,6 @@ if CUSTOM_INVENTORY then
     -- function eCore:canSwapItems(swappingItems, itemData, playerData) end
     -- function eCore:canCarryItem(itemData, playerData) end
     -- function eCore:getItemWeight(itemName, metadata) end
+    -- function eCore:getItemCount(playerData, itemName) end
+    -- function eCore:hasItem(playerData, itemName, count) end
 end

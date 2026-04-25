@@ -2,6 +2,9 @@ if INSIDE_SCRIPTS_UI then
     -- DOCS: https://inside-scripts.gitbook.io/documentation/paid-scripts/notifications-and-progress/functions
     local progressCancelRequired
 
+    --- Auto-generated annotation. Refine behavior details if needed.
+    --- @param params table
+    --- @return any result
     function eCore:progressbar(params)
         progressCancelRequired = false
         local animation, scenario
@@ -49,12 +52,19 @@ if INSIDE_SCRIPTS_UI then
 
     end
 
+    --- Auto-generated annotation. Refine behavior details if needed.
+    --- @return any result
     function eCore:cancelProgressbar()
         progressCancelRequired = true
         exports["is_ui"]:cancelProgressBar()
     end
 
 
+    --- Auto-generated annotation. Refine behavior details if needed.
+    --- @param message any
+    --- @param mType any
+    --- @param mSec any
+    --- @return any result
     function eCore:sendMessage(message, mType, mSec) -- mType success or error
         exports["is_ui"]:Notify(nil, message, tonumber(mSec), mType)
     end

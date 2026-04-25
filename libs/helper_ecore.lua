@@ -1,9 +1,11 @@
---- e_core belső kiterjesztések ugyanarra a `hf` táblára, mint a `libs/helper.lua`.
---- Item registry normalizálás (`normalizeRegisteredItemDef`), indulás / registry várakozás,
---- MySQL `pcall` wrapper, net rate limit, pénzformátum (`Config.currency`) – ezek e_core környezetet feltételeznek.
---- Betöltés: `fxmanifest.lua` közvetlenül a `libs/helper.lua` után. Külső resource továbbra is `eCore.helper`-t kap (`bridge/main.lua`).
+--- e_core-specific extensions on the same `hf` table as `libs/helper.lua`.
+--- Includes item registry normalization (`normalizeRegisteredItemDef`), startup/registry waiting,
+--- MySQL `pcall` wrapper, net rate limiting, and currency formatting (`Config.currency`).
+--- Load order: `fxmanifest.lua` loads this file immediately after `libs/helper.lua`.
+--- External resources still consume the merged table through `eCore.helper` (`bridge/main.lua`).
 
---- REGISTERED_ITEMS / getItemWeight / canCarryItem egyeztetett mezői (bridge + override convertItems).
+--- Shared weight-key contract for REGISTERED_ITEMS / getItemWeight / canCarryItem
+--- (bridge + override convertItems compatibility).
 --- @return string wKey
 --- @return table weightKeys ordered list (same as normalizeRegisteredItemDef)
 function hf.getRegisteredItemWeightKeyConfig()
@@ -14,8 +16,8 @@ function hf.getRegisteredItemWeightKeyConfig()
     return wKey, { wKey, 'weight', 'Weight', 'itemWeight', 'item_weight', 'totalWeight' }
 end
 
---- @param nameLower string már kisbetűs kulcs (pl. ox item kulcs)
---- @param row table a forrás item tábla (helyben módosul)
+--- @param nameLower string Pre-lowercased key (for example: ox item key).
+--- @param row table Source item row (mutated in place).
 --- @return table row
 function hf.normalizeRegisteredItemDef(nameLower, row)
     if type(row) ~= 'table' or type(nameLower) ~= 'string' or nameLower == '' then
@@ -87,6 +89,9 @@ function hf.normalizeRegisteredItemDef(nameLower, row)
     return row
 end
 
+--- Auto-generated annotation. Refine behavior details if needed.
+--- @param amount number
+--- @return any result
 function hf.moneyFormat(amount)
     if Config.currency.suffix then
         return ('%s%s'):format(hf.numberFormat(amount), Config.currency.symbol)
@@ -95,7 +100,7 @@ function hf.moneyFormat(amount)
     end
 end
 
---- Létező játékos forrás-e (szerver).
+--- Checks whether player source currently exists (server-side).
 ---@param src number
 ---@return boolean
 function hf.isValidPlayerSource(src)
@@ -106,9 +111,9 @@ function hf.isValidPlayerSource(src)
     return name ~= nil and name ~= ''
 end
 
---- Admin API policy check (`Config.adminApi[section]`) `auth.source` alapján.
---- @param section string pl. `cleanup`, `diagnostics`
---- @param payload table|nil (opcionális: `{ auth = { source = number } }`)
+--- Admin API policy check (`Config.adminApi[section]`) based on `auth.source`.
+--- @param section string For example: `cleanup`, `diagnostics`.
+--- @param payload table|nil Optional payload: `{ auth = { source = number } }`.
 --- @return boolean
 --- @return string|nil
 function hf.adminApiCanAccess(section, payload)
@@ -121,11 +126,11 @@ function hf.adminApiCanAccess(section, payload)
         if cfg.allowServerWithoutSource == true then
             return true, nil
         end
-        return false, 'Hiányzó auth.source az admin API híváshoz.'
+        return false, 'Missing auth.source for admin API call.'
     end
 
     if not hf.isValidPlayerSource(src) then
-        return false, 'Érvénytelen auth.source.'
+        return false, 'Invalid auth.source.'
     end
 
     local acePerm = tostring(cfg.acePermission or '')
@@ -152,20 +157,21 @@ function hf.adminApiCanAccess(section, payload)
     if aceOk or idOk then
         return true, nil
     end
-    return false, 'Nincs jogosultság (ACE vagy allowedIdentifiers).'
+    return false, 'No permission (ACE or allowedIdentifiers).'
 end
 
---- Játékbeli admin NUI (`Config.web`, pl. `ecore_admin` + `ecore.admin`): ACE és/vagy `allowedIdentifiers`.
+--- In-game admin NUI access check (`Config.web`, e.g. `ecore_admin` + `ecore.admin`):
+--- ACE and/or `allowedIdentifiers`.
 --- @param src number
 --- @return boolean ok
 --- @return string|nil err
 function hf.webConsoleAccess(src)
     if not hf.isValidPlayerSource(src) then
-        return false, 'Érvénytelen játékos.'
+        return false, 'Invalid player.'
     end
     local w = type(Config) == 'table' and Config.web or {}
     if w.enabled ~= true then
-        return false, 'Az admin konzol ki van kapcsolva (Config.operator.admin.enabled = false).'
+        return false, 'Admin console is disabled (Config.operator.admin.enabled = false).'
     end
     local acePerm = tostring(w.acePermission or '')
     local aceOk = acePerm ~= '' and IsPlayerAceAllowed(src, acePerm)
@@ -191,12 +197,12 @@ function hf.webConsoleAccess(src)
     end
     if acePerm == '' and not hf.isPopulatedTable(list) then
         return false,
-            'Nincs jogosultság: állíts `Config.web.acePermission`-t és add_ace-et, vagy töltsd a `Config.web.allowedIdentifiers` listát.'
+            'No permission: set `Config.web.acePermission` with add_ace, or populate `Config.web.allowedIdentifiers`.'
     end
-    return false, 'Nincs jogosultság az admin konzolhoz (ACE vagy azonosító lista).'
+    return false, 'No permission for admin console (ACE or identifier list).'
 end
 
---- Jogosultság-elutasítás audit (in-memory ring + opcionális cLog).
+--- Permission-denied audit (in-memory ring + optional cLog).
 --- @param section string
 --- @param action string
 --- @param payload table|nil
@@ -270,11 +276,11 @@ function hf.auditAdminApiDenied(section, action, payload, reason)
     end
 end
 
---- Egyszerű rate limit játékos + kulcs szerint (szerver net eseményekhez).
+--- Simple player+key rate limit (server net-event guard).
 ---@param src number player source
----@param name string egyedi kulcs pl. eseménynév
+---@param name string unique key, e.g. event name
 ---@param cooldownMs number
----@return boolean true ha mehet a hívás
+---@return boolean true when call is allowed
 function hf.netRateLimit(src, name, cooldownMs)
     if not hf.isValidPlayerSource(src) then
         return false
@@ -342,7 +348,7 @@ function hf.awaitItemRegistryReady(logTag)
     return true
 end
 
---- Melyik inventory override aktív (shared override config.lua flagok).
+--- Returns active inventory override label (shared override config.lua flags).
 ---@return string
 function hf.inventoryIntegrationLabel()
     local parts = {}
@@ -361,8 +367,8 @@ function hf.inventoryIntegrationLabel()
     return table.concat(parts, '+')
 end
 
---- Egy soros indulási összegzés: verzió, keretrendszer, inventory réteg, item registry állapot.
----@param side string `server` vagy `client`
+--- Prints one-line startup summary: version, framework, inventory layer, item-registry status.
+---@param side string `server` or `client`
 function hf.logEcoreStartupSummary(side)
     local ver = GetResourceMetadata(GetCurrentResourceName(), 'version', 0) or '?'
     local fw = tostring(FRAMEWORK or 'none')
@@ -371,14 +377,15 @@ function hf.logEcoreStartupSummary(side)
     print(('[^2e_core^7] [%s] v%s | framework=%s | inventory=%s | items=%s'):format(side, ver, fw, inv, items))
 end
 
---- oxmysql **.await** hívások: `pcall` + `cLog` hiba esetén. Csak **szerver** szálon hívd (`MySQL` globál).
----@param tag string napló címke (pl. `loadMeta:identifier`)
+--- Wraps oxmysql **.await** calls with `pcall` and `cLog` on failure.
+--- Call only from server thread (`MySQL` global).
+---@param tag string log tag (for example: `loadMeta:identifier`)
 ---@param fn fun(): any
 ---@return boolean ok
----@return any result ha ok; hibaérték ha nem ok
+---@return any result on success; error payload otherwise
 function hf.mysqlAwait(tag, fn)
     if rawget(_G, 'MySQL') == nil then
-        cLog(('[e_core][MySQL] %s: MySQL globális hiányzik (nem szerver szál?)'):format(tag), 'error', 1)
+        cLog(('[e_core][MySQL] %s: MySQL global is missing (non-server context?)'):format(tag), 'error', 1)
         return false, 'mysql_missing'
     end
     local ok, res = pcall(fn)

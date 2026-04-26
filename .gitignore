@@ -28,6 +28,7 @@ Desktop.ini
 .vscode/*
 !.vscode/extensions.json
 .idea/
+.continue/
 
 # Python (ha futtatod a repo scriptjeit lokálisan)
 __pycache__/

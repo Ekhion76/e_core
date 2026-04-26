@@ -108,7 +108,7 @@ eCore = exports.e_core:getCore()
 eCoreConfig = exports.e_core:getConfig()
 ```
 
-`imports/core.lua`. **`eCore.helper`** = **`hf`**: `libs/helper.lua` (általános segédek) + `libs/helper_ecore.lua` (e_core kiterjesztés: item normalizálás, registry várakozás, `mysqlAwait`, indulási log, net rate limit, `moneyFormat`). **`eCore.Err`** = `libs/errors.lua` → **`eCoreErr`** (azonos kulcsok / string értékek); külső resource összehasonlíthat: `reason == exports.e_core:getCore().Err.inventory_full`.
+`imports/core.lua`. **`eCore.helper`** = **`hf`**: `libs/helper.lua` (általános segédek) + `libs/helper_ecore.lua` (e_core kiterjesztés: item normalizálás, registry várakozás, `mysqlAwait`, indulási log, net rate limit, `moneyFormat`). **`eCore.GroupAccess:check(playerData, data)`**: `src/libs/GroupAccess.lua` (job/gang whitelist–blacklist; lásd §6). **`eCore.Err`** = `libs/errors.lua` → **`eCoreErr`** (azonos kulcsok / string értékek); külső resource összehasonlíthat: `reason == exports.e_core:getCore().Err.inventory_full`.
 
 ---
 
@@ -160,6 +160,12 @@ Forrás: **`libs/errors.lua`**. Az e_core belső kódja **`eCoreErr.xyz`** form�
 | `getRegisteredItem` |
 | `isReady` |
 
+**Kiegészítő közös helper (`src/libs/GroupAccess.lua`):**
+- Lua oldali osztály/tábla név: **`GroupAccess`**
+- Facade elérés: **`eCore.GroupAccess:check(playerData, data)`**
+- JS pár (`src/web/copyable/GroupAccess.js`): **`class GroupAccess`** + `GroupAccess.check(playerData, data)`
+- Szerződés: `data.whitelist` / `data.blacklist` alapú job+gang hozzáférés a `convertPlayer` szerinti `playerData.job` / `playerData.gang` mezőkre; üres mindkét lista → **true**; kitöltött whitelist esetén a blacklist figyelmen kívül hagyva.
+
 ---
 
 ## 7. `eCore:` – kliens (globális), `bridge/global/client.lua`
@@ -178,7 +184,7 @@ ox_target jellegű globális opciók / zónák: `disableTargeting`, `addGlobalOp
 
 ## 9. `eCore:` – ESX ág (`ESX_CORE`)
 
-**Shared (`bridge/esx/shared.lua`):** `convertPlayer`, `convertItems`.
+**Shared (`bridge/esx/shared.lua`):** `convertPlayer` (egységes `job`/`gang` séma, `charName`, `firstName`/`lastName`, `position`, `metadata`, ESX-en neutral `gang` + opcionális `citizenid` alias), `convertItems`.
 
 **Client (`bridge/esx/client.lua`):** `triggerCallback`, `sendMessage`, `drawText`, `hideText`, `progressbar`, `cancelProgressbar`, `isLoggedIn`, `getInventory`, `getPlayerMaxWeight`, `getRegisteredItems`, `getPlayer`, `getAccounts`, `canInteract`, `setFuelLevel`, `vehicleKeys`, `setVehicleProperties`, `setVehiclePropertiesFromNetId`, `deleteVehicle`, `getClosestVehicle`.
 
@@ -188,7 +194,7 @@ ox_target jellegű globális opciók / zónák: `disableTargeting`, `addGlobalOp
 
 ## 10. `eCore:` – QB ág (`QB_CORE`)
 
-**Shared (`bridge/qb/shared.lua`):** `convertItems`, `getRegisteredItems`, `convertPlayer`.
+**Shared (`bridge/qb/shared.lua`):** `convertItems`, `getRegisteredItems`, `convertPlayer` (ugyanaz a `job`/`gang`/név/`metadata`/`position` szerződés mint ESX ágon, normalizálva).
 
 **Client (`bridge/qb/client.lua`):** ESX-hez hasonló készlet; eltérések: `sendMessage` opcionális `image`; `getPlayer(newJob, newGang)`; további metódusok mint ESX kliensnél (`triggerCallback`, `progressbar`, `getInventory`, jármű, stb.).
 

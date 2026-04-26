@@ -40,6 +40,31 @@ end
 
 local integrityOptsBySrc = {}
 
+--- Adds latest item-convert diagnostics summary lines to integrity output.
+--- @param lines table
+--- @return nil
+local function appendItemConvertDiagnostics(lines)
+    if type(lines) ~= 'table' then
+        return
+    end
+    local function add(text)
+        lines[#lines + 1] = tostring(text)
+    end
+    add('--- ItemConvert diagnostics ---')
+    if type(hf.itemConvertDiagSummaryLines) ~= 'function' then
+        add('ItemConvert diagnostics: helper not available.')
+        return
+    end
+    local parts = hf.itemConvertDiagSummaryLines(10)
+    if type(parts) ~= 'table' or #parts == 0 then
+        add('ItemConvert diagnostics: no lines.')
+        return
+    end
+    for i = 1, #parts do
+        add(parts[i])
+    end
+end
+
 --- Auto-generated annotation. Refine behavior details if needed.
 --- @param opts table
 --- @return any result
@@ -442,6 +467,7 @@ local function runIntegrityOnlyStep(runSrc, xPlayer, io)
         local fw = exports[GetCurrentResourceName()]:getFrameWork()
         appendLine(lines, ('Framework: %s'):format(tostring(fw)))
         appendLine(lines, ('isReady (szerver): %s'):format(tostring(ready)))
+        appendItemConvertDiagnostics(lines)
         push({
             action = 'DIAGNOSTICS_CHECKLIST_SET',
             id = 'env',
@@ -648,6 +674,7 @@ local function runIntegrityServerSequence(src, xPlayer)
         appendLine(lines, ('Framework: %s'):format(tostring(fw)))
         local ready = eCore:isReady() == true
         appendLine(lines, ('isReady (szerver): %s'):format(tostring(ready)))
+        appendItemConvertDiagnostics(lines)
         push( {
             action = 'DIAGNOSTICS_CHECKLIST_SET',
             id = 'env',
@@ -937,6 +964,7 @@ RegisterNetEvent('e_core:integrityCheck:request', function(opts)
         local fw = exports[GetCurrentResourceName()]:getFrameWork()
         appendLine(lines, ('Framework: %s'):format(tostring(fw)))
         appendLine(lines, ('isReady (szerver): %s'):format(tostring(eCore:isReady() == true)))
+        appendItemConvertDiagnostics(lines)
         runProfessionRegistryChecks(lines)
         runInventoryChecks(xPlayer, lines, ioReq)
         TriggerClientEvent(

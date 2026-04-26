@@ -1,10 +1,17 @@
 <script lang="ts">
   import { onMount, onDestroy } from 'svelte'
-  import { postNui } from './nui'
+  import { fade, fly, slide } from 'svelte/transition'
+  import { fetchNui } from './nui'
 
-  type RowStatus = 'idle' | 'pending' | 'running' | 'pass' | 'fail' | 'skipped' | 'cancelled'
-
+  type IntegrityStatus = 'pending' | 'running' | 'ok' | 'fail' | 'skipped' | 'cancelled'
   type IntegrityStep = { id: string; label: string }
+  type IntegrityTestRow = {
+    id: string
+    label: string
+    status: IntegrityStatus
+    detail: string
+    updatedAt: number
+  }
 
   const BASE_STEPS: IntegrityStep[] = [
     { id: 'env', label: 'Környezet (resource, framework, isReady)' },
@@ -57,13 +64,40 @@
 
   let fullRunBusy = $state(false)
   let rowBusy = $state<Record<string, boolean>>({})
-
-  let rowStatus = $state<Record<string, RowStatus>>({})
+  let rows = $state<Record<string, IntegrityTestRow>>({})
+  let rowOrder = $state<string[]>([])
   let liveHint = $state('')
   let logLines = $state<string[]>([])
-  let progressLogLines = $state<string[]>([])
+  let awaitingProgress = $state(false)
+  let currentScope = $state<'full' | 'single' | 'verify_failed' | null>(null)
+  let scopedIds = $state<string[]>([])
+  let autoScrollLog = $state(true)
+  let logContainer: HTMLDivElement | null = null
+  let reportStatus = $state('')
 
   const displaySteps = $derived(stepsForForm())
+  const displayRows = $derived.by(() => {
+    const fallback = displaySteps
+    const ids = rowOrder.length > 0 ? rowOrder : fallback.map((x) => x.id)
+    return ids.map((id) => {
+      const fromState = rows[id]
+      if (fromState) {
+        return fromState
+      }
+      const fromBase = fallback.find((x) => x.id === id)
+      return {
+        id,
+        label: fromBase?.label ?? id,
+        status: 'pending' as IntegrityStatus,
+        detail: '',
+        updatedAt: 0
+      }
+    })
+  })
+  const failedIds = $derived(displayRows.filter((r) => r.status === 'fail').map((r) => r.id))
+  const failedRows = $derived(displayRows.filter((r) => r.status === 'fail'))
+  const shouldVerify = $derived(failedIds.length > 0)
+  const primaryLabel = $derived(shouldVerify ? 'Verify Changes' : 'Run Full Integrity Check')
 
   function buildIntegrityOpts(): Record<string, unknown> {
     return {
@@ -79,19 +113,110 @@
     }
   }
 
+  function sleep(ms: number): Promise<void> {
+    return new Promise((resolve) => {
+      setTimeout(resolve, ms)
+    })
+  }
+
+  function trimLog(lines: string[]): string[] {
+    const MAX_LOG_LINES = 200
+    if (lines.length <= MAX_LOG_LINES) {
+      return lines
+    }
+    return lines.slice(lines.length - MAX_LOG_LINES)
+  }
+
+  function isTerminal(status: IntegrityStatus): boolean {
+    return status === 'ok' || status === 'fail' || status === 'skipped' || status === 'cancelled'
+  }
+
+  function setScopedBusy(scope: 'full' | 'single' | 'verify_failed' | null, ids: string[]) {
+    currentScope = scope
+    scopedIds = [...ids]
+    if (scope === 'full' || scope === 'verify_failed') {
+      fullRunBusy = true
+    }
+  }
+
+  function maybeResolveScope() {
+    if (!currentScope || scopedIds.length === 0) {
+      return
+    }
+    const done = scopedIds.every((id) => {
+      const row = rows[id]
+      return row ? isTerminal(row.status) : false
+    })
+    if (!done) {
+      return
+    }
+    if (currentScope === 'full' || currentScope === 'verify_failed') {
+      fullRunBusy = false
+    }
+    currentScope = null
+    scopedIds = []
+  }
+
+  function ensureRow(id: string, label?: string): IntegrityTestRow {
+    const current = rows[id]
+    if (current) {
+      if (label && label !== current.label) {
+        const merged = { ...current, label }
+        rows = { ...rows, [id]: merged }
+        return merged
+      }
+      return current
+    }
+    const fallback = displaySteps.find((x) => x.id === id)
+    const created: IntegrityTestRow = {
+      id,
+      label: label ?? fallback?.label ?? id,
+      status: 'pending',
+      detail: '',
+      updatedAt: Date.now()
+    }
+    rows = { ...rows, [id]: created }
+    if (!rowOrder.includes(id)) {
+      rowOrder = [...rowOrder, id]
+    }
+    return created
+  }
+
+  function updateRow(id: string, partial: Partial<IntegrityTestRow>) {
+    const base = ensureRow(id)
+    const next: IntegrityTestRow = { ...base, ...partial, updatedAt: Date.now() }
+    rows = { ...rows, [id]: next }
+    if (id === 'progress') {
+      awaitingProgress = next.status === 'running'
+    }
+    if (isTerminal(next.status)) {
+      rowBusy = { ...rowBusy, [id]: false }
+    }
+    maybeResolveScope()
+  }
+
   function resetInlineUi() {
     liveHint = ''
     logLines = []
-    progressLogLines = []
-    const next: Record<string, RowStatus> = {}
+    awaitingProgress = false
+    const next: Record<string, IntegrityTestRow> = {}
+    const order: string[] = []
     for (const s of displaySteps) {
-      next[s.id] = 'idle'
+      order.push(s.id)
+      next[s.id] = {
+        id: s.id,
+        label: s.label,
+        status: 'pending',
+        detail: '',
+        updatedAt: Date.now()
+      }
     }
-    rowStatus = next
-  }
-
-  function setRow(id: string, status: RowStatus) {
-    rowStatus = { ...rowStatus, [id]: status }
+    rowOrder = order
+    rows = next
+    rowBusy = {}
+    fullRunBusy = false
+    currentScope = null
+    scopedIds = []
   }
 
   function onGameMessage(event: MessageEvent) {
@@ -107,35 +232,38 @@
         break
       case 'DIAGNOSTICS_CHECKLIST_INIT': {
         const items = Array.isArray(item.items) ? item.items : []
-        const next: Record<string, RowStatus> = { ...rowStatus }
+        const nextRows: Record<string, IntegrityTestRow> = { ...rows }
+        const nextOrder: string[] = []
         for (const it of items) {
-          const id = String((it as { id?: string }).id || '')
+          const id = String((it as { id?: string }).id || '').trim()
+          const label = String((it as { label?: string }).label || id).trim() || id
           if (id) {
-            next[id] = 'pending'
+            nextOrder.push(id)
+            nextRows[id] = {
+              id,
+              label,
+              status: 'pending',
+              detail: '',
+              updatedAt: Date.now()
+            }
           }
         }
-        rowStatus = next
+        rowOrder = nextOrder
+        rows = nextRows
+        rowBusy = {}
+        awaitingProgress = false
         break
       }
       case 'DIAGNOSTICS_CHECKLIST_SET': {
-        const id = String(item.id || '')
+        const id = String(item.id || '').trim()
         const raw = String(item.status || 'pending')
-        let ui: RowStatus = 'idle'
-        if (raw === 'ok') {
-          ui = 'pass'
-        } else if (raw === 'fail') {
-          ui = 'fail'
-        } else if (raw === 'running') {
-          ui = 'running'
-        } else if (raw === 'skipped') {
-          ui = 'skipped'
-        } else if (raw === 'cancelled') {
-          ui = 'cancelled'
-        } else if (raw === 'pending') {
-          ui = 'pending'
+        const detail = String(item.detail || '')
+        let ui: IntegrityStatus = 'pending'
+        if (raw === 'ok' || raw === 'fail' || raw === 'running' || raw === 'skipped' || raw === 'cancelled' || raw === 'pending') {
+          ui = raw
         }
         if (id) {
-          setRow(id, ui)
+          updateRow(id, { status: ui, detail })
         }
         break
       }
@@ -144,17 +272,17 @@
         break
       case 'DIAGNOSTICS_LOG_SET': {
         const lines = Array.isArray(item.lines) ? item.lines.map((x: unknown) => String(x)) : []
-        logLines = lines
-        break
-      }
-      case 'DIAGNOSTICS_APPEND': {
-        const lines = Array.isArray(item.lines) ? item.lines.map((x: unknown) => String(x)) : []
-        progressLogLines = lines
+        logLines = trimLog(lines)
         break
       }
       case 'DIAGNOSTICS_INLINE_LOG': {
         const lines = Array.isArray(item.lines) ? item.lines.map((x: unknown) => String(x)) : []
-        logLines = [...logLines, ...lines]
+        logLines = trimLog([...logLines, ...lines])
+        break
+      }
+      case 'DIAGNOSTICS_APPEND': {
+        const lines = Array.isArray(item.lines) ? item.lines.map((x: unknown) => String(x)) : []
+        logLines = trimLog([...logLines, ...lines])
         break
       }
       default:
@@ -162,31 +290,72 @@
     }
   }
 
-  function runFullIntegrityChecklist(): void {
-    fullRunBusy = true
+  async function requestFullRun(): Promise<void> {
     resetInlineUi()
-    postNui('integrityDiagnosticsRun', { opts: buildIntegrityOpts() })
-    setTimeout(() => {
+    const ids = displaySteps.map((x) => x.id)
+    setScopedBusy('full', ids)
+    try {
+      await fetchNui('integrityCheckRequest', { opts: buildIntegrityOpts() }, 'integrityDiagnosticsRun')
+    } catch {
       fullRunBusy = false
-    }, 800)
-  }
-
-  function runSingleStep(stepId: string): void {
-    rowBusy = { ...rowBusy, [stepId]: true }
-    postNui('integrityDiagnosticsRun', {
-      opts: { ...buildIntegrityOpts(), onlyStep: stepId }
-    })
-    setTimeout(() => {
-      rowBusy = { ...rowBusy, [stepId]: false }
-    }, 600)
-  }
-
-  function statusIcon(id: string): string {
-    const s = rowStatus[id] ?? 'idle'
-    if (s === 'running') {
-      return '…'
+      currentScope = null
+      scopedIds = []
+      liveHint = 'Integrity request failed: NUI endpoint not reachable.'
+      logLines = trimLog([...logLines, '[Integrity UI] NUI request failed. Check callback route.'])
     }
-    if (s === 'pass') {
+  }
+
+  async function requestSingleStep(stepId: string): Promise<void> {
+    rowBusy = { ...rowBusy, [stepId]: true }
+    setScopedBusy('single', [stepId])
+    try {
+      await fetchNui('integrityCheckRequest', { opts: { ...buildIntegrityOpts(), onlyStep: stepId } }, 'integrityDiagnosticsRun')
+    } catch {
+      rowBusy = { ...rowBusy, [stepId]: false }
+      currentScope = null
+      scopedIds = []
+      liveHint = `OnlyStep request failed (${stepId}).`
+      logLines = trimLog([...logLines, `[Integrity UI] OnlyStep request failed: ${stepId}`])
+    }
+  }
+
+  async function requestVerifyFailed(): Promise<void> {
+    if (failedIds.length === 0) {
+      return
+    }
+    setScopedBusy('verify_failed', failedIds)
+    try {
+      for (const stepId of failedIds) {
+        rowBusy = { ...rowBusy, [stepId]: true }
+        await fetchNui('integrityCheckRequest', { opts: { ...buildIntegrityOpts(), onlyStep: stepId } }, 'integrityDiagnosticsRun')
+        await sleep(360)
+      }
+    } catch {
+      fullRunBusy = false
+      currentScope = null
+      scopedIds = []
+      liveHint = 'Verify Changes request failed.'
+      logLines = trimLog([...logLines, '[Integrity UI] Verify Changes request failed.'])
+    }
+  }
+
+  async function onPrimaryClick(): Promise<void> {
+    if (fullRunBusy) {
+      return
+    }
+    if (shouldVerify) {
+      await requestVerifyFailed()
+      return
+    }
+    await requestFullRun()
+  }
+
+  function statusIcon(status: IntegrityStatus): string {
+    const s = status
+    if (s === 'running') {
+      return '⟳'
+    }
+    if (s === 'ok') {
       return '✓'
     }
     if (s === 'fail') {
@@ -198,27 +367,82 @@
     if (s === 'pending') {
       return '○'
     }
-    return ''
+    return '○'
   }
 
-  function iconClass(id: string): string {
-    const s = rowStatus[id] ?? 'idle'
-    if (s === 'pass') {
-      return 'icon-pass'
+  function statusClass(status: IntegrityStatus): string {
+    return `is-${status}`
+  }
+
+  function buildSupportReportText(): string {
+    const opts = buildIntegrityOpts()
+    const now = new Date().toISOString()
+    const lines: string[] = []
+    lines.push('=== e_core Integrity Support Report ===')
+    lines.push(`generatedAt: ${now}`)
+    lines.push(`scope: checkIntegrity inline-admin run`)
+    lines.push('')
+    lines.push('[Options]')
+    lines.push(`cooldownMs=${String(opts.cooldownMs)}`)
+    lines.push(`testItem=${String(opts.testItem)}`)
+    lines.push(`testItemAmount=${String(opts.testItemAmount)}`)
+    lines.push(`tryAddRemove=${String(opts.tryAddRemove)}`)
+    lines.push(`progressDurationMs=${String(opts.progressDurationMs)}`)
+    lines.push(`printToConsole=${String(opts.printToConsole)}`)
+    lines.push(`uiStepMs=${String(opts.uiStepMs)}`)
+    lines.push('')
+    lines.push('[Checklist]')
+    for (const row of displayRows) {
+      lines.push(`- ${row.id} | ${row.status} | ${row.label}${row.detail ? ` | ${row.detail}` : ''}`)
     }
-    if (s === 'fail') {
-      return 'icon-fail'
+    lines.push('')
+    lines.push('[Failed Steps]')
+    if (failedRows.length === 0) {
+      lines.push('- none')
+    } else {
+      for (const row of failedRows) {
+        lines.push(`- ${row.id} | ${row.label}${row.detail ? ` | ${row.detail}` : ''}`)
+      }
     }
-    if (s === 'running') {
-      return 'icon-run'
+    lines.push('')
+    lines.push('[Raw Log]')
+    if (logLines.length === 0) {
+      lines.push('- empty')
+    } else {
+      for (const line of logLines) {
+        lines.push(line)
+      }
     }
-    if (s === 'skipped' || s === 'cancelled') {
-      return 'icon-skip'
+    return lines.join('\n')
+  }
+
+  async function copySupportReport(): Promise<void> {
+    try {
+      const txt = buildSupportReportText()
+      await navigator.clipboard.writeText(txt)
+      reportStatus = 'Report a vágólapra másolva.'
+    } catch {
+      reportStatus = 'Másolás sikertelen (clipboard tiltva).'
     }
-    if (s === 'pending') {
-      return 'icon-pending'
+  }
+
+  function downloadSupportReport(): void {
+    try {
+      const txt = buildSupportReportText()
+      const stamp = new Date().toISOString().replace(/[:.]/g, '-')
+      const blob = new Blob([txt], { type: 'text/plain;charset=utf-8' })
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `e_core-integrity-report-${stamp}.txt`
+      document.body.appendChild(a)
+      a.click()
+      document.body.removeChild(a)
+      URL.revokeObjectURL(url)
+      reportStatus = 'Report .txt letöltés indítva.'
+    } catch {
+      reportStatus = 'Letöltés sikertelen.'
     }
-    return 'icon-idle'
   }
 
   function lineTone(line: string): string {
@@ -244,19 +468,50 @@
     window.removeEventListener('message', onGameMessage)
   })
 
-  let lastStepIds = $state('')
+  function onLogScroll() {
+    if (!logContainer) {
+      return
+    }
+    const threshold = 18
+    const offset = logContainer.scrollHeight - (logContainer.scrollTop + logContainer.clientHeight)
+    autoScrollLog = offset <= threshold
+  }
 
+  $effect(() => {
+    logLines.length
+    if (!autoScrollLog || !logContainer) {
+      return
+    }
+    queueMicrotask(() => {
+      if (!logContainer || !autoScrollLog) {
+        return
+      }
+      logContainer.scrollTop = logContainer.scrollHeight
+    })
+  })
+
+  let lastStepIds = $state('')
   $effect(() => {
     const k = displaySteps.map((s) => s.id).join(',')
     if (k === lastStepIds) {
       return
     }
     lastStepIds = k
-    const next: Record<string, RowStatus> = {}
+    const nextRows: Record<string, IntegrityTestRow> = {}
+    const nextOrder: string[] = []
     for (const s of displaySteps) {
-      next[s.id] = rowStatus[s.id] ?? 'idle'
+      nextOrder.push(s.id)
+      const existing = rows[s.id]
+      nextRows[s.id] = existing ?? {
+        id: s.id,
+        label: s.label,
+        status: 'pending',
+        detail: '',
+        updatedAt: Date.now()
+      }
     }
-    rowStatus = next
+    rowOrder = nextOrder
+    rows = nextRows
   })
 </script>
 
@@ -268,17 +523,63 @@
         <button
           type="button"
           class="primary"
-          onclick={runFullIntegrityChecklist}
+          onclick={onPrimaryClick}
           disabled={fullRunBusy}
-          title="Szerver checklist + napló + kliens progress; eredmény a jobb oldalon."
+          title="Automatikus teljes futás vagy hibás sorok célzott újraellenőrzése."
         >
-          {fullRunBusy ? 'Indítás…' : 'Összes teszt futtatása'}
+          {fullRunBusy ? 'Folyamatban…' : primaryLabel}
         </button>
       </div>
       <p class="muted small">
-        A checklist és a szerver napló itt, a jobb oldalon jelenik meg. A progress sáv a játék UI-ban (ox_lib / egyéb)
-        látszik a háttérben.
+        A szerver napló a jobb oldali rögzített panelen látszik, így görgetés közben is követhető. A progress sáv a játék
+        UI-ban (ox_lib / egyéb) jelenik meg a háttérben.
       </p>
+    </div>
+
+    <div class="card">
+      <h3>Integritás lépések</h3>
+      <p class="muted small">
+        Egy lépés futtatása külön (szerver + szükség esetén kliens progress). A napló futás közben végig látszik a jobb
+        oldalon.
+      </p>
+      <div class="report-actions">
+        <button type="button" class="secondary" onclick={copySupportReport} title="Teljes support report másolása">
+          Copy Report
+        </button>
+        <button type="button" class="secondary" onclick={downloadSupportReport} title="Teljes support report mentése txt-be">
+          Save Report (.txt)
+        </button>
+      </div>
+      {#if reportStatus}
+        <p class="muted small">{reportStatus}</p>
+      {/if}
+      <ul class="step-list">
+        {#each displayRows as row (row.id)}
+          <li class="step-row {statusClass(row.status)}" transition:slide={{ duration: 140 }}>
+            <span class="step-icon {statusClass(row.status)}" aria-hidden="true">{statusIcon(row.status)}</span>
+            <div class="step-meta">
+              <strong>{row.label}</strong>
+              <span class="mono">{row.id}</span>
+              {#if row.detail.trim()}
+                <small class="step-detail" transition:fly={{ y: 4, duration: 150 }}>{row.detail}</small>
+              {:else if row.id === 'progress' && awaitingProgress}
+                <small class="step-detail is-live" transition:fly={{ y: 4, duration: 150 }}>
+                  Awaiting client progress callback...
+                </small>
+              {/if}
+            </div>
+            <button
+              type="button"
+              class="secondary icon-button"
+              onclick={() => requestSingleStep(row.id)}
+              disabled={rowBusy[row.id] === true || fullRunBusy || row.status === 'running' || (row.id === 'progress' && awaitingProgress)}
+              title="OnlyStep futtatás"
+            >
+              {rowBusy[row.id] ? '…' : row.status === 'fail' ? '↻' : '▶'}
+            </button>
+          </li>
+        {/each}
+      </ul>
     </div>
 
     <div class="card">
@@ -321,51 +622,24 @@
         </label>
       </div>
     </div>
-
-    <div class="card">
-      <h3>Integritás lépések</h3>
-      <p class="muted small">Egy lépés futtatása külön (szerver + szükség esetén kliens progress).</p>
-      <ul class="step-list">
-        {#each displaySteps as step (step.id)}
-          <li class="step-row">
-            <span class="step-icon {iconClass(step.id)}" aria-hidden="true">{statusIcon(step.id)}</span>
-            <div class="step-meta">
-              <strong>{step.label}</strong>
-              <span class="mono">{step.id}</span>
-            </div>
-            <button
-              type="button"
-              class="secondary"
-              onclick={() => runSingleStep(step.id)}
-              disabled={rowBusy[step.id] === true || fullRunBusy}
-            >
-              {rowBusy[step.id] ? 'Fut…' : 'Futtatás'}
-            </button>
-          </li>
-        {/each}
-      </ul>
-    </div>
   </div>
 
   <div class="integrity-col integrity-col--right">
     <div class="card log-card">
       <h3>Eredmény napló</h3>
       {#if liveHint.trim()}
-        <div class="hint-strip">{liveHint}</div>
+        <div class="hint-strip" transition:fly={{ y: -4, duration: 160 }}>
+          <span class="hint-dot" aria-hidden="true"></span>
+          <span>{liveHint}</span>
+        </div>
       {/if}
-      <div class="log-scroll" role="log" aria-live="polite">
-        {#if logLines.length === 0 && progressLogLines.length === 0}
+      <div class="log-scroll" role="log" aria-live="polite" bind:this={logContainer} onscroll={onLogScroll}>
+        {#if logLines.length === 0}
           <p class="muted small">Indítás után itt jelennek meg a szerver sorok és a progress összefoglaló.</p>
         {:else}
           {#each logLines as line}
-            <div class="log-line {lineTone(line)}">{line}</div>
+            <div class="log-line {lineTone(line)}" transition:fade={{ duration: 120 }}>{line}</div>
           {/each}
-          {#if progressLogLines.length > 0}
-            <div class="log-subhead">Kliens progress</div>
-            {#each progressLogLines as line}
-              <div class="log-line log-line--prog {lineTone(line)}">{line}</div>
-            {/each}
-          {/if}
         {/if}
       </div>
     </div>
@@ -373,11 +647,22 @@
 </div>
 
 <style>
+  .integrity-layout,
+  .integrity-layout * {
+    --color-success: #2ecc71;
+    --color-error: #e74c3c;
+    --color-running: #3498db;
+    --color-pending: #95a5a6;
+    --color-skipped: #f39c12;
+    --color-cancelled: #c084fc;
+    --color-surface-dark: #0f1115;
+    --color-text-muted: #a7b0c0;
+  }
   .integrity-layout {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) minmax(280px, 0.95fr);
+    grid-template-columns: minmax(0, 1.12fr) minmax(320px, 0.88fr);
     gap: 1rem;
-    align-items: stretch;
+    align-items: start;
     min-height: 0;
   }
   @media (max-width: 900px) {
@@ -393,28 +678,53 @@
   }
   .integrity-col--right {
     min-height: 0;
+    position: sticky;
+    top: 0.4rem;
+    align-self: start;
   }
   .log-card {
     flex: 1;
     display: flex;
     flex-direction: column;
     min-height: 12rem;
-    max-height: min(70vh, 42rem);
+    max-height: min(78vh, 50rem);
   }
   .hint-strip {
     margin: 0 0 0.5rem;
     padding: 0.45rem 0.6rem;
     border-radius: 8px;
-    background: #1e3a5f;
-    border: 1px solid #334e7a;
+    background: #162638;
+    border: 1px solid #2f4f72;
     color: #dbeafe;
     font-size: 0.9rem;
+    display: flex;
+    align-items: center;
+    gap: 0.55rem;
+  }
+  .hint-dot {
+    width: 0.62rem;
+    height: 0.62rem;
+    border-radius: 999px;
+    background: var(--color-running);
+    box-shadow: 0 0 0 0 rgba(52, 152, 219, 0.45);
+    animation: hintPulse 1.15s ease-out infinite;
+  }
+  @keyframes hintPulse {
+    0% {
+      box-shadow: 0 0 0 0 rgba(52, 152, 219, 0.45);
+    }
+    100% {
+      box-shadow: 0 0 0 8px rgba(52, 152, 219, 0);
+    }
   }
   .log-scroll {
     flex: 1;
     min-height: 0;
     overflow-y: auto;
-    padding: 0.35rem 0.15rem 0.35rem 0;
+    padding: 0.5rem 0.45rem 0.5rem;
+    border-radius: 8px;
+    background: var(--color-surface-dark);
+    border: 1px solid #212733;
     font-family: ui-monospace, 'Cascadia Code', monospace;
     font-size: 0.82rem;
     line-height: 1.45;
@@ -425,9 +735,6 @@
     white-space: pre-wrap;
     word-break: break-word;
   }
-  .log-line--prog {
-    color: #a5c4e8;
-  }
   .log--bad {
     color: #fecaca;
   }
@@ -437,14 +744,6 @@
   .log--sep {
     color: #94a3b8;
     margin-top: 0.35rem;
-  }
-  .log-subhead {
-    margin: 0.75rem 0 0.25rem;
-    font-weight: 700;
-    color: #93c5fd;
-    font-size: 0.78rem;
-    text-transform: uppercase;
-    letter-spacing: 0.04em;
   }
   .card-header {
     display: flex;
@@ -480,7 +779,7 @@
     cursor: not-allowed;
   }
   .muted {
-    color: #9fb2d8;
+    color: var(--color-text-muted);
     margin: 0.25rem 0 0;
   }
   .muted.small {
@@ -527,6 +826,15 @@
     display: flex;
     flex-direction: column;
     gap: 0.5rem;
+    max-height: min(46vh, 28rem);
+    overflow-y: auto;
+    padding-right: 0.2rem;
+  }
+  .report-actions {
+    display: flex;
+    gap: 0.55rem;
+    margin: 0.35rem 0 0.5rem;
+    flex-wrap: wrap;
   }
   .step-row {
     display: grid;
@@ -538,29 +846,44 @@
     border-radius: 8px;
     background: #182746;
   }
+  .step-row.is-running {
+    border-color: color-mix(in srgb, var(--color-running) 50%, #31466f);
+  }
+  .step-row.is-ok {
+    border-color: color-mix(in srgb, var(--color-success) 45%, #31466f);
+  }
+  .step-row.is-fail {
+    border-color: color-mix(in srgb, var(--color-error) 50%, #31466f);
+  }
+  .step-row.is-skipped {
+    border-color: color-mix(in srgb, var(--color-skipped) 50%, #31466f);
+  }
+  .step-row.is-cancelled {
+    border-color: color-mix(in srgb, var(--color-cancelled) 45%, #31466f);
+  }
   .step-icon {
     width: 1.75rem;
     text-align: center;
     font-size: 1.2rem;
     font-weight: 800;
   }
-  .icon-pass {
-    color: #4ade80;
+  .step-icon.is-ok {
+    color: var(--color-success);
   }
-  .icon-fail {
-    color: #f87171;
+  .step-icon.is-fail {
+    color: var(--color-error);
   }
-  .icon-run {
-    color: #fbbf24;
+  .step-icon.is-running {
+    color: var(--color-running);
   }
-  .icon-skip {
-    color: #94a3b8;
+  .step-icon.is-skipped {
+    color: var(--color-skipped);
   }
-  .icon-idle {
-    color: #475569;
+  .step-icon.is-cancelled {
+    color: var(--color-cancelled);
   }
-  .icon-pending {
-    color: #64748b;
+  .step-icon.is-pending {
+    color: var(--color-pending);
   }
   .step-meta {
     min-width: 0;
@@ -577,5 +900,19 @@
     font-family: ui-monospace, monospace;
     font-size: 0.78rem;
     color: #94a3b8;
+  }
+  .step-detail {
+    margin: 0.1rem 0 0;
+    font-size: 0.78rem;
+    line-height: 1.35;
+    color: #c6d3ee;
+  }
+  .step-detail.is-live {
+    color: #93c5fd;
+  }
+  .icon-button {
+    min-width: 2.4rem;
+    font-weight: 700;
+    padding-inline: 0.55rem;
   }
 </style>

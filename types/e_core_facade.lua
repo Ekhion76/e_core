@@ -5,6 +5,7 @@
 
 ---@class eCore
 ---@field helper table
+---@field GroupAccess table|nil Class-like helper: `GroupAccess` with `check(playerData, data)`.
 ---@field Err table<string, string>
 ---@field isReady fun(self: eCore): boolean|nil
 ---@field getInventoryWeight fun(self: eCore, playerData: table): number
@@ -14,7 +15,7 @@
 ---@field getRegisteredItem fun(self: eCore, name: string): table|nil
 ---@field getRegisteredItems fun(self: eCore): table
 ---@field convertItems fun(self: eCore, items: table): table
----@field convertPlayer fun(self: eCore, playerData: table, newJob?: table): table
+---@field convertPlayer fun(self: eCore, playerData: table, newJob?: table, newGang?: table): table
 ---@field triggerCallback fun(self: eCore, name: string, cb: fun(...), ...): nil
 ---@field createCallback fun(self: eCore, name: string, fn: fun(source: number, cb: function, ...)): nil
 ---@field getPlayer fun(self: eCore, id: number|table?, ...): table|nil

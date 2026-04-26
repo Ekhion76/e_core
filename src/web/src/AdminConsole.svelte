@@ -174,9 +174,6 @@
   <header class="header header--with-close">
     <div>
       <h1>e_core Admin</h1>
-      <p class="muted">
-        Integritás: <strong>Integritás</strong> fül (itt futtatható) · Admin NUI: <code>/ecore_admin</code> · Registry futások: Diagnostics fül
-      </p>
     </div>
     <button type="button" class="overlay-close" onclick={closeConsole} title="Bezárás">✕</button>
   </header>

@@ -1,4 +1,31 @@
 ================================================================================
+Itemconvert hardening – hibariport (fájl + konzol)
+================================================================================
+
+Cél
+  Az item registry konverzió (`convertItems` + `normalizeRegisteredItemDef`) ne
+  legyen néma fallback: hiba/fallback esetén diagnosztikai nyom maradjon.
+
+Fájl log (szerver)
+  - Napi JSONL: `logs/itemconvert-YYYY-MM-DD.jsonl`
+  - Soronként egy esemény: ts, severity, code, item, reason, source, runId.
+
+Konzol tükör (szerver)
+  - Warning/error események rövid, egységes sorban mennek konzolra is.
+  - Kulcs alapú rate-limit (`code+item`) miatt nem floodol induláskor.
+  - Formátum: `[e_core][itemconvert][WARN|ERROR] code=... item=... reason=...`
+
+Fő reason code-ok
+  - `missing_weight` / `invalid_weight`
+  - `fallback_image`
+  - `duplicate_lower_key`
+  - `invalid_item_row` / `invalid_item_key`
+  - `normalization_error` / `convert_row_error`
+
+Integritás report
+  A `checkIntegrity` futás elején bekerül egy `ItemConvert diagnostics` blokk:
+  összegzés (code darabszámok) + napi logfájl név.
+================================================================================
 e_core – AI és támogatás referencia (magyar)
 ================================================================================
 Verzió (resource): fxmanifest.lua → version mező. Publikus export táblázat:
@@ -57,7 +84,16 @@ Kapcsolódó fájlok a repóban
 - src/libs/helper_ecore.lua            – ugyanarra a hf-re: e_core item/normalize,
                                      registry várakozás, mysqlAwait, indulási log,
                                      net rate limit, moneyFormat; eCore.helper = hf
+- src/libs/GroupAccess.lua             – `GroupAccess` (Lua) és facade elérés:
+                                     `eCore.GroupAccess:check`
+                                     (job/gang whitelist–blacklist szerződés)
 - src/libs/errors.lua                  – eCoreErr ok stringek; eCore.Err (src/bridge/main.lua)
+- src/libs/itemconvert_diag.lua        – itemconvert hardening diagnosztika:
+                                     napi JSONL fájl + rate-limitelt szerver konzol tükör
+- src/libs/file_event_logger.lua       – újrahasználható JSONL fájl logger (napi fájlnév,
+                                     append + fallback célfájl)
+- src/libs/itemconvert_console_sink.lua – itemconvert konzol sink (`cLog` formátum +
+                                     rate-limit)
 - src/libs/meta.lua                    – szint / kedvezmény, checkMetaExists, levelChange
 - src/libs/config_check.lua            – Config alapértékek normalizálása induláskor
 - src/standalone/config/main.lua, src/standalone/config/levels.lua – globális Config + szintek
@@ -84,6 +120,25 @@ Kapcsolódó fájlok a repóban
 ================================================================================
 Keretrendszer-felismerés (FRAMEWORK, ESX_CORE, QB_CORE)
 ================================================================================
+
+================================================================================
+Access rules páros (Lua + JS)
+================================================================================
+
+Azonos névvel használandó páros:
+- **Lua:** `GroupAccess:check(playerData, data)` (`src/libs/GroupAccess.lua`)
+- **JS:** `class GroupAccess` + `GroupAccess.check(playerData, data)`
+  (`src/web/copyable/GroupAccess.js`)
+
+Facade elérés (Lua oldalon):
+- `eCore.GroupAccess:check(playerData, data)`
+
+Szerződés (mindkét oldalon ugyanaz):
+- ha `whitelist` és `blacklist` is üres/hiányzik → `true`
+- ha whitelist kitöltött → whitelist dönt (blacklist ignorálva)
+- különben blacklist dönt
+- lista forma: név tömb (`{ 'police', 'ambulance' }`) vagy név→grade map
+  (`{ police = {0,1}, gangx = {} }`, ahol `{}` = bármely grade)
 
 Mérvadó forrásfájlok
   src/bridge/esx/config_defaults.lua   – e_core_apply_esx_config()
@@ -178,8 +233,9 @@ Szerep röviden
     mezőnevek: count, stb.), Config.itemBox, Config.imagePath, stb.
 
   shared.lua
-    eCore:convertPlayer(playerData, newJob) – job, charName, position/coords
-    normalizálás consumer formához.
+    eCore:convertPlayer(playerData, newJob) – `hf.normalizePlayerJobForEcore` +
+    neutral `gang`, `hf.applyEcorePlayerDisplayFields` (charName, first/last,
+    position, metadata), opcionális `citizenid` = `identifier`.
     eCore:convertItems(items) – item kulcs lower, image, isUnique/isWeapon
     alapértékek; REGISTERED_ITEMS nélküli item lista egységesítéséhez használt.
 
@@ -279,8 +335,9 @@ Szerep röviden
     eCore:getRegisteredItems() – mindig convertItems(QBCore.Shared.Items)
     (nincs REGISTERED_ITEMS ág, ellentétben az ESX szerverrel).
     eCore:convertPlayer(playerData, newJob, newGang) – PlayerData / Functions
-    kibontás; job és gang grade mezők ESX-szerű aliasokra; citizenid →
-    identifier; charinfo → charName.
+    kibontás; `normalizePlayerJobForEcore` / `normalizePlayerGangForEcore`;
+    citizenid → identifier; megjelenítés `applyEcorePlayerDisplayFields` (charinfo,
+    metadata, position).
 
   client.lua
     triggerCallback → QBCore.Functions.TriggerCallback

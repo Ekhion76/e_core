@@ -1,3 +1,16 @@
+0.0.59
+- **Breaking – GroupAccess kanonikus páros:** a hozzáférés-ellenőrző Lua modul átnevezve `src/libs/GroupAccess.lua`-ra, és a publikus elérés **`eCore.GroupAccess:check(playerData, data)`**. A korábbi `access_rules` / `ECoreAccessRules` / `checkJobGangAccess` nevek kivezetve.
+- **Copyable NUI helper hely:** új célkönyvtár `src/web/copyable/`; kanonikus JS fájl: **`src/web/copyable/GroupAccess.js`** (`class GroupAccess`).
+- **Doksi szinkron:** `docs/PUBLIC_API_HU.md`, `docs/AI_SUPPORT_REFERENCE_HU.txt`, `types/e_core_facade.lua` frissítve a Lua+JS `GroupAccess` páros szerződésre.
+
+0.0.58
+- **Job / gang whitelist–blacklist helper:** új shared modul `src/libs/access_rules.lua`, publikus facade: **`eCore:checkJobGangAccess(playerData, data)`** (whitelist prioritás, névlista vagy `{ [név] = {}|grade tömb }` grade szűrés, opcionális `gang`). Doksi: `docs/PUBLIC_API_HU.md` §6, `types/e_core_facade.lua`.
+- **NUI helper source (reuse):** új `src/web/shared/access_rules.js`, amely a fenti Lua szabály JS megfelelője; consumer NUI-k közvetlenül átvehetik/szinkronizálhatják. Export formátum: **`class ECoreAccessRules`**, használat: `ECoreAccessRules.check(playerData, data)`.
+- **Naming pair alignment:** Lua oldalon bevezetve az azonos nevű **`ECoreAccessRules.check(playerData, data)`** + facade alias **`eCore.AccessRules.check`**; a régi `eCore:checkJobGangAccess` wrapperként megmarad. Lua+JS páros szerződés külön dokumentálva: `docs/AI_SUPPORT_REFERENCE_HU.txt`, `docs/PUBLIC_API_HU.md`.
+
+0.0.57
+- **Bridge `convertPlayer` egységes játékos-facade:** közös `job` / `gang` normalizálás (`hf.normalizePlayerJobForEcore`, `hf.normalizePlayerGangForEcore`) és megjelenítési mezők (`hf.applyEcorePlayerDisplayFields`) a `src/libs/helper_ecore.lua`-ban; ESX ág most **mindig** ad neutral `gang` sort, kitölti a `metadata` táblát (ha hiányzott), `position` ← `coords`, valamint opcionálisan `citizenid` = `identifier` (QB-paritás); QB ág ugyanezen segédeken megy, így hiányzó / részleges `job`/`gang` nem borítja el a betöltést. Érintett: `src/bridge/esx/shared.lua`, `src/bridge/qb/shared.lua`. Doksi: `docs/PUBLIC_API_HU.md` §9–10, `docs/AI_SUPPORT_REFERENCE_HU.txt` (bridge shared).
+
 0.0.56
 - **Lua annotációs szabvány + teljes sweep:** új guide `docs/LUA_ANNOTATION_STYLE_EN.md`, új backlog `docs/LUA_ANNOTATION_BACKLOG_EN.md`, valamint `.cursor/rules/lua-annotation-style.mdc` szabály. A teljes `e_core` Lua függvénykészletre egységes, angol nyelvű LuaLS annotáció került (`@param`, `@return`, publikus szerződések elsőbbsége; bridge/domain/override/NUI bridge fájlokkal együtt). Eredmény: audit szerint **451/451** függvény annotált (0 hiányzó blokk).
 

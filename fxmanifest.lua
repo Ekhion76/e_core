@@ -1,7 +1,7 @@
 fx_version 'cerulean'
 game 'gta5'
 description 'ECO CORE'
-version '0.0.56'
+version '0.0.59'
 
 shared_scripts {
     '@ox_lib/init.lua',
@@ -17,6 +17,10 @@ shared_scripts {
     'src/imports/utils.lua',
     'src/libs/helper.lua',
     'src/libs/helper_ecore.lua',
+    'src/libs/file_event_logger.lua',
+    'src/libs/itemconvert_console_sink.lua',
+    'src/libs/itemconvert_diag.lua',
+    'src/libs/GroupAccess.lua',
     'src/libs/errors.lua',
 
     'src/libs/meta.lua',
@@ -92,7 +96,7 @@ server_scripts {
     'src/standalone/usableitem.lua',
 }
 
-ui_page 'src/web/dist/index.html'
+ui_page 'http://localhost:5173'
 
 files {
     'src/imports/core.lua',

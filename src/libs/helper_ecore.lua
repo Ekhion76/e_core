@@ -18,24 +18,44 @@ end
 
 --- @param nameLower string Pre-lowercased key (for example: ox item key).
 --- @param row table Source item row (mutated in place).
+--- @param diagCtx table|nil Optional diagnostics context (`{ source = string }`).
 --- @return table row
-function hf.normalizeRegisteredItemDef(nameLower, row)
+function hf.normalizeRegisteredItemDef(nameLower, row, diagCtx)
     if type(row) ~= 'table' or type(nameLower) ~= 'string' or nameLower == '' then
         return row
     end
 
     local wKey, weightKeys = hf.getRegisteredItemWeightKeyConfig()
+    local sourceTag = type(diagCtx) == 'table' and tostring(diagCtx.source or 'itemconvert') or 'itemconvert'
 
     local ok, err = pcall(function()
         row.name = nameLower
 
         local wNum
+        local hadWeightField = false
+        local hadInvalidWeight = false
         for _, k in ipairs(weightKeys) do
+            if row[k] ~= nil then
+                hadWeightField = true
+                local probe = tonumber(row[k])
+                if not probe or probe < 0 then
+                    hadInvalidWeight = true
+                end
+            end
             local n = tonumber(row[k])
             if n and n >= 0 then
                 wNum = n
                 break
             end
+        end
+        if not wNum and hf.itemConvertDiagRecord then
+            hf.itemConvertDiagRecord({
+                source = sourceTag,
+                code = hadWeightField and 'invalid_weight' or 'missing_weight',
+                severity = 'warning',
+                item = nameLower,
+                reason = hadWeightField and 'No usable non-negative numeric weight found.' or 'No weight field found.',
+            })
         end
         row[wKey] = wNum or 0
 
@@ -58,6 +78,15 @@ function hf.normalizeRegisteredItemDef(nameLower, row)
 
         if type(row.image) ~= 'string' or row.image == '' then
             row.image = nameLower .. '.png'
+            if hf.itemConvertDiagRecord then
+                hf.itemConvertDiagRecord({
+                    source = sourceTag,
+                    code = 'fallback_image',
+                    severity = 'info',
+                    item = nameLower,
+                    reason = 'Image missing, fallback to <name>.png',
+                })
+            end
         end
 
         local ammoStr
@@ -76,6 +105,15 @@ function hf.normalizeRegisteredItemDef(nameLower, row)
     if not ok then
         if cLog then
             cLog('eCore:normalizeRegisteredItemDef', { name = nameLower, err = tostring(err) }, 1)
+        end
+        if hf.itemConvertDiagRecord then
+            hf.itemConvertDiagRecord({
+                source = sourceTag,
+                code = 'normalization_error',
+                severity = 'error',
+                item = nameLower,
+                reason = tostring(err),
+            })
         end
         row.name = nameLower
         row[wKey] = tonumber(row[wKey]) or tonumber(row.weight) or 0
@@ -394,4 +432,146 @@ function hf.mysqlAwait(tag, fn)
         return false, res
     end
     return true, res
+end
+
+--- Default job row when the framework did not supply a usable `job` table.
+--- @return table
+local function ecoreDefaultJobRow()
+    return {
+        name = 'unemployed',
+        label = 'Unemployed',
+        grade = 0,
+        grade_name = 'unemployed',
+        grade_label = 'Unemployed',
+        grade_salary = 0,
+        onduty = true,
+        isboss = false,
+    }
+end
+
+--- Default gang row for consumers that always read `gang` (ESX has no gang; QB may omit).
+--- @return table
+local function ecoreDefaultGangRow()
+    return {
+        name = 'none',
+        label = 'No Gang',
+        grade = 0,
+        grade_name = 'none',
+        grade_label = 'None',
+        grade_salary = 0,
+        isboss = false,
+    }
+end
+
+--- Normalizes `job` to a single e_core consumer shape: flat numeric `grade`, `grade_name`,
+--- `grade_label`, `grade_salary`, optional `isboss`. Supports QB nested `job.grade` and
+--- ESX-style flat jobs. Mutates the input table **in place** when `job` is a table (keeps
+--- QBCore / ESX live references); nil input returns a new unemployed-shaped table.
+--- @param job table|nil
+--- @return table
+function hf.normalizePlayerJobForEcore(job)
+    if type(job) ~= 'table' then
+        return ecoreDefaultJobRow()
+    end
+    local gradeRaw = job.grade
+    if type(gradeRaw) == 'table' then
+        job.grade_name = gradeRaw.name
+        job.grade_label = (type(gradeRaw.name) == 'string' and gradeRaw.name ~= '') and gradeRaw.name
+            or (type(job.label) == 'string' and job.label or '')
+        job.grade_salary = tonumber(job.payment) or tonumber(gradeRaw.payment) or 0
+        job.grade = tonumber(gradeRaw.level) or 0
+        job.isboss = gradeRaw.isboss == true
+    elseif type(gradeRaw) == 'number' then
+        job.grade = tonumber(gradeRaw) or 0
+        job.grade_name = job.grade_name or job.name or 'unemployed'
+        job.grade_label = job.grade_label or job.grade_name
+            or (type(job.label) == 'string' and job.label or '')
+        job.grade_salary = tonumber(job.grade_salary) or tonumber(job.payment) or 0
+    else
+        job.grade = tonumber(job.grade) or 0
+        job.grade_name = job.grade_name or job.name or 'unemployed'
+        job.grade_label = job.grade_label or job.grade_name
+            or (type(job.label) == 'string' and job.label or '')
+        job.grade_salary = tonumber(job.grade_salary) or tonumber(job.payment) or 0
+    end
+    return job
+end
+
+--- Same contract as `hf.normalizePlayerJobForEcore` for gang data (QB-Core nested `grade`).
+--- Mutates `gang` in place when it is a table; nil returns a new neutral gang row.
+--- @param gang table|nil
+--- @return table
+function hf.normalizePlayerGangForEcore(gang)
+    if type(gang) ~= 'table' then
+        return ecoreDefaultGangRow()
+    end
+    local gradeRaw = gang.grade
+    if type(gradeRaw) == 'table' then
+        gang.grade_name = gradeRaw.name
+        gang.grade_label = (type(gradeRaw.name) == 'string' and gradeRaw.name ~= '') and gradeRaw.name
+            or (type(gang.label) == 'string' and gang.label or 'None')
+        gang.grade_salary = tonumber(gang.payment) or tonumber(gradeRaw.payment) or 0
+        gang.grade = tonumber(gradeRaw.level) or 0
+        gang.isboss = gradeRaw.isboss == true
+    elseif type(gradeRaw) == 'number' then
+        gang.grade = tonumber(gradeRaw) or 0
+        gang.grade_name = gang.grade_name or gang.name or 'none'
+        gang.grade_label = gang.grade_label or gang.grade_name
+            or (type(gang.label) == 'string' and gang.label or 'None')
+        gang.grade_salary = tonumber(gang.grade_salary) or tonumber(gang.payment) or 0
+    else
+        gang.grade = tonumber(gang.grade) or 0
+        gang.grade_name = gang.grade_name or gang.name or 'none'
+        gang.grade_label = gang.grade_label or gang.grade_name
+            or (type(gang.label) == 'string' and gang.label or 'None')
+        gang.grade_salary = tonumber(gang.grade_salary) or tonumber(gang.payment) or 0
+    end
+    return gang
+end
+
+--- Fills cross-framework display fields on the player table in place: `metadata` (empty table if
+--- missing), `position` from `coords` when present, `firstName` / `lastName` / `charName`
+--- (QB `charinfo` first, otherwise ESX-style fields / `variables` / `name`).
+--- @param playerData table
+--- @return nil
+function hf.applyEcorePlayerDisplayFields(playerData)
+    if type(playerData) ~= 'table' then
+        return
+    end
+    if type(playerData.metadata) ~= 'table' then
+        playerData.metadata = {}
+    end
+    local coords = playerData.coords or playerData.position
+    if type(coords) == 'table' then
+        playerData.position = coords
+    end
+
+    local ci = playerData.charinfo
+    if type(ci) == 'table' then
+        local fn = ci.firstname or ci.firstName
+        local ln = ci.lastname or ci.lastName
+        if type(fn) == 'string' and fn ~= '' and type(ln) == 'string' and ln ~= '' then
+            playerData.firstName = fn
+            playerData.lastName = ln
+            playerData.charName = ('%s %s'):format(fn, ln)
+            return
+        end
+    end
+
+    local v = playerData.variables
+    local first = playerData.firstName or playerData.firstname
+    local last = playerData.lastName or playerData.lastname
+    if (type(first) ~= 'string' or first == '') and type(v) == 'table' then
+        first = v.firstName or v.firstname
+        last = v.lastName or v.lastname
+    end
+    if type(first) == 'string' and first ~= '' and type(last) == 'string' and last ~= '' then
+        playerData.firstName = first
+        playerData.lastName = last
+        playerData.charName = ('%s %s'):format(first, last)
+        return
+    end
+
+    local n = playerData.name
+    playerData.charName = (type(n) == 'string' and n ~= '') and n or ''
 end

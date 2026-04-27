@@ -5,7 +5,7 @@ Returns the player's entire meta database, or one category by key.
 
 **@param** `meta` (optional): string category key; trimmed like on the server. Non-string or empty after trim → **`false`, `reason`** (`eCoreErr.no_valid_meta_name`).
 
-**@return**: full `ECO.meta` table | one category value | **`nil`** if the key is missing | **`false`, reason`** on invalid `meta` argument
+**@return**: full client meta cache table (from last `e_core:sync`) | one category value | **`nil`** if the key is missing | **`false`, reason`** on invalid `meta` argument
 
 ```lua
 local all = exports.e_core:getMeta()
@@ -82,6 +82,52 @@ exports.e_core:getConfig()
 if exports.e_core:isReady() then
     -- biztonságos item / súly logika
 end
+```
+
+## registerHudElement / unregisterHudElement
+Register one HUD element to the e_core edit proxy and keep a central Svelte 5 rune-state in sync.
+
+```lua
+-- consumer client bootstrap
+local RegisteredElements = RegisteredElements or {}
+
+local ok, posOrReason = exports.e_core:registerHudElement('e_petrol_station:price_panel', {
+    label = 'Benzinkút',
+    defaultPos = {
+        x = 0.12,
+        y = 0.30,
+        w = 0.20,
+        h = 0.10,
+        anchor = 'top-left'
+    }
+})
+
+if ok then
+    RegisteredElements['e_petrol_station:price_panel'] = true
+end
+
+-- on resource stop:
+exports.e_core:unregisterHudElement('e_petrol_station:price_panel')
+```
+
+```ts
+// consumer NUI: store.svelte.ts
+export type HudAnchor = 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right' | 'center'
+export const hudState = $state({
+  pos: { x: 0.12, y: 0.3, w: 0.2, h: 0.1, anchor: 'top-left' as HudAnchor },
+  isEditing: false,
+  label: 'Benzinkút'
+})
+```
+
+```ts
+// consumer NUI: message listener
+window.addEventListener('message', (event) => {
+  const item = event.data
+  if (item?.action === 'ECORE_HUD_SYNC' && item?.id === 'e_petrol_station:price_panel') {
+    hudState.pos = item.pos
+  }
+})
 ```
 
 ## Helper functions (hf)

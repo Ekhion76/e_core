@@ -2,16 +2,16 @@
 --- Do not overwrite the bridge files.
 --- Copy the function you want to modify here
 
-if CUSTOM_INVENTORY then
-    (function(_inv) end)(CUSTOM_INVENTORY)
+if not CUSTOM_INVENTORY then return end
 
-    -- function eCore:getInventory(playerData) end
-    -- function eCore:getPlayerMaxWeight(playerData) end
-    -- function eCore:getRegisteredItems() end
-    -- function eCore:getInventoryWeight(playerData) end
-    -- function eCore:canSwapItems(swappingItems, itemData, playerData) end
-    -- function eCore:canCarryItem(itemData, playerData) end
-    -- function eCore:getItemWeight(itemName, metadata) end
-    -- function eCore:getItemCount(playerData, itemName) end
-    -- function eCore:hasItem(playerData, itemName, count) end
-end
+(function(_inv) end)(CUSTOM_INVENTORY)
+
+-- function eCore:getInventory(playerData) end
+-- function eCore:getPlayerMaxWeight(playerData) end
+-- function eCore:getRegisteredItems() end
+-- function eCore:getInventoryWeight(playerData) end
+-- function eCore:canSwapItems(swappingItems, itemData, playerData) end
+-- function eCore:canCarryItem(itemData, playerData) end
+-- function eCore:getItemWeight(itemName, metadata) end
+-- function eCore:getItemCount(playerData, itemName) end
+-- function eCore:hasItem(playerData, itemName, count) end

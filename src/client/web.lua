@@ -1,10 +1,24 @@
 --- Opens in-game admin NUI (`Config.web`, default command `ecore_admin`).
 local hf = hf
+local pendingWebOpen = false
 
 RegisterNetEvent('e_core:web:open', function()
-    if not ECO or not ECO.nuiReady then
+    if not eCoreNui.isReady() then
+        pendingWebOpen = true
         return
     end
+    if eCore and eCore.UI and type(eCore.UI.IsEditMode) == 'function' and eCore.UI.IsEditMode() then
+        return
+    end
+    SetNuiFocus(true, true)
+    SendNUIMessage({ action = 'WEB_OPEN' })
+end)
+
+RegisterNetEvent('e_core:web:nuiReady', function()
+    if not pendingWebOpen then
+        return
+    end
+    pendingWebOpen = false
     SetNuiFocus(true, true)
     SendNUIMessage({ action = 'WEB_OPEN' })
 end)

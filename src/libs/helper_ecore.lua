@@ -164,11 +164,11 @@ function hf.adminApiCanAccess(section, payload)
         if cfg.allowServerWithoutSource == true then
             return true, nil
         end
-        return false, 'Missing auth.source for admin API call.'
+        return false, eCoreErr.admin_missing_auth_source
     end
 
     if not hf.isValidPlayerSource(src) then
-        return false, 'Invalid auth.source.'
+        return false, eCoreErr.admin_invalid_auth_source
     end
 
     local acePerm = tostring(cfg.acePermission or '')
@@ -195,21 +195,21 @@ function hf.adminApiCanAccess(section, payload)
     if aceOk or idOk then
         return true, nil
     end
-    return false, 'No permission (ACE or allowedIdentifiers).'
+    return false, eCoreErr.admin_api_policy_denied
 end
 
 --- In-game admin NUI access check (`Config.web`, e.g. `ecore_admin` + `ecore.admin`):
---- ACE and/or `allowedIdentifiers`.
+--- Permission field and/or `allowedIdentifiers` (`config_check` szintézis).
 --- @param src number
 --- @return boolean ok
 --- @return string|nil err
 function hf.webConsoleAccess(src)
     if not hf.isValidPlayerSource(src) then
-        return false, 'Invalid player.'
+        return false, eCoreErr.admin_invalid_web_player
     end
     local w = type(Config) == 'table' and Config.web or {}
     if w.enabled ~= true then
-        return false, 'Admin console is disabled (Config.operator.admin.enabled = false).'
+        return false, eCoreErr.admin_console_disabled
     end
     local acePerm = tostring(w.acePermission or '')
     local aceOk = acePerm ~= '' and IsPlayerAceAllowed(src, acePerm)
@@ -234,10 +234,9 @@ function hf.webConsoleAccess(src)
         return true, nil
     end
     if acePerm == '' and not hf.isPopulatedTable(list) then
-        return false,
-            'No permission: set `Config.web.acePermission` with add_ace, or populate `Config.web.allowedIdentifiers`.'
+        return false, eCoreErr.admin_web_unconfigured
     end
-    return false, 'No permission for admin console (ACE or identifier list).'
+    return false, eCoreErr.admin_web_denied
 end
 
 --- Permission-denied audit (in-memory ring + optional cLog).
@@ -339,6 +338,12 @@ end
 ---@param logTag string cLog key (e.g. 'REGISTERED ITEMS')
 ---@return boolean success
 function hf.awaitItemRegistryReady(logTag)
+    if _G._ECORE_INIT_FAILED == true then
+        CORE_READY = false
+        cLog(logTag, 'Skipped item registry load: e_core is in IDLE state due to framework detect/init failure.', 1)
+        return false
+    end
+
     local start = GetGameTimer()
     local timeout = GetConvarInt('e_core:items_ready_timeout_ms', 120000)
     if timeout < 30000 then
@@ -360,7 +365,17 @@ function hf.awaitItemRegistryReady(logTag)
 
     while not hf.isPopulatedTable(REGISTERED_ITEMS) do
         attempt = attempt + 1
-        REGISTERED_ITEMS = eCore:getRegisteredItems()
+        local ok, result = pcall(function()
+            return eCore:getRegisteredItems()
+        end)
+        if ok then
+            REGISTERED_ITEMS = result
+        else
+            if attempt == 1 then
+                cLog(logTag, ('getRegisteredItems failed: %s'):format(tostring(result)), 1)
+            end
+            REGISTERED_ITEMS = nil
+        end
 
         local elapsed = GetGameTimer() - start
         if elapsed >= timeout then
@@ -390,6 +405,9 @@ end
 ---@return string
 function hf.inventoryIntegrationLabel()
     local parts = {}
+    if rawget(_G, 'CUSTOM_INVENTORY') == true then
+        parts[#parts + 1] = 'custom_inventory'
+    end
     if rawget(_G, 'OX_INVENTORY') == true then
         parts[#parts + 1] = 'ox_inventory'
     end
@@ -408,11 +426,22 @@ end
 --- Prints one-line startup summary: version, framework, inventory layer, item-registry status.
 ---@param side string `server` or `client`
 function hf.logEcoreStartupSummary(side)
+    if _G._ECORE_INIT_FAILED == true then
+        return
+    end
+
     local ver = GetResourceMetadata(GetCurrentResourceName(), 'version', 0) or '?'
     local fw = tostring(FRAMEWORK or 'none')
     local inv = hf.inventoryIntegrationLabel()
-    local items = CORE_READY == true and 'ready' or (CORE_READY == false and 'timeout' or 'pending')
-    print(('[^2e_core^7] [%s] v%s | framework=%s | inventory=%s | items=%s'):format(side, ver, fw, inv, items))
+    local state = 'ACTIVE'
+    local items = 'pending'
+    if CORE_READY == true then
+        items = 'ready'
+    elseif CORE_READY == false then
+        items = 'not_ready'
+    end
+    print(('[^2e_core^7] [%s] v%s | state=%s | framework=%s | inventory=%s | items=%s'):format(
+        side, ver, state, fw, inv, items))
 end
 
 --- Wraps oxmysql **.await** calls with `pcall` and `cLog` on failure.
@@ -424,7 +453,7 @@ end
 function hf.mysqlAwait(tag, fn)
     if rawget(_G, 'MySQL') == nil then
         cLog(('[e_core][MySQL] %s: MySQL global is missing (non-server context?)'):format(tag), 'error', 1)
-        return false, 'mysql_missing'
+        return false, eCoreErr.mysql_missing
     end
     local ok, res = pcall(fn)
     if not ok then

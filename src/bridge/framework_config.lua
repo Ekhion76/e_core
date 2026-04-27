@@ -1,70 +1,144 @@
---- Egy belépési pont: melyik legacy core aktív, ESX_CORE / QB_CORE / FRAMEWORK / eCore / Config.
---- ConVar: e_core:framework = auto | esx | qb (kis/nagybetű mindegy, trimelve).
---- Két core egyszerre + auto → error (állítsd a ConVart).
+--- Legacy core választás: `FRAMEWORK`, `ESX` / `QBCore`, `ESX_CORE` / `QB_CORE`, `eCore` / `Config` alapok.
+--- ConVar: `e_core:framework` = auto | esx | qb (trim, kisbetű).
+--- ConVar: `e_core:framework_resource` – nem üres és **kényszerített** esx|qb mellett felülírja az alap resource nevet (`es_extended` / `qb-core`). `auto` mellett figyelmen kívül hagyva (log).
+--- Hiba esetén: kontrollált `IDLE` állapot (nincs `error()`/resource stop), hogy a szerver indulása ne sérüljön.
+_G._ECORE_INIT_FAILED = false
 
-local function normalize_framework_mode(raw)
-    local v = string.lower(tostring(raw or 'auto'):gsub('^%s*(.-)%s*$', '%1'))
-    if v == '' then
-        v = 'auto'
-    end
-    if v ~= 'auto' and v ~= 'esx' and v ~= 'qb' then
-        print(('[^1e_core^7] Ismeretlen e_core:framework=%s, ^3auto^7 használata.'):format(v))
-        v = 'auto'
-    end
-    return v
+local ESX_DEFAULT = 'es_extended'
+local QB_DEFAULT = 'qb-core'
+
+---@param s string|nil
+---@return string
+local function trim(s)
+    return tostring(s or ''):gsub('^%s*(.-)%s*$', '%1')
 end
 
-local esx_started = GetResourceState('es_extended') == 'started'
-local qb_started = GetResourceState('qb-core') == 'started'
-local mode = normalize_framework_mode(GetConvar('e_core:framework', 'auto'))
-
-local chosen
-
-if esx_started and qb_started then
-    if mode == 'auto' then
-        error(
-            '[e_core] es_extended és qb-core is fut. Csak egy legacy core támogatott. Állítsd például: setr e_core:framework "esx" vagy "qb".'
-        )
-    end
-    chosen = mode
-    print(('[^3e_core^7] FIGYELMEZETÉS: mindkét core fut; aktív ág kényszerítve: ^2%s^7.'):format(chosen))
-elseif esx_started then
-    if mode == 'qb' then
-        error('[e_core] e_core:framework=qb, de a qb-core nem fut (vagy nem started).')
-    end
-    chosen = 'esx'
-elseif qb_started then
-    if mode == 'esx' then
-        error('[e_core] e_core:framework=esx, de az es_extended nem fut (vagy nem started).')
-    end
-    chosen = 'qb'
-else
-    if mode ~= 'auto' then
-        print(('[^1e_core^7] e_core:framework=%s, de sem es_extended, sem qb-core nem fut ezen a pillanatban.'):format(mode))
-    end
-    print('[^3e_core^7] Nem fut es_extended és qb-core sem az e_core indulásakor. Ellenőrizd az ensure sorrendet (core előbb).')
+--- Stub globals, print, then keep resource alive in controlled idle mode.
+---@param msg string
+---@return nil
+local function enterIdle(msg)
+    _G._ECORE_INIT_FAILED = true
     FRAMEWORK = nil
-    eCore = {}
-    Config = {}
     ESX_CORE = false
     QB_CORE = false
+    Config = {}
+    eCore = {}
+    print(('^1%s^7'):format(msg .. ' [e_core state=IDLE]'))
     return
 end
 
-if chosen == 'esx' then
-    if not esx_started then
-        error('[e_core] Az ESX ág választva, de es_extended nem started.')
-    end
-    e_core_apply_esx_config()
-    ESX_CORE = true
-    QB_CORE = false
-elseif chosen == 'qb' then
-    if not qb_started then
-        error('[e_core] A QB ág választva, de qb-core nem started.')
-    end
-    e_core_apply_qb_config()
-    ESX_CORE = false
-    QB_CORE = true
-else
-    error('[e_core] Belső hiba: ismeretlen chosen=' .. tostring(chosen))
+local fw = string.lower(trim(GetConvar('e_core:framework', 'auto')))
+if fw == '' then
+    fw = 'auto'
 end
+if fw ~= 'auto' and fw ~= 'esx' and fw ~= 'qb' then
+    print(('[^1e_core^7] Ismeretlen e_core:framework=%s, ^3auto^7 használata.'):format(fw))
+    fw = 'auto'
+end
+
+local res = trim(GetConvar('e_core:framework_resource', ''))
+if res ~= '' and fw == 'auto' then
+    print(
+        ('[^1e_core^7] e_core:framework_resource be van állítva, de e_core:framework=auto: az override-re nem alkalmazható. '
+            .. 'Használj setr e_core:framework "esx" vagy "qb"-ot, vagy töröld a e_core:framework_resource-ot.')
+    )
+    res = ''
+end
+
+---@param default string
+---@return string
+local function resolveResource(default)
+    if res ~= '' then
+        return res
+    end
+    return default
+end
+
+-- Resource nevek a GetResourceState ellenőrzéshez (auto: mindig alap; esx|qb: override csak a kért ágra)
+local scan_esx, scan_qb = ESX_DEFAULT, QB_DEFAULT
+if fw == 'esx' then
+    scan_esx = resolveResource(ESX_DEFAULT)
+elseif fw == 'qb' then
+    scan_qb = resolveResource(QB_DEFAULT)
+end
+
+local esx_started = GetResourceState(scan_esx) == 'started'
+local qb_started = GetResourceState(scan_qb) == 'started'
+
+local hint = ' Ha egyedi legacy core resource nevet használsz: setr e_core:framework "esx"|"qb" és setr e_core:framework_resource "<név>".'
+
+-- Két core + auto → fatális
+if esx_started and qb_started then
+    if fw == 'auto' then
+        enterIdle(
+            ('[e_core] %s és %s is fut. Csak egy legacy core. Állítsd: setr e_core:framework "esx" vagy "qb".%s'):format(scan_esx, scan_qb, hint)
+        )
+        return
+    end
+    print(('[^3e_core^7] FIGYELMEZETÉS: mindkét core fut; aktív ág kényszerítve: ^2%s^7.'):format(fw))
+    ecore_framework_resource_set(scan_esx, scan_qb)
+    if fw == 'esx' then
+        e_core_apply_esx_config()
+        ESX_CORE = true
+        QB_CORE = false
+        return
+    end
+    if fw == 'qb' then
+        e_core_apply_qb_config()
+        ESX_CORE = false
+        QB_CORE = true
+        return
+    end
+    enterIdle('[e_core] Belső hiba: két core mellett ismeretlen e_core:framework=' .. tostring(fw))
+    return
+end
+
+if esx_started then
+    if fw == 'qb' then
+        enterIdle(('[e_core] e_core:framework=qb, de %s nem fut (vagy nem started).%s'):format(scan_qb, hint))
+        return
+    end
+    if fw == 'auto' or fw == 'esx' then
+        ecore_framework_resource_set(scan_esx, scan_qb)
+        e_core_apply_esx_config()
+        ESX_CORE = true
+        QB_CORE = false
+        return
+    end
+end
+
+if qb_started then
+    if fw == 'esx' then
+        enterIdle(('[e_core] e_core:framework=esx, de %s nem fut (vagy nem started).%s'):format(scan_esx, hint))
+        return
+    end
+    if fw == 'auto' or fw == 'qb' then
+        ecore_framework_resource_set(scan_esx, scan_qb)
+        e_core_apply_qb_config()
+        ESX_CORE = false
+        QB_CORE = true
+        return
+    end
+end
+
+-- Nincs started core
+if fw == 'esx' and not esx_started then
+    enterIdle(('[e_core] e_core:framework=esx, de %s nem fut (vagy nem started).%s'):format(scan_esx, hint))
+    return
+end
+if fw == 'qb' and not qb_started then
+    enterIdle(('[e_core] e_core:framework=qb, de %s nem fut (vagy nem started).%s'):format(scan_qb, hint))
+    return
+end
+
+if fw ~= 'auto' then
+    print(('[^1e_core^7] e_core:framework=%s, de sem %s, sem %s nem fut (started).'):format(fw, scan_esx, scan_qb))
+end
+print(
+    ('[^3e_core^7] Nem fut %s és %s sem az e_core indulásakor. Ellenőrizd az ensure sorrendet (core előbb).'):format(scan_esx, scan_qb)
+)
+FRAMEWORK = nil
+eCore = {}
+Config = {}
+ESX_CORE = false
+QB_CORE = false

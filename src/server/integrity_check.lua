@@ -181,10 +181,9 @@ local function integrityPolicyAccess(src)
 
     if not aceOk and not idOk then
         if acePerm == '' and not hf.isPopulatedTable(ic.allowedIdentifiers) then
-            return false,
-                'Nincs jogosultság: állíts `integrityCheck.acePermission`-t (pl. ecore.diagnostics) és add_ace-et, vagy töltsd az `allowedIdentifiers` listát.'
+            return false, eCoreErr.integrity_policy_misconfigured
         end
-        return false, 'Nincs jogosultság (ACE vagy azonosító lista).'
+        return false, eCoreErr.integrity_policy_denied
     end
     return true, nil
 end
@@ -194,10 +193,10 @@ end
 --- @return any result
 local function integrityCanRun(src)
     if not hf.isValidPlayerSource(src) then
-        return false, 'Érvénytelen játékos.'
+        return false, eCoreErr.integrity_invalid_player
     end
     if not Config.integrityCheck or not Config.integrityCheck.enabled then
-        return false, 'Az integritás ellenőrzés ki van kapcsolva (Config.integrityCheck.enabled).'
+        return false, eCoreErr.integrity_check_disabled
     end
 
     local policyOk, policyErr = integrityPolicyAccess(src)
@@ -212,12 +211,12 @@ local function integrityCanRun(src)
         local cd = io.cooldownMs
         local now = GetGameTimer()
         if lastRun[src] and (now - lastRun[src]) < cd then
-            return false, 'Várj a következő futtatás előtt (cooldown).'
+            return false, eCoreErr.integrity_cooldown_active
         end
     end
 
     if awaitingProgress[src] then
-        return false, 'Még fut (vagy elakadt) egy progress teszt – várj, vagy próbáld újra később.'
+        return false, eCoreErr.integrity_progress_busy
     end
 
     return true, nil

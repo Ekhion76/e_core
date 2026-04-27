@@ -1,44 +1,44 @@
 OX_LIB = lib and lib.progressBar
 
-if OX_LIB then
-    -- these functions override the bridge/global/ and bridge/esx/qb/ functions
-    -- if you want to rewrite any function, copy it here and modify it here
+if not OX_LIB then return end
 
-    --- Auto-generated annotation. Refine behavior details if needed.
-    --- @param params table
-    --- @return any result
-    function eCore:progressbar(params)
-        if params.animation then
-            params.animation = {
-                dict = params.animation.dict,
-                clip = params.animation.anim,
-                flag = params.animation.flag
-            }
-        end
+-- these functions override the bridge/global/ and bridge/esx/qb/ functions
+-- if you want to rewrite any function, copy it here and modify it here
 
-        if lib.progressBar({
-            name = params.name:lower(),
-            duration = params.duration,
-            label = params.label,
-            useWhileDead = params.useWhileDead,
-            canCancel = params.canCancel,
-            disable = params.controlDisables or {},
-            anim = params.animation,
-            prop = params.prop
-        }) then
-            if params.onFinish then
-                params.onFinish()
-            end
-        else
-            if params.onCancel then
-                params.onCancel()
-            end
-        end
+--- Auto-generated annotation. Refine behavior details if needed.
+--- @param params table
+--- @return any result
+function eCore:progressbar(params)
+    if params.animation then
+        params.animation = {
+            dict = params.animation.dict,
+            clip = params.animation.anim,
+            flag = params.animation.flag
+        }
     end
 
-    --- Auto-generated annotation. Refine behavior details if needed.
-    --- @return any result
-    function eCore:cancelProgressbar()
-        lib.cancelProgress()
+    if lib.progressBar({
+        name = params.name:lower(),
+        duration = params.duration,
+        label = params.label,
+        useWhileDead = params.useWhileDead,
+        canCancel = params.canCancel,
+        disable = params.controlDisables or {},
+        anim = params.animation,
+        prop = params.prop
+    }) then
+        if params.onFinish then
+            params.onFinish()
+        end
+    else
+        if params.onCancel then
+            params.onCancel()
+        end
     end
+end
+
+--- Auto-generated annotation. Refine behavior details if needed.
+--- @return any result
+function eCore:cancelProgressbar()
+    lib.cancelProgress()
 end

@@ -4,7 +4,7 @@
 
 ## Adatmodell és életciklus
 
-- **Tárolás:** `ECO.meta[playerId].labor` = `{ val, time }` – a teljes játékos-meta JSON-ként kerül DB-be (`server/db.lua`, `users` / `players` tábla `e_core` oszlop).
+- **Tárolás:** `PlayerMetaStore.get(playerId).labor` = `{ val, time }` – a teljes játékos-meta JSON-ként kerül DB-be (`server/db.lua`, `users` / `players` tábla `e_core` oszlop).
 - **Betöltés:** `loadMeta` → `prepareMeta` (labor default + NaN/érvénytelen szám védelem) → `addOfflineLabor` → első `e_core:sync` a kliensnek.
 
 **Fájlok:** `server/db.lua` (`loadMeta`), `server/meta.lua` (`prepareMeta`, `syncRequest`).
@@ -16,7 +16,7 @@
 | `getLabor(playerId)` | Olvasás; guard: `systemMode.labor`, playerId, `meta.labor` létezik (`laborPlayerRow`). **Siker: `true`, egyenleg** (a 0 is így jön); **hiba: `false`, `eCoreErr`**. |
 | `setLabor(playerId, amount)` | Abszolút beállítás + `syncRequest` |
 | `addLabor` / `removeLabor` | Relatív változtatás; limit / érvénytelen összeg ágak |
-| `laborIncrease()` | Online automatikus regeneráció: periodikus `SetTimeout`; célok **`GetPlayers()`** + `ECO.meta[id].labor` (nem `pairs(ECO.meta)`); opc. hullám: ConVar **`e_core:labor_tick_chunk`** (0 = mind egyben, >0 = játékos / `SetTimeout(0)` hullám) |
+| `laborIncrease()` | Online automatikus regeneráció: periodikus `SetTimeout`; célok **`GetPlayers()`** + `PlayerMetaStore.get(id).labor` (nem teljes memória-szken); opc. hullám: ConVar **`e_core:labor_tick_chunk`** (0 = mind egyben, >0 = játékos / `SetTimeout(0)` hullám) |
 | `addOfflineLabor(playerId)` | Offline idő alapú jóváírás; **nem** hív `syncRequest`-et (a betöltési sync lefedi) |
 
 **Exportok:** `server/exports.lua` – `getLabor`, `setLabor`, `addLabor`, `removeLabor`.
@@ -52,14 +52,14 @@ Részletes szerződés: `docs/PUBLIC_API_HU.md` §2–§3 + §5, `export_example
 
 ## Szinkron és mentés
 
-- **set/add/remove** után: `syncRequest(playerId)` (`server/meta.lua`) – kötegelt `TriggerClientEvent('e_core:sync', id, ECO.meta[id])` egy `SetTimeout(0)` tickben.
+- **set/add/remove** után: `syncRequest(playerId)` (`server/meta.lua`) – kötegelt `e_core:sync` egy `SetTimeout(0)` tickben (`PlayerMetaStore.queueSync` → burkolt payload, lásd `docs/NET_EVENTS_AUDIT_HU.md`).
 - **`laborIncrease`:** tick után **`syncRequest(playerId)`** (ugyanaz a kötegelt útvonal), ha ténylegesen nőtt a labor (`val < laborLimit` ág).
 
 ## Kliens és NUI
 
 | Hely | Szerep |
 |------|--------|
-| `client/main.lua` – `getLabor()` | Cache: siker **`true`, `ECO.meta.labor.val`**; labor ki → `false, reason`; nincs még `labor` blokk (sync előtt) → `false, not_found_metadata` |
+| `client/main.lua` – `getLabor()` | Cache (`ClientMetaStore.getMeta()`): siker **`true`, labor.val**; labor ki → `false, reason`; nincs még `labor` blokk (sync előtt) → `false, not_found_metadata` |
 | `client/exports.lua` | `getLabor` export (kliensen nincs labor írás) |
 | `e_core:sync` esemény | Teljes meta; INIT / UPDATE (page vs hud) |
 | `src/web/src/lib/LevelPreview.svelte` – `updateHud()` | Labor szám + progress (`model.laborLimit`) |
@@ -82,7 +82,7 @@ Részletes szerződés: `docs/PUBLIC_API_HU.md` §2–§3 + §5, `export_example
 2. **`laborIncrease` skálázhatóság:** **kész** – iteráció **online** forrásokon (`GetPlayers` + `hf.isValidPlayerSource` + meta.labor); nagy szerveren opcionálisan `setr e_core:labor_tick_chunk 64` (példa) több frame-re osztja a feldolgozást.
 3. ~~**Szinkron egységesítés**~~ – kész: auto tick alatt **`syncRequest(playerId)`** (kötegelt ugyanaz a mechanizmus, mint meta írásnál); közvetlen `TriggerClientEvent` ide nem kell.
 4. **`labor.time` viselkedés:** mindkét útvonal **`os.time()`** alapú periódus (`laborIncreaseTime` perc online; offline szorzó `addOfflineLabor`-ban). **Online tick:** `labor.time` mindig frissül; kliens sync csak ha `val < laborLimit` (volt tényleges növelés) – így cap mellett kevesebb hálózat, a szerver `labor.time` ettől még mindig aktuális offline számításhoz. **Betöltés:** `addOfflineLabor` után a meglévő `loadMeta` → `e_core:sync` küldi a kliensnek a frissített sort.
-5. ~~**Kliens `getLabor`**~~ – kész: `ECO.meta.labor` hiánya → `false, not_found_metadata`.
+5. ~~**Kliens `getLabor`**~~ – kész: kliens meta cache `labor` hiánya → `false, not_found_metadata`.
 6. **API stílus:** szerver továbbra is `(false, reason)` / siker szám vagy `true`; egységes Result típus később (nincs változás).
 
 ## Gyors fájlindex
@@ -255,7 +255,7 @@ Itt nem csak a `removeLabor` egy sora számít, hanem az a **végpontok között
 | Lépés | e_core / kód | Hálózat | Számítás |
 |--------|----------------|---------|----------|
 | Alapköltség | recept / config (`labor`, `laborCost.*`) | 0 | `tonumber`, konstans olvasás |
-| Jártasság olvasása | `getAbility(playerId, kategória, szakma)` | **0** – memória (`ECO.meta`) | O(1) táblaolvasás |
+| Jártasság olvasása | `getAbility(playerId, kategória, szakma)` | **0** – memória (`PlayerMetaStore`) | O(1) táblaolvasás |
 | Kedvezmény tábla | `getDiscounts(proficiency)` (`libs/meta.lua` + export) | **0** | `Config.levels` bejárás / interpoláció – kis **O(szintek száma)** |
 | Ténylegesen fizetendő labor | pl. crafting: `labor - (labor/100)*discounts.labor`; fishing: `reqLabor - reqLabor * laborDiscounts * 0.01` | **0** | pár lebegőpont / `math.ceil` |
 | Aktuális egyenleg | `getLabor(playerId)` | **0** – szerveroldali export, nem küld a kliensnek | O(1) olvasás |
@@ -263,7 +263,7 @@ Itt nem csak a `removeLabor` egy sora számít, hanem az a **végpontok között
 
 **Összegzés az ellenőrzésre:** az egész „van elég labor discounttal?” blokk **szerveren belül** fut; **nem** jár vele `e_core:sync`, és **nem** kell külön lekérdezni a klienstől a labor értéket, ha a szerveren már betöltött a meta.
 
-**Kliens oldali előellenőrzés** (pl. `eco_crafting` kliens craft gomb előtt): `getLabor()`, `getAbility`, `getDiscounts` a **kliens exportokkal**, a legutóbbi `e_core:sync`-ből kitöltött `ECO.meta` cache-ből. Ez is **0** e_core-hálózat, de **csak UX / optimista** ellenőrzés: a szerver újra számol és dönt.
+**Kliens oldali előellenőrzés** (pl. `eco_crafting` kliens craft gomb előtt): `getLabor()`, `getAbility`, `getDiscounts` a **kliens exportokkal**, a legutóbbi `e_core:sync`-ből kitöltött **`ClientMetaStore`** meta szerint. Ez is **0** e_core-hálózat, de **csak UX / optimista** ellenőrzés: a szerver újra számol és dönt.
 
 ### 2. Ha nincs elég labor (hibaág)
 
@@ -276,14 +276,14 @@ Itt nem csak a `removeLabor` egy sora számít, hanem az a **végpontok között
 |--------|------------------|------------|
 | `removeLabor(playerId, ténylegesLabor)` | Közvetlenül semmi; utána `syncRequest` | Memória + limit + `os.time()` |
 | Ugyanabban a műveletben `addAbility(...)` (craft / fish) | Ugyancsak `syncRequest`; **kötegelve** gyakran **ugyanazzal** a tickkel | Két hívás → egy kötegelt szinkron lehetséges |
-| `TriggerClientEvent('e_core:sync', id, ECO.meta[id])` | **1** (tipikus sikeres craft/fish + jártasság esetén is) | Payload = **teljes meta**, nem delta |
+| `TriggerClientEvent('e_core:sync', id, envelope)` | **1** (tipikus sikeres craft/fish + jártasság esetén is) | Payload: **`{ v, kind='full', rev, data }`** – `data` = teljes meta (delta később) |
 | DB | **0 azonnal** | Mentés külön ütemezés / esemény szerint |
 
 ### 4. Kijelzés frissítés (labor HUD / stat lap)
 
 **Kliens `e_core:sync` után** (`client/main.lua`):
 
-- `ECO.meta = meta` (teljes tábla csere);
+- `ClientMetaStore.applyServerSync(payload)` → teljes meta csere a kliensen;
 - ha `nuiReady`: **egy** `SendNUIMessage` – `UPDATE`, `subject = 'page'` **vagy** `'hud'` (`IsNuiFocused()` szerint), a **teljes** `metadata`-val.
 
 Tehát egy sikeres laboros művelet végén az e_core + NUI részből: **1** szerver→kliens net esemény + **1** NUI frissítés (ha a NUI már inicializálva van). A labor sáv / szám a `view.js` `updateHud()` / oldal logikán át jelenik meg – további hálózat **nincs** (belső NUI üzenet).
@@ -374,7 +374,7 @@ belsőleg hívja a már létező `getDiscounts(proficiencyPoints)`-ot és a fent
 
 ### Rövid válasz
 
-A két memóriabeli változás (`removeLabor` + `addAbility`) **nem** jelenti automatikusan **két** hálózati szinkront: mindkettő `syncRequest`-et hív (`server/meta.lua`), ami **kötegelve**, ugyanarra a `SetTimeout(0, …)` tickre gyakran **egyetlen** `TriggerClientEvent('e_core:sync', id, ECO.meta[id])`-et eredményez. A payload tehát „minden”, mert **egy atomi pillanatkép** megy a kliensnek – nem kell külön egyeztetni, mi változott előbb vagy utóbb.
+A két memóriabeli változás (`removeLabor` + `addAbility`) **nem** jelenti automatikusan **két** hálózati szinkront: mindkettő `syncRequest`-et hív (`server/meta.lua`), ami **kötegelve**, ugyanarra a `SetTimeout(0, …)` tickre gyakran **egyetlen** `e_core:sync` üzenetet eredményez (`PlayerMetaStore`). A payload `data` mezője a teljes meta, mert **egy atomi pillanatkép** megy a kliensnek – nem kell külön egyeztetni, mi változott előbb vagy utóbb.
 
 ```mermaid
 flowchart LR
@@ -397,7 +397,7 @@ flowchart LR
 
 ### Miért teljes tömb, nem delta?
 
-1. **Konzisztencia:** A kliens `ECO.meta`-ja mindig ugyanazt a táblát látja, mint a szerver az adott pillanatban. Nincs „labor már friss, jártasság még régi” két üzenet közötti ablak.
+1. **Konzisztencia:** A kliens meta cache mindig ugyanazt a táblát látja, mint a szerver `data` mezője az adott pillanatban. Nincs „labor már friss, jártasság még régi” két üzenet közötti ablak.
 2. **Egyszerű szerződés:** Egy eseménynév (`e_core:sync`), egy kezelő (`client/main.lua`: teljes csere + NUI `UPDATE` teljes `metadata`-val). Nincs merge logika, nincs mezőszintű verzió.
 3. **NUI igény:** A stat lap / HUD a **teljes** meta kontextusát használja; részleges üzenethez a kliensnek és a JS-nek össze kellene fésülnie a részpatch-et a korábbi állapottal (több hibaforrás).
 4. **Lua / FiveM:** Mélyen beágyazott táblák delta szinkronja és szerializációja könnyen elcsúszik; **teljes csere** előre jelezhető és könnyen tesztelhető.
@@ -405,7 +405,7 @@ flowchart LR
 
 ### Hátrány
 
-Nagy `ECO.meta` + sűrű akció esetén az **üzenetméret** lesz a szűk keresztmetszet (lásd lentebb a refaktor megjegyzést).
+Nagy meta + sűrű akció esetén az **üzenetméret** (`data` JSON) lesz a szűk keresztmetszet (lásd lentebb a refaktor megjegyzést).
 
 ### Összegzés
 
@@ -413,6 +413,6 @@ Nem azért kell a teljes tömb, mert „minden mező mindig változik”, hanem 
 
 ### Refaktor-szempont
 
-Ha sok művelet és nagy `ECO.meta`, a **domináns költség** gyakran nem a kedvezmény számítás, hanem a **teljes meta együttes küldése** minden sikeres akció után. Érdemes lehet később **delta / részleges sync** vagy „csak labor + érintett kategória” üzenet, ha a forgalom szűk keresztmetszet lesz.
+Ha sok művelet és nagy meta, a **domináns költség** gyakran nem a kedvezmény számítás, hanem a **teljes meta együttes küldése** minden sikeres akció után. Érdemes lehet később **delta / részleges sync** vagy „csak labor + érintett kategória” üzenet, ha a forgalom szűk keresztmetszet lesz (`rev` + envelope már előkészítve).
 
 Utolsó rögzítés: e_core felterképezés + eco_crafting / eco_fishing minták + laboros művelet teljes folyamat + **kanonikus labor-költség** + **miért teljes meta sync** fejezet.

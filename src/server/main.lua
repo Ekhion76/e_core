@@ -1,9 +1,3 @@
-ECO = {}
-ECO.meta = {}
-ECO.lastSave = {}
-ECO.idsToSync = {}
-ECO.syncRequested = false
-
 local hf = hf
 
 CORE_READY, REGISTERED_ITEMS = nil, nil

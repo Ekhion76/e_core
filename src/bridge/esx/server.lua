@@ -190,7 +190,7 @@ if ESX_CORE then
             return REGISTERED_ITEMS
         end
 
-        ESX = exports['es_extended']:getSharedObject()
+        ESX = exports[ecore_framework_resource_esx()]:getSharedObject()
         return self:convertItems(ESX.Items)
     end
 

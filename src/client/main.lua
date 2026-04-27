@@ -1,7 +1,13 @@
-ECO = {}
-ECO.meta = {}
-ECO.nuiReady = false
 local hf = hf
+
+--- Returns whether `eCore:isLoggedIn()` can be called (init not aborted and method exists).
+---@return boolean
+local function eCoreClientReady()
+    if _G._ECORE_INIT_FAILED then
+        return false
+    end
+    return type(eCore) == 'table' and type(eCore.isLoggedIn) == 'function'
+end
 
 CORE_READY, REGISTERED_ITEMS = nil, nil
 
@@ -16,7 +22,7 @@ CreateThread(function()
     hf.logEcoreStartupSummary('client')
 end)
 
-local nuiReady, init
+local init
 
 ------------
 --- META ---
@@ -34,7 +40,8 @@ function getAbility(category, name)
         return false, eCoreErr.no_valid_meta_name
     end
 
-    if not ECO.meta[ck] then
+    local meta = ClientMetaStore.getMeta()
+    if not meta[ck] then
         return false, eCoreErr.category_does_not_exist
     end
 
@@ -46,20 +53,20 @@ function getAbility(category, name)
         if nk == '' then
             return false, eCoreErr.no_valid_meta_name
         end
-        local slot = ECO.meta[ck][nk]
+        local slot = meta[ck][nk]
         if slot == nil then
             return false, eCoreErr.meta_does_not_exist
         end
         return slot
     end
-    return ECO.meta[ck]
+    return meta[ck]
 end
 
 --- @param meta string|nil optional category key (same trim contract as server-side)
 --- @return table|false full meta | one category | false, eCoreErr when key parameter is invalid
 function getMeta(meta)
     if meta == nil then
-        return ECO.meta
+        return ClientMetaStore.getMeta()
     end
     if type(meta) ~= 'string' then
         return false, eCoreErr.no_valid_meta_name
@@ -68,7 +75,7 @@ function getMeta(meta)
     if mk == '' then
         return false, eCoreErr.no_valid_meta_name
     end
-    return ECO.meta[mk]
+    return ClientMetaStore.getMeta()[mk]
 end
 
 --- Returns current client-side labor value if available.
@@ -77,10 +84,11 @@ function getLabor()
     if not Config.systemMode.labor then
         return false, eCoreErr.the_system_is_turned_off
     end
-    if not ECO.meta or not ECO.meta.labor then
+    local m = ClientMetaStore.getMeta()
+    if not m or not m.labor then
         return false, eCoreErr.not_found_metadata
     end
-    local labor = ECO.meta.labor
+    local labor = m.labor
     if type(labor) ~= 'table' then
         return false, eCoreErr.not_found_metadata
     end
@@ -96,14 +104,15 @@ end
 function nuiInit()
     cLog('NUI INIT', 'Loading', 2)
 
-    while not nuiReady do
+    while not eCoreNui.isReady() do
         Wait(1000)
         cLog('NUI INIT', 'Wait', 2)
     end
 
+    local meta = ClientMetaStore.getMeta()
     -- INIT MESSAGE
     SendNUIMessage({ action = 'INIT',
-                     metadata = ECO.meta,
+                     metadata = meta,
                      levels = Config.levels,
                      locale = locales[Config.locale],
                      laborLimit = Config.laborLimit,
@@ -113,60 +122,66 @@ function nuiInit()
 
     cLog('NUI INIT', 'Loaded...', 2)
 
-    if eCore:isLoggedIn() then
-        if nuiReady and Config.systemMode.labor and Config.displayComponent.laborHud then
+    if eCoreClientReady() and eCore:isLoggedIn() then
+        if eCoreNui.isReady() and Config.systemMode.labor and Config.displayComponent.laborHud then
             SendNUIMessage({ action = 'OPEN', subject = 'hud' })
         end
     end
 end
 
 AddEventHandler('e_core:onPlayerLoaded', function()
-    if nuiReady and Config.systemMode.labor and Config.displayComponent.laborHud then
+    if _G._ECORE_INIT_FAILED then return end
+    if eCoreNui.isReady() and Config.systemMode.labor and Config.displayComponent.laborHud then
         SendNUIMessage({ action = 'OPEN', subject = 'hud' })
     end
 end)
 
 AddEventHandler('onResourceStart', function(resource)
     if resource == GetCurrentResourceName() then
-        if eCore:isLoggedIn() then
+        if eCoreClientReady() and eCore:isLoggedIn() then
             TriggerServerEvent('e_core:loadMeta')
         end
     end
 end)
 
 AddEventHandler('e_core:isPauseMenuActive', function(isPaused)
+    if _G._ECORE_INIT_FAILED then return end
     if isPaused then
         SetNuiFocus(false, false)
         SendNUIMessage({ action = 'CLOSE', subject = 'all' })
     else
 
-        if eCore:isLoggedIn() and Config.systemMode.labor and Config.displayComponent.laborHud then
+        if eCoreClientReady() and eCore:isLoggedIn() and Config.systemMode.labor and Config.displayComponent.laborHud then
             SendNUIMessage({ action = 'OPEN', subject = 'hud' })
         end
     end
 end)
 
 AddEventHandler('e_core:onPlayerUnload', function()
-    ECO.meta = {}
+    ClientMetaStore.clearOnUnload()
 
     init = false
     SetNuiFocus(false, false)
     SendNUIMessage({ action = 'CLOSE', subject = 'all' })
 end)
 
-RegisterNetEvent('e_core:sync', function(meta)
-    if type(meta) ~= 'table' then
+RegisterNetEvent('e_core:sync', function(payload)
+    if type(payload) ~= 'table' then
         cLog('e_core:sync', 'ignored: payload is not a table', 2)
         return
     end
-    ECO.meta = meta
+    local meta = ClientMetaStore.applyServerSync(payload)
+    if not meta then
+        cLog('e_core:sync', 'ignored: could not apply payload', 2)
+        return
+    end
 
     if not init then
         init = true
         nuiInit()
     end
 
-    if nuiReady then
+    if eCoreNui.isReady() then
         if IsNuiFocused() then
             SendNUIMessage({ action = 'UPDATE', subject = 'page', metadata = meta })
         else
@@ -184,13 +199,42 @@ end)
 
 -- NUI CALLBACKS
 RegisterNUICallback('nuiReady', function(_, cb)
-    nuiReady = true
-    ECO.nuiReady = true
+    eCoreNui.markShellReady()
+    TriggerEvent('e_core:web:nuiReady')
     cb('ok')
 end)
 
 RegisterNUICallback('exit', function(_, cb)
+    if eCore and eCore.UI and type(eCore.UI.IsEditMode) == 'function' and eCore.UI.IsEditMode() then
+        eCore.UI.ExitEditMode()
+    end
     SetNuiFocus(false, false)
+    cb('ok')
+end)
+
+RegisterNUICallback('hudPreview', function(data, cb)
+    if ECoreHudLayout and type(ECoreHudLayout.applyPreview) == 'function' then
+        local ok = ECoreHudLayout.applyPreview(data and data.id, data and data.pos)
+        cb(ok and 'ok' or 'ignored')
+        return
+    end
+    cb('ignored')
+end)
+
+RegisterNUICallback('hudCommit', function(data, cb)
+    if ECoreHudLayout and type(ECoreHudLayout.commit) == 'function' then
+        ECoreHudLayout.commit(data)
+    end
+    if eCore and eCore.UI and type(eCore.UI.ExitEditMode) == 'function' then
+        eCore.UI.ExitEditMode()
+    end
+    cb('ok')
+end)
+
+RegisterNUICallback('hudEditExit', function(_, cb)
+    if eCore and eCore.UI and type(eCore.UI.ExitEditMode) == 'function' then
+        eCore.UI.ExitEditMode()
+    end
     cb('ok')
 end)
 
@@ -198,14 +242,18 @@ if Config.enableStatMenu then
     RegisterKeyMapping('openMeta', 'View Skills', 'keyboard', Config.keyBind.openStat)
 
     RegisterCommand('openMeta', function()
-        if not nuiReady then
+        if not eCoreNui.isReady() then
             cLog('command openMeta', 'Waiting for NUI load', 2)
+            return false
+        end
+        if eCore and eCore.UI and type(eCore.UI.IsEditMode) == 'function' and eCore.UI.IsEditMode() then
+            cLog('command openMeta', 'Blocked while HUD edit mode is active', 2)
             return false
         end
 
         if not IsNuiFocused() then
             SetNuiFocus(true, true)
-            SendNUIMessage({ action = 'OPEN', subject = 'page', metadata = ECO.meta })
+            SendNUIMessage({ action = 'OPEN', subject = 'page', metadata = ClientMetaStore.getMeta() })
         end
     end)
 end

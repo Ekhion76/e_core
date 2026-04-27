@@ -64,8 +64,10 @@ Csak **szerver** `TriggerClientEvent`-tel érkeznek (kliens–kliens spoof nem c
 
 | Név | Forrás (e_core) | Tartalom / kockázat |
 |-----|-----------------|---------------------|
-| `e_core:sync` | `server/meta.lua` (`syncRequest`), `server/db.lua` | Teljes meta pillanatkép; megbízhatóság = szerver logika. |
+| `e_core:sync` | `server/player_meta_store.lua` (`queueSync` / `pushFullSync`), `server/meta.lua` (`syncRequest` → `queueSync`), `server/db.lua` (`loadMeta` → `pushFullSync`) | **Ajánlott payload:** `{ v = 1, kind = 'full', rev = <uint>, data = <meta tábla> }` – `data` a teljes meta pillanatkép; `rev` játékosonként monoton (delta sync előkészítés). **Legacy:** közvetlen meta tábla (régi kliens / fork); a kliens mindkettőt kezeli. |
 | `e_core:levelChange` | `libs/meta.lua` | Popup adat; csak szerver küldi. |
+
+**Kliens (`e_core:sync`):** `RegisterNetEvent` → `ClientMetaStore.applyServerSync` (`client_meta_store.lua`); `SendNUIMessage` INIT/UPDATE csak ha **`eCoreNui.isReady()`** (`ecore_nui.lua`).
 | `e_core:integrityCheck:nuiPush` / `consoleOnly` / `clientPrint` / `progressTest` | `server/integrity_check.lua` | Integritás NUI / konzol / progress; csak érvényes futásból. |
 
 **Labor HUD (`OPEN` subject `hud`):** a bridge `TriggerEvent('e_core:onPlayerLoaded'|'e_core:onPlayerUnload')` **lokális** eseményeket használ; a `client/main.lua` ezekre **`AddEventHandler`**-t használ (korábban `RegisterNetEvent` volt – a bridge nem küldött hálózati eseményt ugyanezen a néven, így a labor HUD nyitás nem futott a bridge útvonalon).

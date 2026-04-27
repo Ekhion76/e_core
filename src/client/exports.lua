@@ -27,3 +27,24 @@ exports('isReady', function()
 
     return eCore:isReady() == true
 end)
+
+--- Registers one HUD element for e_core edit-mode synchronization.
+--- @param id string
+--- @param data table
+--- @return boolean success
+--- @return table|string posOrErr
+exports('registerHudElement', function(id, data)
+    if not eCore or not eCore.UI or type(eCore.UI.RegisterHudElement) ~= 'function' then
+        return false, 'hud_api_not_ready'
+    end
+    return eCore.UI.RegisterHudElement(id, data)
+end)
+
+--- Unregisters one HUD element from e_core sync/edit flow.
+--- @param id string
+--- @return nil
+exports('unregisterHudElement', function(id)
+    if eCore and eCore.UI and type(eCore.UI.UnregisterHudElement) == 'function' then
+        eCore.UI.UnregisterHudElement(id)
+    end
+end)

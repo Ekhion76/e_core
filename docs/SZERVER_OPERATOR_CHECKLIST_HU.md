@@ -2,19 +2,21 @@
 
 Egy oldalnyi ellenőrzés **éles vagy teszt szerver** indítás előtt / után. Részletes stack: **`docs/SUPPORTED_STACK_MATRIX_HU.md`**. Net / callback audit: **`docs/NET_EVENTS_AUDIT_HU.md`**.
 
+**Mi ez a dokumentum?** **Üzemeltetői feladatlista**, nem „hiányzó dokumentáció” vagy fejlesztői backlog. A `[ ]` jelölések **minden indításnál / átállásnál** pipálható ellenőrzések: cél, hogy a szerveren ténylegesen lefusson, amit a doksik leírnak (ensure sorrend, log, jogosultságok). Ha valami nincs kipipálva, az **üzemeltetési teendő**, nem automatikusan „elmaradt doksi”.
+
 ---
 
 ## 1. Gyors checklist (másolható)
 
-- [ ] **Egy** legacy core fut: `es_extended` **vagy** `qb-core` (QBox gyakran qb-core kompat réteggel). Ha véletlen **mindkettő** fut: `setr e_core:framework "esx"` vagy `"qb"` – `auto` ilyenkor **hibával leáll** (szándékos).
+- [ ] **Egy** legacy core fut: alapból `es_extended` **vagy** `qb-core`. **Átnevezett core:** `setr e_core:framework "esx"` vagy `"qb"`, majd `setr e_core:framework_resource "<resource név>"`. Ha **mindkettő** fut: `setr e_core:framework "esx"` vagy `"qb"` – `auto` ilyenkor **hibával leáll** (szándékos).
 - [ ] **`server.cfg` sorrend:** a választott core **előbb** `ensure`, mint `e_core` (item registry és bridge init).
 - [ ] **`oxmysql`** telepítve és `ensure`-elve (a `fxmanifest.lua` `dependencies`-ben szerepel).
 - [ ] **`ox_lib`** resource fut – a manifest `@ox_lib/init.lua`-t tölti; ha nincs indítva, az e_core **nem** indul tisztán. *(Jelenleg nincs a `dependencies {}` blokkban – üzemeltető felelősség.)*
 - [ ] **Adatbázis:** MySQL elérhető; az e_core meta/labor táblák a szervered szerint létre vannak-e hozva (lásd telepítési / DB jegyzetek a saját workflow-dban).
 - [ ] **Migrációs tábla:** indulás után létezik-e az `e_core_migrations` (automatikusan jön létre); opcionálisan: `exports.e_core:getDbSchemaVersion()` megegyezik-e a repóban lévő cél verzióval – **`docs/DB_MIGRATIONS_HU.md`**.
-- [ ] **Inventory override:** ha ox / qs / avp stb., a megfelelő resource is fusson; ütköző két override ne írja felül egymást véletlenül (`standalone/overrides/**` sorrend).
+- [ ] **Inventory override:** ha ox / qs / avp stb., a megfelelő resource is fusson; ütköző két override ne írja felül egymást véletlenül (`fxmanifest` betöltési sorrend + `overrides/**` mappa).
 - [ ] **Indulási log:** konzolon megjelenik-e az egységes sor (`logEcoreStartupSummary`): verzió, framework, inventory címke, `items=ready|timeout|pending`. `timeout` esetén: item registry / inventory integráció ellenőrzése.
-- [ ] **Opcionális ConVarok** (ha nem az alap kell): `e_core:framework`, `e_core:items_ready_timeout_ms`, `e_core:items_ready_poll_ms`, `e_core:loadmeta_rate_ms` (net rate limit meta betöltéshez), `e_core:labor_tick_chunk` (labor auto tick: 0 = mind egyben, pl. 32–128 = hullámonkénti feldolgozás nagy online létszámnál).
+- [ ] **Opcionális ConVarok** (ha nem az alap kell): `e_core:framework`, `e_core:framework_resource`, `e_core:items_ready_timeout_ms`, `e_core:items_ready_poll_ms`, `e_core:loadmeta_rate_ms` (net rate limit meta betöltéshez), `e_core:labor_tick_chunk` (labor auto tick: 0 = mind egyben, pl. 32–128 = hullámonkénti feldolgozás nagy online létszámnál).
 - [ ] **Admin konzol (`/ecore_admin`):** `Config.operator.admin.enabled = true` + `Config.operator.identifiers` és/vagy ACE (`add_ace … ecore.admin allow`). Alap: `standalone/config/main.lua` → `Config.operator.admin` (a betöltéskor szintetizált `Config.web` mezők csak belső használatra maradnak).
 - [ ] **Integritás parancs (`/ecore_diag`):** `Config.operator.integrityCheck.enabled = true`. Ha az admin NUI be van kapcsolva (`Config.operator.admin.enabled`), a jog a **`hf.webConsoleAccess`** (admin policy) szerint van; különben `integrityCheck` ACE + azonosítók. Részletek: `standalone/config/main.lua` → `Config.operator.integrityCheck`.
 

@@ -16,12 +16,14 @@ max_line_length = false
 allow_defined_top = true
 unused_args = false
 unused = false
+redefined = true
 
 read_globals = {
     "lib",
     "MySQL",
     "json",
     "exports",
+    "error",
     "Citizen",
     "CreateThread",
     "Wait",
@@ -38,6 +40,7 @@ read_globals = {
     "TriggerLatentClientEvent",
     "GetCurrentResourceName",
     "GetResourceState",
+    "StopResource",
     "GetInvokingResource",
     "GetConvar",
     "GetConvarInt",
@@ -67,6 +70,8 @@ read_globals = {
     "GetPlayers",
     "PerformHttpRequest",
     "LoadResourceFile",
+    "GetResourcePath",
+    "GetCloudTimeAsInt",
     "CreateVehicle",
     "Entity",
     "NetworkGetEntityFromNetworkId",
@@ -134,7 +139,9 @@ globals = {
     "hf",
     "eCoreErr",
     "eCoreConfig",
-    "ECO",
+    "PlayerMetaStore",
+    "ClientMetaStore",
+    "eCoreNui",
     "CORE_READY",
     "REGISTERED_ITEMS",
     "Config",
@@ -154,6 +161,10 @@ globals = {
     "INSIDE_SCRIPTS_UI",
     "ECORE_DB_MIGRATIONS",
     "ECORE_DB_SCHEMA_TARGET",
+    "_ECORE_INIT_FAILED",
+    "ecore_framework_resource_set",
+    "ecore_framework_resource_esx",
+    "ecore_framework_resource_qb",
     "e_core_run_db_migrations",
     "e_core_get_applied_migration_id",
     "loadMeta",

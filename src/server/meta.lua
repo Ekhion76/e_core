@@ -102,13 +102,13 @@ function resolveAbilityCap(category, name)
     return math.floor(cap)
 end
 
---- @return table|nil row ECO.meta[playerId]
+--- @return table|nil row PlayerMetaStore row for `playerId`
 --- @return string|nil err eCoreErr
 local function meta_require_player_row(playerId)
     if not tonumber(playerId) then
         return nil, eCoreErr.not_found_metadata
     end
-    local row = ECO.meta[playerId]
+    local row = PlayerMetaStore.get(playerId)
     if type(row) ~= 'table' then
         return nil, eCoreErr.not_found_metadata
     end
@@ -419,21 +419,7 @@ end
 --- @param playerId number
 --- @return nil
 function syncRequest(playerId)
-    ECO.idsToSync[playerId] = true
-
-    if not ECO.syncRequested then
-
-        ECO.syncRequested = true
-
-        SetTimeout(0, function()
-            for id in pairs(ECO.idsToSync) do
-                TriggerClientEvent('e_core:sync', id, ECO.meta[id])
-            end
-
-            ECO.idsToSync = {}
-            ECO.syncRequested = false
-        end)
-    end
+    PlayerMetaStore.queueSync(playerId)
 end
 
 --- Initializes runtime meta structure for a player from persisted payload.
@@ -445,17 +431,31 @@ function prepareMeta(playerId, meta)
         meta = {}
     end
 
-    ECO.meta[playerId] = meta
-    ECO.meta[playerId]['login'] = os.time()
-    ECO.meta[playerId]['logout'] = meta['logout'] or 0
-    ECO.meta[playerId]['labor'] = meta['labor'] or { val = Config.defaultLabor, time = os.time() }
+    PlayerMetaStore.setPlayerMeta(playerId, meta)
+    local row = PlayerMetaStore.get(playerId)
+    if not row then
+        return
+    end
 
-    local val = ECO.meta[playerId]['labor'].val
-    ECO.meta[playerId]['labor'].val = (tonumber(val) and val == val) and tonumber(val) or 0
+    row['login'] = os.time()
+    row['logout'] = meta['logout'] or 0
+    row['labor'] = meta['labor'] or { val = Config.defaultLabor, time = os.time() }
+    local hudLayout = meta['hudLayout']
+    if type(hudLayout) ~= 'table' then
+        hudLayout = {}
+    end
+    if type(hudLayout.elements) ~= 'table' then
+        hudLayout.elements = {}
+    end
+    hudLayout.v = tonumber(hudLayout.v) or 1
+    row['hudLayout'] = hudLayout
+
+    local val = row['labor'].val
+    row['labor'].val = (tonumber(val) and val == val) and tonumber(val) or 0
 
     if hf.isPopulatedTable(Config.metaFields) then
         for metaCategory, defaultValue in pairs(Config.metaFields) do
-            ECO.meta[playerId][metaCategory] = ECO.meta[playerId][metaCategory] or defaultValue
+            row[metaCategory] = row[metaCategory] or defaultValue
         end
     end
 end
@@ -479,11 +479,16 @@ end)
 function saveRequest(playerId, event)
     local xPlayer = eCore:getPlayer(playerId)
 
-    if xPlayer and ECO.meta[playerId] then
+    if xPlayer and PlayerMetaStore.get(playerId) then
         local time = os.time()
+        local last = PlayerMetaStore.getLastSave(playerId) or 0
 
-        if time - ECO.lastSave[playerId] > 1 then
-            ECO.meta[playerId]['logout'], ECO.lastSave[playerId] = time, time
+        if time - last > 1 then
+            local row = PlayerMetaStore.get(playerId)
+            if row then
+                row['logout'] = time
+            end
+            PlayerMetaStore.setLastSave(playerId, time)
             saveMeta(xPlayer, true)
             cLog(xPlayer.name .. ' ' .. event, 'saving metadata...', 1)
         end

@@ -23,13 +23,13 @@ if QB_CORE then
     --- @return any result
     function eCore:drawText(message, position, mType)
         if mType == 'info' then mType = 'primary' end
-        TriggerEvent('qb-core:client:DrawText', message, position) -- CHANGE ME
+        TriggerEvent(('%s:client:DrawText'):format(ecore_framework_resource_qb()), message, position) -- CHANGE ME if event namespace differs
     end
 
     --- Auto-generated annotation. Refine behavior details if needed.
     --- @return any result
     function eCore:hideText()
-        TriggerEvent('qb-core:client:HideText') -- CHANGE ME
+        TriggerEvent(('%s:client:HideText'):format(ecore_framework_resource_qb())) -- CHANGE ME if event namespace differs
     end
 
     --- Auto-generated annotation. Refine behavior details if needed.

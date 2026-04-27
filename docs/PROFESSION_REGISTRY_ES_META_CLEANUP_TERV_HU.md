@@ -23,6 +23,19 @@ Az e_core legyen a szakmak "source of truth"-a:
 - recipe validacio indulaskor (ismeretlen profession -> hiba/log/tiltas),
 - biztonsagos meta cleanup folyamat (dry-run + apply).
 
+### Határ: létrehozás = kizárólag e_core; consumer = integráció
+
+**Ne keverd össze a két fogalmat** („registry migráció” vs. „consumer átállás”):
+
+| Mit jelent | Hol történik | Példa |
+|------------|----------------|--------|
+| **Létrehozás** | **Csak e_core** | DB migráció (`e_core_level_profiles`, `e_core_professions`), bootstrap **seed**, read/admin API exportok, `validateProfessionKeys`, diagnostics tesztkatalógus, admin NUI/bridge a registryhez |
+| **Integráció (átállás)** | **Consumer** (`eco_*`) | pl. `initMeta()`: `getProfessionDefaults` + `registerMeta`; később induláskor recipe-ellenőrzés **`validateProfessionKeys`**-szel. **Sorrend:** előbb e_core (adat + API), utána vékony consumer hívás — **fogalom:** ez nem „félig consumer, félig e_core létrehozás”, hanem 100% e_core forrás, consumer hívó |
+
+- A consumer **nem** hoz létre második registryt, **nem** duplikálja a táblákat, **nem** definiálja a kanonikus profession listát: az mind az **e_core** és az **adatbázis** feladata.
+- Ha új profession kell, azt **e_core** oldalon hozzátöltöd (admin / migráció / seed), és onnantól a consumer a meglévő exportokon látja.
+- A „**eco_crafting registry migráció**” röviden: **(1)** e_core: séma + seed + API; **(2)** eco_crafting: kód, ami **e_core exportokra** épül, **source of truth** nélkül.
+
 ---
 
 ## 1) Profession registry modell (DB-first, kontrollalt)
@@ -74,7 +87,9 @@ Ezzel a consumer nem recipe-bol epit "igazsagot", csak lekerdezi.
 
 ---
 
-## 2) Consumer oldali atallas (eco_crafting minta)
+## 2) Consumer oldali atallas (eco_crafting minta) — *nem* létrehozás, csak hívás
+
+Itt nincs új adatstruktúra: a **registry létrehozása továbbra is 1)–ben (e_core + DB)** marad. A consumer csak a **fenti exportokat** hívja.
 
 Most:
 
@@ -537,9 +552,6 @@ Peldak:
 Ez a modell jobb kontrollt ad, mint a recipe-derived auto-regisztracio.
 Az uzemeltetesnek kiszámíthatóbb, auditálhatóbb, es meggatolja az elirasbol eredő hibas szakmaneveket.
 
-## Megvalositasi bontas (Sprint 1)
+## Megvalositasi bontas
 
-A blueprinthez tartozó konkret, task-szintu implementacios terv:
-
-- `docs/PROFESSION_REGISTRY_IMPLEMENTACIOS_TERV_SPRINT1_HU.md`
-- futas kozbeni egyhelyes valtozasnaplo: `docs/IMPLEMENTATION_MUNKANAPLO_WIP_HU.md`
+A részletes ütemezés a kódban és a [`docs/INDEX_HU.md`](INDEX_HU.md) szerinti főbb doksikban követhető; külön sprint- és WIP-napló fájl nincs.

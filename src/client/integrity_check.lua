@@ -34,7 +34,7 @@ RegisterNetEvent('e_core:integrityCheck:nuiPush', function(data)
     if type(data) ~= 'table' or data.adminInline ~= true then
         return
     end
-    if not integrityUseNui() or not ECO or not ECO.nuiReady then
+    if not integrityUseNui() or not eCoreNui.isReady() then
         return
     end
     SendNUIMessage(data)
@@ -50,7 +50,7 @@ RegisterNetEvent('e_core:integrityCheck:clientPrint', function(lines, section, m
         return
     end
 
-    if meta.adminInline == true and ECO and ECO.nuiReady then
+    if meta.adminInline == true and eCoreNui.isReady() then
         if section == 'progress' then
             SendNUIMessage({
                 action = 'DIAGNOSTICS_APPEND',
@@ -79,7 +79,7 @@ RegisterNetEvent('e_core:integrityCheck:progressTest', function(opts)
     local duration = math.max(1000, math.min(60000, tonumber(opts.duration) or 3000))
     local adminInline = opts.adminInline == true
 
-    if integrityUseNui() and ECO and ECO.nuiReady then
+    if integrityUseNui() and eCoreNui.isReady() then
         SendNUIMessage({
             action = 'DIAGNOSTICS_CHECKLIST_SET',
             id = 'progress',
@@ -102,7 +102,7 @@ RegisterNetEvent('e_core:integrityCheck:progressTest', function(opts)
         useWhileDead = false,
         canCancel = true,
         onFinish = function()
-            if integrityUseNui() and ECO and ECO.nuiReady then
+            if integrityUseNui() and eCoreNui.isReady() then
                 SendNUIMessage({
                     action = 'DIAGNOSTICS_CHECKLIST_SET',
                     id = 'progress',
@@ -119,7 +119,7 @@ RegisterNetEvent('e_core:integrityCheck:progressTest', function(opts)
             TriggerServerEvent('e_core:integrityCheck:progressResult', true)
         end,
         onCancel = function()
-            if integrityUseNui() and ECO and ECO.nuiReady then
+            if integrityUseNui() and eCoreNui.isReady() then
                 SendNUIMessage({
                     action = 'DIAGNOSTICS_CHECKLIST_SET',
                     id = 'progress',

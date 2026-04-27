@@ -91,7 +91,7 @@ local function admin_audit_can_access(payload)
     if okDiagnostics then
         return true, nil
     end
-    return false, 'Nincs jogosultság (cleanup/diagnostics admin policy).'
+    return false, eCoreErr.admin_audit_dual_policy_denied
 end
 
 --- Auto-generated annotation. Refine behavior details if needed.
@@ -222,6 +222,39 @@ local function cleanup_parse_timestamp(raw)
 end
 
 --- Auto-generated annotation. Refine behavior details if needed.
+--- @param row any
+--- @return any result
+local function cleanup_job_from_row(row)
+    local createdAt = cleanup_parse_timestamp(row.created_at) or os.time()
+    local updatedAt = cleanup_parse_timestamp(row.updated_at) or createdAt
+
+    local job = {
+        jobId = tostring(row.job_id),
+        status = tostring(row.status or 'failed'),
+        mode = tostring(row.mode or 'dry_run'),
+        category = tostring(row.category or ''),
+        name = tostring(row.name or ''),
+        requestedBy = tostring(row.requested_by or 'unknown'),
+        batchSize = math.max(100, math.min(2000, math.floor(tonumber(row.batch_size) or 500))),
+        createdAt = createdAt,
+        updatedAt = updatedAt,
+        startedAt = cleanup_parse_timestamp(row.started_at),
+        finishedAt = cleanup_parse_timestamp(row.finished_at),
+        lastCursor = tostring(row.last_cursor or ''),
+        cancelRequested = tonumber(row.cancel_requested) == 1,
+        stats = {
+            processed = math.max(0, math.floor(tonumber(row.processed) or 0)),
+            changed = math.max(0, math.floor(tonumber(row.changed_rows) or 0)),
+            removedKeys = math.max(0, math.floor(tonumber(row.removed_keys) or 0)),
+            failed = math.max(0, math.floor(tonumber(row.failed) or 0)),
+            invalidJson = math.max(0, math.floor(tonumber(row.invalid_json) or 0)),
+        },
+        errors = cleanup_decode_errors(row.errors_json),
+    }
+    return job
+end
+
+--- Auto-generated annotation. Refine behavior details if needed.
 --- @param meta table
 --- @param category any
 --- @param name string
@@ -260,7 +293,7 @@ local function cleanup_job_step(job)
         { job.lastCursor or '', job.batchSize }
     )
     if not rowsOk then
-        return false, 'scan_failed'
+        return false, eCoreErr.cleanup_scan_failed
     end
     if #rows == 0 then
         return true, true
@@ -849,39 +882,6 @@ cleanup_job_persist = function(job)
             createdAt, updatedAt, startedAt, finishedAt,
         }
     )
-end
-
---- Auto-generated annotation. Refine behavior details if needed.
---- @param row any
---- @return any result
-local function cleanup_job_from_row(row)
-    local createdAt = cleanup_parse_timestamp(row.created_at) or os.time()
-    local updatedAt = cleanup_parse_timestamp(row.updated_at) or createdAt
-
-    local job = {
-        jobId = tostring(row.job_id),
-        status = tostring(row.status or 'failed'),
-        mode = tostring(row.mode or 'dry_run'),
-        category = tostring(row.category or ''),
-        name = tostring(row.name or ''),
-        requestedBy = tostring(row.requested_by or 'unknown'),
-        batchSize = math.max(100, math.min(2000, math.floor(tonumber(row.batch_size) or 500))),
-        createdAt = createdAt,
-        updatedAt = updatedAt,
-        startedAt = cleanup_parse_timestamp(row.started_at),
-        finishedAt = cleanup_parse_timestamp(row.finished_at),
-        lastCursor = tostring(row.last_cursor or ''),
-        cancelRequested = tonumber(row.cancel_requested) == 1,
-        stats = {
-            processed = math.max(0, math.floor(tonumber(row.processed) or 0)),
-            changed = math.max(0, math.floor(tonumber(row.changed_rows) or 0)),
-            removedKeys = math.max(0, math.floor(tonumber(row.removed_keys) or 0)),
-            failed = math.max(0, math.floor(tonumber(row.failed) or 0)),
-            invalidJson = math.max(0, math.floor(tonumber(row.invalid_json) or 0)),
-        },
-        errors = cleanup_decode_errors(row.errors_json),
-    }
-    return job
 end
 
 --- @return boolean, table|string

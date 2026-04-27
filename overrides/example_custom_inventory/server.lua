@@ -2,26 +2,24 @@
 --- Do not overwrite the bridge files.
 --- Copy the function you want to modify here
 
-if CUSTOM_INVENTORY then
-    (function(_inv) end)(CUSTOM_INVENTORY)
+if not CUSTOM_INVENTORY then return end
 
-    -- function eCore:addItem(xPlayer, item, count, slot, metadata) end
-    -- function eCore:removeItems(xPlayer, items) end
-    -- function eCore:removeItem(xPlayer, item, count, metadata, slot) end
+(function(_inv) end)(CUSTOM_INVENTORY)
 
-    -- function eCore:getItemWeight(itemName, metadata) end
-    -- function eCore:getFirstSlotByItem(inventory, itemName) end
-    -- function eCore:getAmountOfItems(inventory) end
+-- function eCore:addItem(xPlayer, item, count, slot, metadata) end
+-- function eCore:removeItems(xPlayer, items) end
+-- function eCore:removeItem(xPlayer, item, count, metadata, slot) end
 
-    -- function eCore:getInventoryWeight(xPlayer) end
-    -- function eCore:getPlayerMaxWeight(xPlayer) end
+-- function eCore:getItemWeight(itemName, metadata) end
+-- function eCore:getFirstSlotByItem(inventory, itemName) end
+-- function eCore:getAmountOfItems(inventory) end
 
-    -- function eCore:countFreeSlots(inventory) end
-    -- function eCore:getInventory(xPlayer) end
-    -- function eCore:getRegisteredItems() end
-    -- function eCore:getRegisteredItem(name) end
-    -- function eCore:getItemCount(xPlayer, itemName) end
-    -- function eCore:hasItem(xPlayer, itemName, count) end
-end
+-- function eCore:getInventoryWeight(xPlayer) end
+-- function eCore:getPlayerMaxWeight(xPlayer) end
 
-
+-- function eCore:countFreeSlots(inventory) end
+-- function eCore:getInventory(xPlayer) end
+-- function eCore:getRegisteredItems() end
+-- function eCore:getRegisteredItem(name) end
+-- function eCore:getItemCount(xPlayer, itemName) end
+-- function eCore:hasItem(xPlayer, itemName, count) end

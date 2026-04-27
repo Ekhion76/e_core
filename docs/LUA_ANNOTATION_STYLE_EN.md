@@ -138,3 +138,7 @@ Weak:
 - Reviewer verifies annotation correctness, not only presence.
 - Do not accept PRs adding public functions without annotation block.
 - Keep this guide aligned with `docs/LUA_LS_AND_CI_HU.md`.
+
+## See also (not a “backlog” list)
+
+- **`docs/LUA_ANNOTATION_MAINTENANCE_EN.md`** – post–0.0.56 **policy** (ongoing rules, A–C review order). It is **not** a todo or missing-block count; the old misleading filename was removed.

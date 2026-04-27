@@ -10,13 +10,14 @@ end
 
 --- Resolves player meta row that contains the labor block.
 --- @param playerId number Player source id.
---- @return table|nil row ECO.meta[playerId] row.
+--- @return table|nil row PlayerMetaStore row for `playerId`.
 --- @return string|nil err eCoreErr when metadata/labor is missing.
 local function laborPlayerRow(playerId)
-    if not tonumber(playerId) or not ECO.meta[playerId] or not ECO.meta[playerId].labor then
+    local row = tonumber(playerId) and PlayerMetaStore.get(playerId) or nil
+    if not row or not row.labor then
         return nil, eCoreErr.not_found_metadata
     end
-    return ECO.meta[playerId], nil
+    return row, nil
 end
 
 --- @param playerId number (source)
@@ -136,13 +137,13 @@ end
 -----------------------
 
 --- Collects online player ids that currently have loaded `meta.labor`.
---- Uses `GetPlayers()` to avoid scanning the whole ECO.meta table.
+--- Uses `GetPlayers()` to avoid scanning all in-memory meta rows.
 local function laborIncreaseCollectTargets()
     local ids = {}
     for _, sid in ipairs(GetPlayers()) do
         local playerId = tonumber(sid)
         if playerId and hf.isValidPlayerSource(playerId) then
-            local meta = ECO.meta[playerId]
+            local meta = PlayerMetaStore.get(playerId)
             if meta and meta.labor then
                 ids[#ids + 1] = playerId
             end
@@ -165,7 +166,7 @@ local function laborIncreaseApplyChunks(ids, timeStamp, fromIdx, chunkSize, onDo
 
     for i = fromIdx, endIdx do
         local playerId = ids[i]
-        local meta = ECO.meta[playerId]
+        local meta = PlayerMetaStore.get(playerId)
         if meta and meta.labor then
             meta.labor.time = timeStamp
             if meta.labor.val < limit then

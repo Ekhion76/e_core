@@ -2,6 +2,7 @@
 -- Do not place generic weight / web / diagnostics overrides here
 -- (use inventory override or `standalone/config/main.lua`).
 HUD17 = GetResourceState('17mov_Hud') == 'started'
-if HUD17 then
-    -- example: Config.displayComponent.laborHud = true
-end
+if not HUD17 then return end
+
+--- Extension placeholder: optional `Config.*` tweaks when HUD17 is active (see `client.lua`).
+local _ = HUD17

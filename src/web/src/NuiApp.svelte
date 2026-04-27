@@ -3,6 +3,7 @@
   import { postNui } from './lib/nui'
   import { rankData, type LevelRow } from './lib/rankData'
   import AdminConsole from './AdminConsole.svelte'
+  import HudEditLayer, { type HudElement } from './lib/HudEditLayer.svelte'
 
   type InitPayload = {
     metadata?: Record<string, Record<string, number>>
@@ -40,6 +41,8 @@
   let selectedCategory = $state('')
   let popup = $state<PopupPayload | null>(null)
   let popupClear = $state<ReturnType<typeof setTimeout> | null>(null)
+  let hudEditActive = $state(false)
+  let hudEditElements = $state<HudElement[]>([])
 
   const statColors = [
     '#ec6f86',
@@ -167,6 +170,10 @@
       case 'WEB_CLOSE':
         adminOpen = false
         break
+      case 'HUD_EDIT_STATE':
+        hudEditActive = item.active === true
+        hudEditElements = Array.isArray(item.elements) ? (item.elements as HudElement[]) : []
+        break
       default:
         break
     }
@@ -197,6 +204,7 @@
 </script>
 
 <svelte:window onkeyup={onKeyup} />
+<HudEditLayer active={hudEditActive} elements={hudEditElements} />
 
 <div id="meta_hud" class="nui-hud" style:display={hudOpen ? 'block' : 'none'}>
   <div class="hud_item">

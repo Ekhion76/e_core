@@ -1,5 +1,6 @@
 -- Documentation:
 -- readme.md file or https://github.com/Ekhion76/e_core
+if _G._ECORE_INIT_FAILED then return end
 Config.locale = 'en'
 
 Config.debugLevel = false -- 0-4, false or 0 = off

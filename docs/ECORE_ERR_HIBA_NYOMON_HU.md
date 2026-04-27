@@ -6,7 +6,7 @@
 
 **Kapcsolódó:** `docs/PUBLIC_API_HU.md` §5 (összefoglaló tábla), `export_examples_client.md` / `export_examples_server.md`, `docs/AI_SUPPORT_REFERENCE_HU.txt` (részletes API + GYIK).
 
-**Területenkénti végighaladás (nem függvényenként):** `docs/TERULET_AUDIT_SORREND_HU.md` – melyik blokk következik, másolható AI-üzenet sablon.
+**Dokumentáció navigáció:** `docs/INDEX_HU.md`.
 
 ---
 
@@ -61,7 +61,7 @@ Az `exports.e_core:*` **vékony réteg** (`client/exports.lua`, `server/exports.
 | `unknown_error` | ugyanaz | ox/qs remove belső hiba; **ESX `removeItems`:** hiányzó **`xPlayer`** vagy **`removeInventoryItem`** kivétel; **QB `removeItems`:** hiányzó **`xPlayer`**; `createVehicle`: rossz `pos`/`model`/`props`, nincs entitás, netId 0/`nil`, owner **-1** marad; **override** ox/qs/avp: hiányos **`xPlayer`**, `pcall` kivétel, sikertelen törlés; **ox/qs `addItem`:** kivétel vagy nem `eCoreErr` második string; **avp** `RemoveItemBy` / `AddItem` egyedi üzenet (nem `eCoreErr` érték), `canCarryItem` kivétel / érvénytelen forrás | `standalone/overrides/ox_inventory|qs_inventory|avp_grid_inventory/server.lua`; `bridge/esx/server.lua`, `bridge/qb/server.lua`; `bridge/global/server.lua` |
 | `vehicle_no_plate_data` | hosszú angol szöveg | Jármű létrehozás, rendszám adat | `bridge/global/server.lua` (`createVehicle`) |
 | `the_system_is_turned_off` | ugyanaz | `Config.systemMode` kikapcsolva | `server/labor.lua`, `client/main.lua` (`getLabor`) |
-| `not_found_metadata` | ugyanaz | Nincs `ECO.meta[player]` / nincs kulcs / sync előtt | `server/meta.lua`, `server/labor.lua`, kliens `getLabor` |
+| `not_found_metadata` | ugyanaz | Nincs `PlayerMetaStore.get(player)` sor / nincs kulcs / sync előtt (kliens: üres cache) | `server/meta.lua`, `server/labor.lua`, kliens `getLabor` |
 | `no_valid_meta_name` | ugyanaz | Nem string / üres név trim után | `server/meta.lua` (meta segédek); kliens `client/main.lua` (`getAbility`, `getMeta` param) |
 | `not_valid_amount` | ugyanaz | Labor: `addLabor` / `removeLabor` nem pozitív mennyiség (vagy NaN); jártasság `value` nem szám | `server/labor.lua`, `server/meta.lua` (`addAbility` / `removeAbility` / `setAbility`) |
 | `not_enough_labor` | ugyanaz | `removeLabor`: kevesebb a egyenleg, mint a levonandó | `server/labor.lua` |
@@ -73,6 +73,24 @@ Az `exports.e_core:*` **vékony réteg** (`client/exports.lua`, `server/exports.
 | `meta_default_must_be_table` | ugyanaz | `registerMeta` 3. param nem tábla és nem `nil` | `server/meta.lua` |
 | `meta_value_must_be_table` | ugyanaz | `setMeta` érték nem tábla | `server/meta.lua` |
 | `meta_category_not_table` | ugyanaz | Meglévő kategória slot sérült (nem tábla) | `server/meta.lua` (`registerMeta` merge) |
+| `diagnostics_run_not_found` | ugyanaz | `diagnosticsAdminGetRun` / `diagnosticsAdminCancelRun`: nincs ilyen `runId` a memóriabeli diagnosztikai futás tárolóban | `src/server/diagnostics.lua` |
+| `profession_key_validation_failed` | ugyanaz | Admin diagnostics `profession-key-validation` teszt eredményében (`run.results[]`), ha invalid / hiányzó profession kulcsok voltak; **nem** a `getProfessionRegistry` / `getProfessionLevelProfile` exportok hibakódja | `src/server/diagnostics.lua` (`runProfessionKeyValidationAudit`) |
+| `cleanup_scan_failed` | `'scan_failed'` | Profession meta cleanup: DB sorok beolvasása sikertelen | `src/server/professions.lua` (`cleanup_job_step`) |
+| `mysql_missing` | `'mysql_missing'` | MySQL / oxmysql nem áll készen a `mysqlAwait` híváskor | `src/libs/helper_ecore.lua` |
+| `admin_missing_auth_source` | angol szöveg (lásd `errors.lua`) | Admin API policy: hiányzik a kötelező `auth.source` | `src/libs/helper_ecore.lua` (`hf.adminApiCanAccess`) |
+| `admin_invalid_auth_source` | angol szöveg | Admin API policy: érvénytelen / offline `auth.source` | `src/libs/helper_ecore.lua` |
+| `admin_api_policy_denied` | angol szöveg | Admin API policy: egyik engedélyezési út sem engedélyezett | `src/libs/helper_ecore.lua` |
+| `admin_invalid_web_player` | angol szöveg | Web admin NUI: érvénytelen játékos forrás | `src/libs/helper_ecore.lua` (`hf.webConsoleAccess`) |
+| `admin_console_disabled` | angol szöveg | Web admin NUI ki van kapcsolva a configban | `src/libs/helper_ecore.lua` |
+| `admin_web_unconfigured` | angol szöveg | `Config.web` jog policy nincs kitöltve (nincs engedélyezési út) | `src/libs/helper_ecore.lua` |
+| `admin_web_denied` | angol szöveg | Web admin: policy elutasította a játékost | `src/libs/helper_ecore.lua` |
+| `admin_audit_dual_policy_denied` | magyar szöveg | Denied audit lista: sem cleanup, sem diagnostics admin policy nem engedélyezett | `src/server/professions.lua` |
+| `integrity_invalid_player` | magyar szöveg | Integritás futtatás: érvénytelen `source` | `src/server/integrity_check.lua` |
+| `integrity_check_disabled` | magyar szöveg | `Config.integrityCheck.enabled` kikapcsolva | `src/server/integrity_check.lua` |
+| `integrity_cooldown_active` | magyar szöveg | Integritás parancs cooldown alatt | `src/server/integrity_check.lua` |
+| `integrity_progress_busy` | magyar szöveg | Már fut progress teszt ugyanahhoz a forráshoz | `src/server/integrity_check.lua` |
+| `integrity_policy_misconfigured` | magyar szöveg | Integritás policy nincs konfigurálva (üres engedélyezési út) | `src/server/integrity_check.lua` |
+| `integrity_policy_denied` | magyar szöveg | Integritás policy elutasította a játékost | `src/server/integrity_check.lua` |
 
 **Új kód** esetén: először `libs/errors.lua`, majd e tábla és a `rg eCoreErr\.kulcs` keresés a repóban.
 
@@ -118,7 +136,7 @@ Az `exports.e_core:*` **vékony réteg** (`client/exports.lua`, `server/exports.
 | `no_valid_meta_name` | `getAbility` / `getMeta`: nem string kategória vagy kulcs, illetve trim után üres |
 | `category_does_not_exist` / `meta_does_not_exist` | Utolsó `e_core:sync` előtti hívás, rossz kulcs, vagy nincs ilyen jártasság név a kategóriában |
 | `not_found_metadata` (`getLabor`) | Nincs labor blokk a cache-ben, nem tábla a `labor` slot, vagy `val` nem érvényes szám (NaN / hiány) |
-| `e_core:sync` nem tábla payload | Figyelmeztető `cLog`, a régi `ECO.meta` megmarad (felülírás nélkül) |
+| `e_core:sync` nem tábla payload / nem alkalmazható | Figyelmeztető `cLog`, a kliens meta cache megmarad (felülírás nélkül) |
 
 ### 4.5 Meta perzisztencia (`server/db.lua`, `server/db_migrations.lua`)
 
@@ -127,7 +145,7 @@ Itt **nincs** `false, reason` export – a hívások belsőek (`loadMeta`, `save
 | Jelenség | Mit jelent | Hol nézd |
 |----------|------------|----------|
 | Szerver indulás **error** migrációnál | DDL / `migration_applied` SELECT / `mark` sikertelen – részlet a konzolban és `hf.mysqlAwait` `cLog` | `server/db_migrations.lua`, oxmysql |
-| `loadMeta: DB hiba` | `MySQL.scalar` nem futott le – játékosnak **nincs** betöltött `ECO.meta` sor → később `not_found_metadata` lehet exportoknál | Ellenőrizd DB / kapcsolat; `e_core:loadMeta` újra játékos betöltéskor |
+| `loadMeta: DB hiba` | `MySQL.scalar` nem futott le – játékosnak **nincs** betöltött runtime meta sor → később `not_found_metadata` lehet exportoknál | Ellenőrizd DB / kapcsolat; `e_core:loadMeta` újra játékos betöltéskor |
 | `loadMeta: … nem érvényes JSON objektum` | Az `e_core` oszlop sérült / nem objektum JSON – **szándékosan** nem hívunk `prepareMeta` (ne írjon felül üres táblával) | Kézi DB javítás / backup |
 | `saveMeta` / `saveAllMeta` DB hiba | Mentés nem történt; a memóriabeli meta változatlan marad (kivéve `saveMeta` siker + `dropMeta`) | Konzol + oxmysql |
 | `getDbSchemaVersion` **0** | Üres migráció tábla, lekérdezés hiba, vagy még nem futott le olvasás – lásd `docs/PUBLIC_API_HU.md` §2 | `e_core_get_applied_migration_id`; ha `< ECORE_DB_SCHEMA_TARGET` → `cLog` warning |

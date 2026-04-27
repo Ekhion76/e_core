@@ -23,11 +23,12 @@ end)
 --- @return any result
 function saveMeta(xPlayer, dropMeta)
     local playerId = xPlayer.source
+    local row = PlayerMetaStore.get(playerId)
 
-    if ECO.meta[playerId] then
+    if row then
         local ok = hf.mysqlAwait(('saveMeta:%s'):format(xPlayer.identifier), function()
             MySQL.update.await(UPDATE_META, {
-                json.encode(ECO.meta[playerId]),
+                json.encode(row),
                 xPlayer.identifier,
             })
         end)
@@ -36,7 +37,7 @@ function saveMeta(xPlayer, dropMeta)
             return
         end
         if dropMeta then
-            ECO.meta[playerId] = nil
+            PlayerMetaStore.clear(playerId)
         end
         cLog(xPlayer.name .. ' metadata', 'saved', 1)
     end
@@ -47,7 +48,7 @@ end
 function saveAllMeta()
     local parameters = {}
 
-    for playerId, meta in pairs(ECO.meta) do
+    for playerId, meta in PlayerMetaStore.eachLoaded() do
         local xPlayer = eCore:getPlayer(playerId)
 
         if xPlayer then
@@ -99,7 +100,7 @@ function loadMeta(xPlayer)
 
     prepareMeta(playerId, meta)
     addOfflineLabor(playerId)
-    ECO.lastSave[playerId] = os.time()
+    PlayerMetaStore.setLastSave(playerId, os.time())
 
-    TriggerClientEvent('e_core:sync', playerId, ECO.meta[playerId])
+    PlayerMetaStore.pushFullSync(playerId)
 end

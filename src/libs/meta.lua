@@ -6,19 +6,24 @@ local hf = hf
 --- @param name string
 --- @return any result
 function checkMetaExists(playerId, category, name)
-
-    if not tonumber(playerId) or type(ECO.meta[playerId]) ~= 'table' then
-
+    if not tonumber(playerId) then
         return false
     end
 
-    if type(category) ~= 'string' or type(ECO.meta[playerId][category]) ~= 'table' then
-
+    if not IsDuplicityVersion() then
         return false
     end
 
-    if type(name) ~= 'string' or not tonumber(ECO.meta[playerId][category][name]) then
+    local row = PlayerMetaStore and PlayerMetaStore.get(playerId)
+    if type(row) ~= 'table' then
+        return false
+    end
 
+    if type(category) ~= 'string' or type(row[category]) ~= 'table' then
+        return false
+    end
+
+    if type(name) ~= 'string' or not tonumber(row[category][name]) then
         return false
     end
 

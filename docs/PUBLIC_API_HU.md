@@ -1,12 +1,14 @@
 # e_core – publikus API (szerződés v0.3)
 
-Ez a fájl a **külső hívható** `exports.e_core:*` felületet és az **`eCore:`** facade **névsorát** rögzíti (forrásfájl szerint). Az alábbi táblákban **exportonként egy rövid „mire való”** sor is van (ugyanaz a szemantika, mint az **`export_examples_client.md`** / **`export_examples_server.md`** fájlokban – ott angolul, példakóddal). Viselkedés-részletek, paraméterek, GYIK: **`docs/AI_SUPPORT_REFERENCE_HU.txt`**. **`eCoreErr` / hibanyomozás lépésenként:** **`docs/ECORE_ERR_HIBA_NYOMON_HU.md`**. **Területenkénti stabilizálás (sorban, egy chat = egy blokk):** **`docs/TERULET_AUDIT_SORREND_HU.md`**.
+Ez a fájl a **külső hívható** `exports.e_core:*` felületet és az **`eCore:`** facade **névsorát** rögzíti (forrásfájl szerint). Az alábbi táblákban **exportonként egy rövid „mire való”** sor is van (ugyanaz a szemantika, mint az **`export_examples_client.md`** / **`export_examples_server.md`** fájlokban – ott angolul, példakóddal). Viselkedés-részletek, paraméterek, GYIK: **`docs/AI_SUPPORT_REFERENCE_HU.txt`**. **`eCoreErr` / hibanyomozás lépésenként:** **`docs/ECORE_ERR_HIBA_NYOMON_HU.md`**. **Dokumentáció navigáció:** **`docs/INDEX_HU.md`**.
 
 | Meta | Érték |
 |------|--------|
 | **Resource verzió** | `fxmanifest.lua` → `version` |
 | **Változások** | `changelog.md` – breaking változás = changelogban kiemelve |
 | **Indulás** | `exports.e_core:isReady()` – item registry kész-e (client + server) |
+
+**ConVarok (keret / legacy core resource):** `e_core:framework` = `auto` \| `esx` \| `qb` (alap: `auto`). **`e_core:framework_resource`** – nem üres és **kényszerített** `esx` \| `qb` mellett felülírja az alap resource nevet (`es_extended` vagy `qb-core`); `auto` mellett nem érvényes (figyelmeztető log). Belső registry: `ecore_framework_resource_*` (`framework_resource_registry.lua`). Részlet: `docs/FRAMEWORK_CONFIG_REFACTOR_TERVEZES_HU.md`, `docs/AI_SUPPORT_REFERENCE_HU.txt`.
 
 **Override:** ugyanazon `eCore:` név felülírható `standalone/overrides/<mappa>/` alatt; a betöltési sorrend a mappanevek lexikografikus `**/shared.lua` / `client.lua` / `server.lua` globja szerint dől el.
 
@@ -36,6 +38,8 @@ A tábla névsora = a fájlban lévő `exports(...)` sorok sorrendje; közvetlen
 | `getDiscounts` | Kedvezmények százalékban, a pontszám / szint alapján. | `value` | |
 | `getConfig` | Teljes e_core `Config` tábla olvasása. | – | |
 | `isReady` | Item registry betöltve-e és a core késznek tekinti-e magát; itemhez kötött logika előtt érdemes ellenőrizni. | – | `true` csak ha kész. Részletesebb háromállapot: `eCore:isReady()` (`nil` / `false` / `true`). |
+| `registerHudElement` | HUD elem regisztrálása a hibrid DnD proxy réteghez (e_core edit mode + lokális preview sync). | `id`, `data` | `id`: nem üres string. `data.defaultPos`: normalizált `x,y,w,h` + `anchor` (`top-left`, `top-right`, `bottom-left`, `bottom-right`, `center`). Siker: `true`, effektív pozíció; hiba: `false`, reason. |
+| `unregisterHudElement` | HUD elem levétele az e_core edit/sync regiszterből. | `id` | Resource stopnál ajánlott hívni. |
 
 ---
 
@@ -95,6 +99,8 @@ A tábla névsora = a fájlban lévő `exports(...)` sorok sorrendje; közvetlen
 
 A **`SetHttpHandler` alapú külső HTTP admin (`/admin/...`) el lett távolítva.** A beépített Svelte admin (`ecore_admin`, `src/web/src/lib/registry.ts`) a szerver felé **NUI callbacken** (`eCoreAdminApi`) hív: kliens `client/nui_admin_bridge.lua` → szerver `server/nui_admin_bridge.lua`, jogosultság **`hf.webConsoleAccess`** (ugyanaz, mint az admin NUI megnyitásához). Integritás checklist net: `e_core:integrityCheck:*` (`server/integrity_check.lua`).
 
+**Megjegyzés:** az operátori jogosultság és a szerver oldali policy **konfigurációjának** részletei (parancs, azonosítók, `Config.operator` / `Config.web` / `Config.adminApi` stb.) **nem** részei ennek a táblázatos API-szerződésnek — üzemeltetői lépések: **`docs/SZERVER_OPERATOR_CHECKLIST_HU.md`**, forrás: `standalone/config/main.lua` és a `libs/config_check.lua` szintézis.
+
 - Válasz alakja változatlan: `professionAdminList`, `professionAdminCreate`, `levelProfileAdminList`, stb. ugyanazt az `{ ok, code, message, data }` szerződést adják, mint az exportok.
 - **Böngészős `npm run dev`:** valós CRUD nélkül használd a mock registry-t (`VITE_USE_MOCK_REGISTRY=true`, lásd `src/web/.env.example`).
 
@@ -109,6 +115,8 @@ eCoreConfig = exports.e_core:getConfig()
 ```
 
 `imports/core.lua`. **`eCore.helper`** = **`hf`**: `libs/helper.lua` (általános segédek) + `libs/helper_ecore.lua` (e_core kiterjesztés: item normalizálás, registry várakozás, `mysqlAwait`, indulási log, net rate limit, `moneyFormat`). **`eCore.GroupAccess:check(playerData, data)`**: `src/libs/GroupAccess.lua` (job/gang whitelist–blacklist; lásd §6). **`eCore.Err`** = `libs/errors.lua` → **`eCoreErr`** (azonos kulcsok / string értékek); külső resource összehasonlíthat: `reason == exports.e_core:getCore().Err.inventory_full`.
+
+**HUD import-helper esemény:** az import réteg hallgatja az `e_core:hud:clientPreview` eseményt, és ha az `id` benne van a consumer oldali `RegisteredElements` map-ben, `SendNUIMessage({ action = 'ECORE_HUD_SYNC', id, pos })` üzenetet küld. Így a consumer oldali NUI üzenetkezelő egyetlen központi rune-state-ből (`.svelte.ts`) frissíthet minden komponenst.
 
 ---
 
@@ -139,6 +147,13 @@ Forrás: **`libs/errors.lua`**. Az e_core belső kódja **`eCoreErr.xyz`** form�
 | `meta_default_must_be_table` | ugyanaz | `registerMeta` – harmadik param nem `nil` és nem tábla |
 | `meta_value_must_be_table` | ugyanaz | `setMeta` – érték nem tábla |
 | `meta_category_not_table` | ugyanaz | `registerMeta` merge: meglévő kategória slot nem tábla (sérült adat) |
+| `diagnostics_run_not_found` | ugyanaz | `diagnosticsAdminGetRun` / `diagnosticsAdminCancelRun`: a megadott `runId` nincs a szerver memóriabeli futás tárolójában (pl. szerver restart után, hibás id, már felszámolt futás) |
+| `profession_key_validation_failed` | ugyanaz | Admin diagnostics **`profession-key-validation`** teszt **eredmény** objektumának `code` mezője, ha a kulcsvalidáció hibákat talált (NEM ugyanaz, mint DB-beli „nincs ilyen profession” – az továbbra is `profession_not_found` a `getProfessionLevelProfile` stb. exportoknál) |
+| `cleanup_scan_failed` | `'scan_failed'` | `cleanup_job_step`: meta cleanup DB scan sikertelen |
+| `mysql_missing` | `'mysql_missing'` | `hf.mysqlAwait`: oxmysql nem elérhető |
+| `admin_missing_auth_source` … `admin_web_denied` | angol üzenet (kulcsonként egyedi szöveg) | `hf.adminApiCanAccess`, `hf.webConsoleAccess` (`libs/helper_ecore.lua`) |
+| `admin_audit_dual_policy_denied` | magyar üzenet (táblázat szerinti szöveg) | `server/professions.lua` (`adminApiDeniedAuditList` / denied audit gate) |
+| `integrity_invalid_player` … `integrity_policy_denied` | magyar / vegyes (kulcsonként) | `server/integrity_check.lua` (`integrityCanRun` / policy) |
 
 **Meta szerződés (szerver):** kategória / mező nevek **trim**elve; üres string → `no_valid_meta_name`. `registerMeta` / `setMeta` **nem** írhat a `login`, `logout`, `labor` gyökér kulcsokra. **Jártasság** exportok (`getAbility`, `addAbility`, `setAbility`, `removeAbility`) **nem** használhatók ezekre a kulcsokra – labor olvasásához `getLabor` / `getMeta(playerId, 'labor')`; íráshoz labor exportok.
 
@@ -215,7 +230,7 @@ ox_target jellegű globális opciók / zónák: `disableTargeting`, `addGlobalOp
 ## 12. Még opcionális
 
 - [ ] `PUBLIC_API.json` gépi fogyasztásra.
-- [ ] További return literálok átvezetése `eCoreErr`-re (pl. egyedi override-ok, bridge edge case-ek).
+- [ ] További belső gate / hibaág finomhangolása új `eCoreErr` kulcsokra (inventory + override + bridge **kész**; admin/integrity üzenetek részben `eCoreErr`, lásd `libs/errors.lua`).
 
 ---
 

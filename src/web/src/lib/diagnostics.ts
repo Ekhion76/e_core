@@ -153,7 +153,7 @@ const mockRuns: DiagnosticsRun[] = [
     resultDetails: [
       {
         key: 'profession-key-validation',
-        code: 'profession_not_found',
+        code: 'profession_key_validation_failed',
         issueCount: 2,
         summary: 'A profession kulcsvalidáció hibákat talált.',
         passed: false,

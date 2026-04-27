@@ -1,5 +1,6 @@
 -- Attention! With the rise in levels, add the same or ascending values compared to the previous one!
 -- Take care of the sequence
+if _G._ECORE_INIT_FAILED then return end
 Config.levels = {
 
     { -- 0. Base

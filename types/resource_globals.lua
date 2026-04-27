@@ -1,9 +1,19 @@
 ---@meta
+--luacheck: push ignore 111
 --- e_core resource global runtime state for LuaLS.
 --- Values are populated at runtime by bridge/server/client modules.
 
 ---@type table
-ECO = {}
+PlayerMetaStore = {}
+
+---@type table
+ClientMetaStore = {}
+
+---@type table
+eCoreNui = {}
+
+---@type table
+ECoreHudLayout = {}
 
 ---@type boolean|nil
 CORE_READY = nil
@@ -28,3 +38,20 @@ QBEvents = nil
 
 ---@type table|nil
 locales = nil
+
+---@type boolean|nil
+_ECORE_INIT_FAILED = nil
+
+--- Bridge: `src/bridge/framework_resource_registry.lua` (set induláskor a `framework_config`-ból).
+---@param esx string
+---@param qb string
+---@return nil
+function ecore_framework_resource_set(esx, qb) end
+
+---@return string
+function ecore_framework_resource_esx() end
+
+---@return string
+function ecore_framework_resource_qb() end
+
+--luacheck: pop

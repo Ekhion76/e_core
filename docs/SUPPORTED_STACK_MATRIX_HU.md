@@ -22,5 +22,5 @@ Közös tábla: **`src/libs/errors.lua`** → globális **`eCoreErr`**, valamint
 ## Kapcsolódó
 
 - `docs/SZERVER_OPERATOR_CHECKLIST_HU.md` → Fázis 0: ensure, függőségek, indulási log, kockázatlista.
-- `docs/MODERNIZACIOS_ES_MEGBIZHATOSAGI_TERV_HU.md` → 3D (inventory stratégia).
+- `docs/INDEX_HU.md` – dokumentáció belépési pont; inventory részletek: `docs/AI_SUPPORT_REFERENCE_HU.txt` (Global bridge / shared).
 - `docs/PUBLIC_API_HU.md` → `eCore:` névsor + `eCoreErr` táblázat.

@@ -1,5 +1,5 @@
 --- Server-side registry diagnostics admin (`diagnosticsAdmin*`, queued runs).
---- Integrity checklist lives in `server/integrity_check.lua` (`e_core:integrityCheck:*`).
+--- Integrity checklist lives in `src/server/integrity_check.lua` (`e_core:integrityCheck:*`).
 local hf = hf
 
 local diagnosticsRuns = {}
@@ -14,7 +14,7 @@ local DIAGNOSTICS_ADMIN_TESTS = {
         severity = 'high',
         estimatedCost = 'low',
         docHints = {
-            { docId = 'PROFESSION_REGISTRY_IMPLEMENTACIOS_TERV_SPRINT1_HU', sectionKey = 'task-6-minimal-diagnostics-es-dokumentacio', confidence = 0.95 },
+            { docId = 'PROFESSION_REGISTRY_ES_META_CLEANUP_TERV_HU', sectionKey = 'celallapot', confidence = 0.95 },
             { docId = 'PUBLIC_API_HU', sectionKey = 'server-exportok', confidence = 0.75 },
         },
     },
@@ -24,9 +24,8 @@ local DIAGNOSTICS_ADMIN_TESTS = {
         severity = 'high',
         estimatedCost = 'low',
         docHints = {
-            { docId = 'PROFESSION_REGISTRY_ES_META_CLEANUP_TERV_HU', sectionKey = 'fazis-3-e_core-only-elokeszites-consumer-hid', confidence = 0.98 },
-            { docId = 'PROFESSION_REGISTRY_IMPLEMENTACIOS_TERV_SPRINT1_HU', sectionKey = 'fazis-3-e_core-only-elokeszites-belepo-blokk', confidence = 0.95 },
-            { docId = 'PUBLIC_API_HU', sectionKey = 'server-exportok', confidence = 0.8 },
+            { docId = 'PROFESSION_REGISTRY_ES_META_CLEANUP_TERV_HU', sectionKey = '2-consumer-oldali-atallas', confidence = 0.98 },
+            { docId = 'PUBLIC_API_HU', sectionKey = 'server-exportok', confidence = 0.85 },
         },
     },
 }
@@ -294,7 +293,7 @@ local function runProfessionKeyValidationAudit(run)
     return {
         key = 'profession-key-validation',
         passed = passed,
-        code = passed and eCoreErr.ok or eCoreErr.profession_not_found,
+        code = passed and eCoreErr.ok or eCoreErr.profession_key_validation_failed,
         summary = passed and 'A profession kulcsvalidáció sikeres.' or 'A profession kulcsvalidáció hibákat talált.',
         lines = lines,
         issueCount = issueCount,
@@ -352,6 +351,17 @@ local function diagnostics_execute_run(run)
             local result = runProfessionKeyValidationAudit(run)
             result.docHints = (not result.passed) and clone_doc_hints(testDef.docHints) or {}
             run.results[#run.results + 1] = result
+        elseif testDef then
+            -- Catalog entry without a runner: fail loud so new tests cannot silently "pass".
+            run.results[#run.results + 1] = {
+                key = testKey,
+                passed = false,
+                code = eCoreErr.unknown_error,
+                summary = 'Diagnostics teszt nincs bekötve a végrehajtóhoz.',
+                lines = { ('Implementáció hiányzik ehhez a tesztkulcshoz: %s'):format(tostring(testKey)) },
+                issueCount = 1,
+                docHints = clone_doc_hints(testDef.docHints or {}),
+            }
         end
     end
 
@@ -521,7 +531,7 @@ function diagnosticsAdminGetRun(runId, payload)
 
     local run = diagnosticsRuns[key]
     if not run then
-        return diagnostics_admin_response(false, eCoreErr.profession_not_found, 'Diagnostics run nem található.')
+        return diagnostics_admin_response(false, eCoreErr.diagnostics_run_not_found, 'Diagnostics run nem található.')
     end
 
     return diagnostics_admin_response(true, eCoreErr.ok, 'Diagnostics futás lekérve.', {
@@ -546,7 +556,7 @@ function diagnosticsAdminCancelRun(runId, payload)
 
     local run = diagnosticsRuns[key]
     if not run then
-        return diagnostics_admin_response(false, eCoreErr.profession_not_found, 'Diagnostics run nem található.')
+        return diagnostics_admin_response(false, eCoreErr.diagnostics_run_not_found, 'Diagnostics run nem található.')
     end
     if run.status == 'passed' or run.status == 'failed' or run.status == 'cancelled' then
         return diagnostics_admin_response(false, eCoreErr.invalid_item_data, 'A futás már lezárult, nem megszakítható.')

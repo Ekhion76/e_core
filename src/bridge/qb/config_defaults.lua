@@ -1,7 +1,8 @@
 --- QB bridge alap config – csak `e_core_apply_qb_config()` hívja a `bridge/framework_config.lua`.
 function e_core_apply_qb_config()
     FRAMEWORK = 'qb'
-    QBCore = exports['qb-core']:GetCoreObject()
+    local qb_resource = ecore_framework_resource_qb()
+    QBCore = exports[qb_resource]:GetCoreObject()
     eCore = {}
     Config = {}
 

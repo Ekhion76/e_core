@@ -468,6 +468,9 @@ end
 ## diagnosticsAdminRun / diagnosticsAdminGetRun / diagnosticsAdminCancelRun
 
 ```lua
+-- A `profession-key-validation` teszt eredményében (`run.results[]`) sikertelen kulcsok esetén
+-- a belső `code` = `profession_key_validation_failed` (nem `profession_not_found`).
+
 local runRes = exports.e_core:diagnosticsAdminRun({
     requestedBy = 'admin:console',
     tests = { 'registry_integrity', 'profession-key-validation' },
@@ -482,11 +485,13 @@ end
 
 local runId = runRes.data.run.runId
 local state = exports.e_core:diagnosticsAdminGetRun(runId, {
-    auth = { source = playerId },
+  auth = { source = playerId },
 })
-print(state.code, state.data.run.status)
+-- Ismeretlen / lejárt `runId`: `state.ok == false`, `state.code == 'diagnostics_run_not_found'`.
+print(state.code, state.data and state.data.run and state.data.run.status)
 
 -- Optional cancel for queued/running runs:
 -- local cancel = exports.e_core:diagnosticsAdminCancelRun(runId, { auth = { source = playerId } })
+-- ugyanígy: `diagnostics_run_not_found`, ha a futás már nincs a memóriában
 -- print(cancel.code, cancel.message)
 ```

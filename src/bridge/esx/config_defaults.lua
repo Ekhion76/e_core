@@ -1,7 +1,8 @@
 --- ESX bridge alap config – csak `e_core_apply_esx_config()` hívja a `bridge/framework_config.lua`.
 function e_core_apply_esx_config()
     FRAMEWORK = 'esx'
-    ESX = exports['es_extended']:getSharedObject()
+    local esx_resource = ecore_framework_resource_esx()
+    ESX = exports[esx_resource]:getSharedObject()
     eCore = {}
     Config = {}
 

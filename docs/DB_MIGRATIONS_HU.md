@@ -44,4 +44,4 @@ A cél séma verzió (kód): globális **`ECORE_DB_SCHEMA_TARGET`** a `server/db
 ## Kapcsolódó
 
 - `server/db.lua` – `saveMeta` / `loadMeta` / `saveAllMeta` (UPDATE / SELECT).
-- `docs/MODERNIZACIOS_ES_MEGBIZHATOSAGI_TERV_HU.md` → 3E, Fázis 3.
+- `docs/INDEX_HU.md` – dokumentáció belépési pont.

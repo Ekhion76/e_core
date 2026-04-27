@@ -43,14 +43,14 @@ Az `overrides/` mappa a felülírási funkciók gyűjteménye. A `src/bridge/` m
 
 Új chatben vagy refaktorálásnál érdemes erre hivatkozni:
 
+- [docs/INDEX_HU.md](docs/INDEX_HU.md) – dokumentáció térkép (innen indulj)
 - [docs/PROJECT_STRUCTURE.txt](docs/PROJECT_STRUCTURE.txt) – mappák szerepe és fájlfa
-- [docs/PUBLIC_API_HU.md](docs/PUBLIC_API_HU.md) – publikus `exports.e_core:*` + `eCore:` névsor
-- [docs/SUPPORTED_STACK_MATRIX_HU.md](docs/SUPPORTED_STACK_MATRIX_HU.md) – tier / override mátrix (v0.1)
-- [docs/AI_EGYUTTMUKODES_CHECKLIST_HU.md](docs/AI_EGYUTTMUKODES_CHECKLIST_HU.md) – mit írj az AI elé (környezet, repro, cél)
-- [docs/MODERNIZACIOS_ES_MEGBIZHATOSAGI_TERV_HU.md](docs/MODERNIZACIOS_ES_MEGBIZHATOSAGI_TERV_HU.md) – hosszabb technikai felmérés / terv (opcionális)
-- [docs/SZERVER_OPERATOR_CHECKLIST_HU.md](docs/SZERVER_OPERATOR_CHECKLIST_HU.md) – szerver üzemeltető: ensure sorrend, kockázatlista, ConVarok (Fázis 0)
-- [docs/DB_MIGRATIONS_HU.md](docs/DB_MIGRATIONS_HU.md) – MySQL migrációk, `e_core_migrations`, `getDbSchemaVersion` (Fázis 3)
-- [docs/LUA_LS_AND_CI_HU.md](docs/LUA_LS_AND_CI_HU.md) – LuaLS, luacheck, GitHub Actions (Fázis 4)
+- [docs/PUBLIC_API_HU.md](docs/PUBLIC_API_HU.md) – publikus `exports.e_core:*` + `eCore:` szerződés
+- [docs/AI_SUPPORT_REFERENCE_HU.txt](docs/AI_SUPPORT_REFERENCE_HU.txt) – mély referencia (magyar) + GYIK
+- [docs/SUPPORTED_STACK_MATRIX_HU.md](docs/SUPPORTED_STACK_MATRIX_HU.md) – tier / override mátrix
+- [docs/SZERVER_OPERATOR_CHECKLIST_HU.md](docs/SZERVER_OPERATOR_CHECKLIST_HU.md) – szerver üzemeltető: ensure sorrend, kockázatlista, ConVarok
+- [docs/DB_MIGRATIONS_HU.md](docs/DB_MIGRATIONS_HU.md) – MySQL migrációk, `e_core_migrations`, `getDbSchemaVersion`
+- [docs/LUA_LS_AND_CI_HU.md](docs/LUA_LS_AND_CI_HU.md) – LuaLS, luacheck, GitHub Actions
 
 Példa a testreszabásra:
 

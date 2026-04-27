@@ -1,7 +1,7 @@
 fx_version 'cerulean'
 game 'gta5'
 description 'ECO CORE'
-version '0.0.59'
+version '0.1.2'
 
 shared_scripts {
     '@ox_lib/init.lua',
@@ -9,6 +9,7 @@ shared_scripts {
 
     'src/bridge/esx/config_defaults.lua',
     'src/bridge/qb/config_defaults.lua',
+    'src/bridge/framework_resource_registry.lua',
     'src/bridge/framework_config.lua',
     'src/standalone/config/main.lua',
     'src/standalone/config/levels.lua',
@@ -47,6 +48,9 @@ client_scripts {
 
     'src/bridge/main.lua',
 
+    'src/client/ecore_nui.lua',
+    'src/client/client_meta_store.lua',
+    'src/client/hud_layout_registry.lua',
     'src/client/main.lua',
     'src/client/integrity_check.lua',
     'src/client/web.lua',
@@ -80,8 +84,10 @@ server_scripts {
 
     'src/bridge/global/callbacks/server.lua',
 
+    'src/server/player_meta_store.lua',
     'src/server/main.lua',
     'src/server/meta.lua',
+    'src/server/hud_layout.lua',
     'src/server/labor.lua',
     'src/server/quote.lua',
     'src/server/db_migrations.lua',
@@ -96,7 +102,7 @@ server_scripts {
     'src/standalone/usableitem.lua',
 }
 
-ui_page 'http://localhost:5173'
+ui_page 'src/web/dist/index.html'
 
 files {
     'src/imports/core.lua',

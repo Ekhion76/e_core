@@ -2,8 +2,8 @@
 --- Do not overwrite the bridge files.
 --- Copy the function you want to modify here
 
-if CUSTOM_INVENTORY then
-    (function(_inv) end)(CUSTOM_INVENTORY)
+if not CUSTOM_INVENTORY then return end
 
-    -- function eCore:convertItems(items) end
-end
+(function(_inv) end)(CUSTOM_INVENTORY)
+
+-- function eCore:convertItems(items) end

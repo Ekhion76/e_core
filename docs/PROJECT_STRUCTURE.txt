@@ -17,7 +17,7 @@ overrides/          Testreszabasi pontok (inventory/progress/core override-ok).
 html/               NUI output (web build + css/img).
 web/                Svelte/TS NUI forraskod.
 docs/               Belső projekt dokumentacio.
-tech_docs/          Docusaurus technikai dokumentacio.
+tech_docs/          Helykitöltő: későbbi Docusaurus (vagy) publikus webdoksi; lásd tech_docs/README.md
 types/              LuaLS stubok.
 scripts/            CI/dev seged script.
 _installation_assist/ Opcionális telepitesi segedanyag.

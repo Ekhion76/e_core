@@ -1,3 +1,5 @@
+if _G._ECORE_INIT_FAILED then return end
+
 eCore:createUsableItem("labor_enhancer", function(source)
     local _source = source
     local xPlayer = eCore:getPlayer(_source)

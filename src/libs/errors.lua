@@ -53,8 +53,42 @@ eCoreErr = {
     profession_not_found = 'profession_not_found',
     profession_profile_not_found = 'profession_profile_not_found',
     profession_already_exists = 'profession_already_exists',
+    --- Embedded in admin diagnostics run results for test `profession-key-validation` when invalid/missing keys were found (not a missing profession row in DB).
+    profession_key_validation_failed = 'profession_key_validation_failed',
     cleanup_job_not_found = 'cleanup_job_not_found',
     cleanup_job_not_resumable = 'cleanup_job_not_resumable',
     cleanup_job_already_running = 'cleanup_job_already_running',
+    --- `diagnosticsAdminGetRun` / `diagnosticsAdminCancelRun`: no in-memory run for the given `runId`.
+    diagnostics_run_not_found = 'diagnostics_run_not_found',
     access_denied = 'access_denied',
+
+    --- Internal cleanup job scan (`cleanup_job_step`): DB scan failed.
+    cleanup_scan_failed = 'scan_failed',
+    --- `hf.mysqlAwait` / DB init: oxmysql not available.
+    mysql_missing = 'mysql_missing',
+
+    --- `hf.adminApiCanAccess`: no `auth.source` when required.
+    admin_missing_auth_source = 'Missing auth.source for admin API call.',
+    --- `hf.adminApiCanAccess`: invalid or offline `auth.source`.
+    admin_invalid_auth_source = 'Invalid auth.source.',
+    --- `hf.adminApiCanAccess`: neither configured permission path matched.
+    admin_api_policy_denied = 'No permission (admin policy).',
+    --- `hf.webConsoleAccess`: invalid or offline player source.
+    admin_invalid_web_player = 'Invalid player.',
+    --- `hf.webConsoleAccess`: admin NUI disabled in config.
+    admin_console_disabled = 'Admin console is disabled (Config.operator.admin.enabled = false).',
+    --- `hf.webConsoleAccess`: neither permission field nor allowlist configured.
+    admin_web_unconfigured = 'No permission: configure Config.web permission fields or allowedIdentifiers.',
+    --- `hf.webConsoleAccess`: configured policy did not allow this player.
+    admin_web_denied = 'No permission for admin console (policy or identifier list).',
+    --- `adminApiDeniedAuditList` gate: neither cleanup nor diagnostics admin policy matched.
+    admin_audit_dual_policy_denied = 'Nincs jogosultság (cleanup/diagnostics admin policy).',
+
+    --- Integrity checklist (`integrityCanRun` / policy): invalid source.
+    integrity_invalid_player = 'Érvénytelen játékos.',
+    integrity_check_disabled = 'Az integritás ellenőrzés ki van kapcsolva (Config.integrityCheck.enabled).',
+    integrity_cooldown_active = 'Várj a következő futtatás előtt (cooldown).',
+    integrity_progress_busy = 'Még fut (vagy elakadt) egy progress teszt – várj, vagy próbáld újra később.',
+    integrity_policy_misconfigured = 'Nincs jogosultság: állíts `integrityCheck.acePermission`-t (pl. ecore.diagnostics) és add_ace-et, vagy töltsd az `allowedIdentifiers` listát.',
+    integrity_policy_denied = 'Nincs jogosultság (policy vagy azonosító lista).',
 }

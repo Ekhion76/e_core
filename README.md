@@ -42,14 +42,14 @@ The `overrides/` folder is the customization layer. Functions from `src/bridge/`
 
 When starting a new chat or refactor, link or attach:
 
+- [docs/INDEX_HU.md](docs/INDEX_HU.md) – documentation map (start here)
 - [docs/PROJECT_STRUCTURE.txt](docs/PROJECT_STRUCTURE.txt) – folder roles and file tree
-- [docs/PUBLIC_API_HU.md](docs/PUBLIC_API_HU.md) – public `exports.e_core:*` + `eCore:` name inventory
-- [docs/SUPPORTED_STACK_MATRIX_HU.md](docs/SUPPORTED_STACK_MATRIX_HU.md) – supported stack tiers / overrides (v0.1)
-- [docs/AI_EGYUTTMUKODES_CHECKLIST_HU.md](docs/AI_EGYUTTMUKODES_CHECKLIST_HU.md) – what to put in the first message (environment, repro, goals; text is Hungarian)
-- [docs/MODERNIZACIOS_ES_MEGBIZHATOSAGI_TERV_HU.md](docs/MODERNIZACIOS_ES_MEGBIZHATOSAGI_TERV_HU.md) – longer technical plan (optional)
-- [docs/SZERVER_OPERATOR_CHECKLIST_HU.md](docs/SZERVER_OPERATOR_CHECKLIST_HU.md) – server operator checklist and risk list (Hungarian; Phase 0)
-- [docs/DB_MIGRATIONS_HU.md](docs/DB_MIGRATIONS_HU.md) – MySQL migrations, `e_core_migrations`, `getDbSchemaVersion` (Hungarian; Phase 3)
-- [docs/LUA_LS_AND_CI_HU.md](docs/LUA_LS_AND_CI_HU.md) – LuaLS, luacheck, GitHub Actions (Hungarian; Phase 4)
+- [docs/PUBLIC_API_HU.md](docs/PUBLIC_API_HU.md) – public `exports.e_core:*` + `eCore:` contract
+- [docs/AI_SUPPORT_REFERENCE_HU.txt](docs/AI_SUPPORT_REFERENCE_HU.txt) – deep reference (Hungarian) + GYIK
+- [docs/SUPPORTED_STACK_MATRIX_HU.md](docs/SUPPORTED_STACK_MATRIX_HU.md) – supported stack tiers / overrides
+- [docs/SZERVER_OPERATOR_CHECKLIST_HU.md](docs/SZERVER_OPERATOR_CHECKLIST_HU.md) – server operator checklist (Hungarian)
+- [docs/DB_MIGRATIONS_HU.md](docs/DB_MIGRATIONS_HU.md) – MySQL migrations, `e_core_migrations`, `getDbSchemaVersion` (Hungarian)
+- [docs/LUA_LS_AND_CI_HU.md](docs/LUA_LS_AND_CI_HU.md) – LuaLS, luacheck, GitHub Actions (Hungarian)
 
 Example of customization:
 

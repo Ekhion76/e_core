@@ -55,6 +55,14 @@ Részletek és ConVarok: ugyanaz a szakasz marad, mint korábban: `e_core:items_
 
 **Megjegyzés:** `ESX_CORE` / `QB_CORE` most a **választott aktív ágat** jelenti (nem pusztán azt, hogy a resource elindult-e). Így a nem választott bridge **guard** ágai nem futnak le, még ha a másik core resource véletlenül fut is.
 
+### 6.1 Legacy core **resource** név (átnevezett fork)
+
+| ConVar | Alapértelmezés | Jelentés |
+|--------|----------------|----------|
+| `e_core:framework_resource` | *(üres)* | Nem üres és **`e_core:framework`** = `esx` vagy `qb` → ez a string felülírja az adott ág alap resource nevét (`es_extended` illetve `qb-core`). **`auto` mellett nem** alkalmazódik (figyelmeztető log). |
+
+Runtime: `src/bridge/framework_resource_registry.lua` – `ecore_framework_resource_set`, `ecore_framework_resource_esx`, `ecore_framework_resource_qb` (nincs `_G._ECORE_LEGACY_*`). A QB `DrawText` / `HideText` bridge a QB resource névből épít prefixet; más event namespace → `qb/client.lua` / `qb/server.lua` felülírás.
+
 ---
 
 ## 7. Ellenőrzőlista
@@ -62,4 +70,4 @@ Részletek és ConVarok: ugyanaz a szakasz marad, mint korábban: `e_core:items_
 - [x] `fxmanifest` egy bridge-config belépő + defaults.
 - [x] 0 / 2 core esetén egyértelmű viselkedés (log / `error`).
 - [x] `docs/AI_SUPPORT_REFERENCE_HU.txt` frissítve (fő szekciók).
-- [x] Üzemterv: `docs/REFAKTOR_PRIORITAS_UZEMTERV_HU.md`.
+- [x] Keretrendszer doksik: `docs/INDEX_HU.md`.

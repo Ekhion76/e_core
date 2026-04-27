@@ -1,41 +1,41 @@
-if AVP_GRID_INVENTORY then
-    -- these functions override the bridge/global/ and bridge/esx/qb/ functions
-    -- if you want to rewrite any function, copy it here and modify it here
+if not AVP_GRID_INVENTORY then return end
 
-    local hf = hf
+-- these functions override the bridge/global/ and bridge/esx/qb/ functions
+-- if you want to rewrite any function, copy it here and modify it here
 
-    --- Auto-generated annotation. Refine behavior details if needed.
-    --- @param swappingItems table
-    --- @param itemData any
-    --- @param playerData any
-    --- @return any result
-    function eCore:canSwapItems(swappingItems, itemData, playerData)
+local hf = hf
 
-        -- only canCarry check
-        local p = promise.new()
+--- Auto-generated annotation. Refine behavior details if needed.
+--- @param swappingItems table
+--- @param itemData any
+--- @param playerData any
+--- @return any result
+function eCore:canSwapItems(swappingItems, itemData, playerData)
 
-        eCore:triggerCallback('e_core:getCanSwap', function(result)
+    -- only canCarry check
+    local p = promise.new()
 
-            p:resolve(result)
-        end, swappingItems, itemData)
+    eCore:triggerCallback('e_core:getCanSwap', function(result)
 
-        local result = Citizen.Await(p)
-        return result, (result and '' or 'too_heavy')
-    end
+        p:resolve(result)
+    end, swappingItems, itemData)
 
-    ---Returns true or false (and reason) depending if the inventory can carry the specified item
-    ---@param itemData table {name: string, amount: number, metadata: table}
-    ---@return boolean, string
-    function eCore:canCarryItem(itemData, playerData)
+    local result = Citizen.Await(p)
+    return result, (result and '' or 'too_heavy')
+end
 
-        local p = promise.new()
+---Returns true or false (and reason) depending if the inventory can carry the specified item
+---@param itemData table {name: string, amount: number, metadata: table}
+---@return boolean, string
+function eCore:canCarryItem(itemData, playerData)
 
-        eCore:triggerCallback('e_core:getCanCarry', function(result)
+    local p = promise.new()
 
-            p:resolve(result)
-        end, itemData)
+    eCore:triggerCallback('e_core:getCanCarry', function(result)
 
-        local result = Citizen.Await(p)
-        return result, (result and '' or 'too_heavy')
-    end
+        p:resolve(result)
+    end, itemData)
+
+    local result = Citizen.Await(p)
+    return result, (result and '' or 'too_heavy')
 end

@@ -27,7 +27,7 @@ Opcionális bővítés később:
 
 ## Publikus felület (consumer)
 
-- A `exports.e_core:getCore()` visszaadott `eCore` táblába a **`eCoreLifecycle_buildPublicAPI()`** írja be a kurált mezőket (merge). Példa: `eCore.log.discord.create(...)` – thin wrapper, **nem** a nyers `extensions` tábla.
+- A `exports.e_core:getCore()` visszaadott `eCore` táblába a **`eCoreLifecycle_buildPublicAPI()`** írja be a kurált mezőket (merge). Példa: `eCore.log.discord.create(...)` – thin wrapper, **nem** a nyers `extensions` tábla. **0.1.9+:** `eCore.ecoreVersion` és `eCore.bridgeContract` (séma + kulcslista) — `docs/PUBLIC_API_HU.md` §1.
 - **TILOS** consumernek: `eCore.getModule(...)`, nyers belső tábla visszaadása exporton.
 
 ## Side (client / server / shared)

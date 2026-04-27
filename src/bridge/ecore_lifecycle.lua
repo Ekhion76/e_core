@@ -2,6 +2,9 @@
 --- Contract: do not read `_eCoreInternal` from consumer code; use `exports.e_core:getCore()` only.
 --- @module 'src.bridge.ecore_lifecycle'
 
+--- Bump when `eCore.bridgeContract` shape or semantics change (independent of `ecoreVersion` / fxmanifest semver).
+local ECORE_BRIDGE_CONTRACT_SCHEMA_VERSION = 1
+
 --- Runtime-only internal table (global by Lua limitation; not exported to consumers).
 --- @class ECoreInternal
 --- @field helpers table `{ base = hf, ecore = hfe }`
@@ -96,9 +99,21 @@ function eCoreLifecycle_initExtensions(ctx)
 end
 
 --- PURE: reads `_eCoreInternal` only; returns a **new** table for one-shot merge into `eCore`.
---- @return table api Top-level keys: `framework`, `config`, `i18n`, `util`, optional `log`.
+--- @return table api Top-level keys: `ecoreVersion`, `bridgeContract`, `framework`, `config`, `i18n`, `util`, optional `log`.
 function eCoreLifecycle_buildPublicAPI()
     local out = {}
+    local res = GetCurrentResourceName()
+    local ver = GetResourceMetadata(res, 'version', 0)
+    if type(ver) ~= 'string' or ver == '' then
+        ver = '0.0.0'
+    end
+    out.ecoreVersion = ver
+    -- `log` is merged only on server when Discord extension registered; key still listed for stable discovery.
+    out.bridgeContract = {
+        schemaVersion = ECORE_BRIDGE_CONTRACT_SCHEMA_VERSION,
+        resource = res,
+        lifecycleMergedKeys = { 'framework', 'config', 'i18n', 'util', 'log' },
+    }
     local int = _eCoreInternal
     if type(int) ~= 'table' then
         return out

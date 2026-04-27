@@ -128,6 +128,10 @@ local function dispatchNuiAdmin(src, data)
         return levelProfileAdminDelete(profileKey)
     end
 
+    if action == 'getInventorySamples' then
+        return adminNuiGetInventorySamples(src, payload)
+    end
+
     return {
         ok = false,
         code = eCoreErr.invalid_item_data,

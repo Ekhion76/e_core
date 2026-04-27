@@ -6,6 +6,8 @@ After `exports.e_core:getCore()`, the same `eCore` table includes merged **non-b
 
 | Field | Notes |
 |--------|--------|
+| `eCore.ecoreVersion` | **0.1.9+:** string from this resource’s `fxmanifest` `version` (`GetResourceMetadata`); fallback `0.0.0`. |
+| `eCore.bridgeContract` | **0.1.9+:** `{ schemaVersion, resource, lifecycleMergedKeys }` — stable discovery of lifecycle-merged keys (not the full `eCore:` method list). Bump `schemaVersion` in core when this table’s shape changes. |
 | `eCore.framework` | Same value as `exports.e_core:getFrameWork()` (`'esx'`, `'qb'`, or `nil`). |
 | `eCore.config` | Reference to the live `Config` table (same as `getConfig()`). |
 | `eCore.i18n.translate` / `translateU` | Locale helpers (`src/imports/shared/locale.lua`). |
@@ -96,7 +98,7 @@ exports.e_core:getConfig()
 
 ## isReady
 
-**@return**: boolean – `true` csak akkor, ha az item registry (`REGISTERED_ITEMS`) sikeresen betöltött és a core késznek tekinti magát. Betöltés alatt és timeout után `false`. Finomabb háromállapot: `eCore:isReady()` (`nil` / `false` / `true`).
+**@return**: boolean – `true` csak akkor, ha az item registry (`REGISTERED_ITEMS`) sikeresen betöltött és a core késznek tekinti magát. Betöltés alatt, timeout után és IDLE esetén `false`. **0.1.7+:** `exports.e_core:isReady()` és `eCore:isReady()` mindig **boolean** (nincs `nil` „várakozás” sentinel a facade-on); `CORE_READY` indulás `false` (`src/client/main.lua`).
 
 ```lua
 if exports.e_core:isReady() then

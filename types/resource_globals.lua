@@ -16,7 +16,7 @@ eCoreNui = {}
 ECoreHudLayout = {}
 
 ---@type boolean|nil
-CORE_READY = nil
+CORE_READY = false
 
 ---@type table|nil
 REGISTERED_ITEMS = nil

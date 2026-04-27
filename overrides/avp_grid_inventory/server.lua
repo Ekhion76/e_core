@@ -29,7 +29,7 @@ end
 --- @return any result
 function eCore:removeItem(xPlayer, item, count, metadata, slot)
     if not xPlayer or not hf.isValidPlayerSource(xPlayer.source) then
-        return false, eCoreErr.unknown_error
+        return false, eCoreErr.invalid_player
     end
     if type(item) ~= 'string' or not hf.hasContent(item) then
         return false, eCoreErr.invalid_item_data
@@ -45,7 +45,7 @@ function eCore:removeItem(xPlayer, item, count, metadata, slot)
     end)
     if not okCall then
         cLog('eCore:removeItem:avp', { err = tostring(okRm) }, 1)
-        return false, eCoreErr.unknown_error
+        return false, eCoreErr.inventory_export_exception
     end
     if not okRm then
         return false, asEcoreInventoryReason(reason)
@@ -59,7 +59,7 @@ end
 --- @return any result
 function eCore:removeItems(xPlayer, items)
     if not xPlayer or not hf.isValidPlayerSource(xPlayer.source) then
-        return false, eCoreErr.unknown_error
+        return false, eCoreErr.invalid_player
     end
 
     if not hf.hasEntries(items) then
@@ -87,7 +87,7 @@ function eCore:removeItems(xPlayer, items)
         end)
         if not okCall then
             cLog('eCore:removeItems:avp', { item = item.name, err = tostring(okRm) }, 1)
-            return false, eCoreErr.unknown_error
+            return false, eCoreErr.inventory_export_exception
         end
         if not okRm then
             return false, asEcoreInventoryReason(reason)
@@ -106,7 +106,7 @@ end
 --- @return any result
 function eCore:addItem(xPlayer, item, count, slot, metadata)
     if not xPlayer or not hf.isValidPlayerSource(xPlayer.source) then
-        return false, eCoreErr.unknown_error
+        return false, eCoreErr.invalid_player
     end
     if type(item) ~= 'string' or not hf.hasContent(item) then
         return false, eCoreErr.invalid_item_data
@@ -122,7 +122,7 @@ function eCore:addItem(xPlayer, item, count, slot, metadata)
     end)
     if not okCall then
         cLog('eCore:addItem:avp', { err = tostring(okAdd) }, 1)
-        return false, eCoreErr.unknown_error
+        return false, eCoreErr.inventory_export_exception
     end
     if not okAdd then
         return false, asEcoreInventoryReason(reason)
@@ -154,7 +154,7 @@ function eCore:canCarryItem(itemData, playerData)
         return false, eCoreErr.invalid_item_data
     end
     if type(playerData) ~= 'table' or not hf.isValidPlayerSource(playerData.source) then
-        return false, eCoreErr.unknown_error
+        return false, eCoreErr.invalid_player
     end
 
     local okCall, can = pcall(function()
@@ -162,7 +162,7 @@ function eCore:canCarryItem(itemData, playerData)
     end)
     if not okCall then
         cLog('eCore:canCarryItem:avp', { err = tostring(can) }, 1)
-        return false, eCoreErr.unknown_error
+        return false, eCoreErr.inventory_export_exception
     end
     if can then
         return true

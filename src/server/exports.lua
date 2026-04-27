@@ -62,7 +62,7 @@ end)
 --- @return boolean ready True if core is fully ready for consumers.
 exports('isReady', function()
 
-    return eCore:isReady() == true
+    return eCore:isReady()
 end)
 
 --- Returns the highest applied DB migration id.

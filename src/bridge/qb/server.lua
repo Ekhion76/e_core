@@ -78,6 +78,11 @@ if QB_CORE then
             xPlayer = QBCore.Functions.GetPlayer(xPlayer)
         end
 
+        -- Ugyanaz a szerződés, mint `addMoney`: nil játékosnél ne hívjunk `Functions.RemoveMoney`-t (runtime error).
+        if not xPlayer then
+            return false, eCoreErr.invalid_player
+        end
+
         local convert = { -- ESX2QB
             money = 'cash',
             black_money = 'crypto',
@@ -92,13 +97,22 @@ if QB_CORE then
     --- @param account any
     --- @return any result
     function eCore:getAccounts(xPlayer, account)
+        if type(xPlayer) == 'number' then
+            xPlayer = QBCore.Functions.GetPlayer(xPlayer)
+        end
+
+        -- ESX ág `getAccounts`-szel összhang: hiányos játékos = nincs számla egyenleg (0), nem error.
+        if not xPlayer or type(xPlayer.money) ~= 'table' then
+            return 0
+        end
+
         local convert = { -- ESX2QB
             money = 'cash',
             black_money = 'crypto',
         }
 
         account = convert[account] and convert[account] or account
-        return xPlayer.money[account]
+        return xPlayer.money[account] or 0
     end
 
     ------------------------------------------------------------------------
@@ -106,6 +120,14 @@ if QB_CORE then
     ------------------------------------------------------------------------
 
     function eCore:getInventory(xPlayer)
+        if type(xPlayer) == 'number' then
+            xPlayer = QBCore.Functions.GetPlayer(xPlayer)
+        end
+
+        if not xPlayer or type(xPlayer.items) ~= 'table' then
+            return {}
+        end
+
         return xPlayer.items
     end
 
@@ -117,6 +139,14 @@ if QB_CORE then
     --- @param metadata any
     --- @return any result
     function eCore:addItem(xPlayer, item, count, slot, metadata)
+        if type(xPlayer) == 'number' then
+            xPlayer = QBCore.Functions.GetPlayer(xPlayer)
+        end
+
+        if not xPlayer then
+            return false, eCoreErr.invalid_player
+        end
+
         if not xPlayer.Functions.AddItem(item, count, slot, metadata) then
             return false, eCoreErr.inventory_full
         end
@@ -139,6 +169,14 @@ if QB_CORE then
     --- @param slot number
     --- @return any result
     function eCore:removeItem(xPlayer, itemName, count, metadata, slot)
+        if type(xPlayer) == 'number' then
+            xPlayer = QBCore.Functions.GetPlayer(xPlayer)
+        end
+
+        if not xPlayer then
+            return false, eCoreErr.invalid_player
+        end
+
         count = tonumber(count)
         if not hf.hasContent(itemName) or not count or count < 1 then
             return false, eCoreErr.no_items_to_remove
@@ -201,6 +239,14 @@ if QB_CORE then
     --- @param items table
     --- @return any result
     function eCore:removeItems(xPlayer, items)
+        if type(xPlayer) == 'number' then
+            xPlayer = QBCore.Functions.GetPlayer(xPlayer)
+        end
+
+        if not xPlayer then
+            return false, eCoreErr.invalid_player
+        end
+
         if not hf.hasEntries(items) then
             return false, eCoreErr.no_items_to_remove
         end
@@ -218,10 +264,6 @@ if QB_CORE then
             if not amt or amt < 1 or amt ~= amt then
                 return false, eCoreErr.invalid_item_data
             end
-        end
-
-        if not xPlayer then
-            return false, eCoreErr.unknown_error
         end
 
         local count

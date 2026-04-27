@@ -13,9 +13,17 @@
   import DocumentationPanel from './lib/DocumentationPanel.svelte'
   import ProfessionsPanel from './lib/ProfessionsPanel.svelte'
   import LevelProfilesPanel from './lib/LevelProfilesPanel.svelte'
+  import InventorySamplesPanel from './lib/InventorySamplesPanel.svelte'
   import { postNui } from './lib/nui'
 
-  type TabId = 'overview' | 'diagnostics' | 'integrity' | 'documentation' | 'professions' | 'level-profiles'
+  type TabId =
+    | 'overview'
+    | 'diagnostics'
+    | 'integrity'
+    | 'documentation'
+    | 'professions'
+    | 'level-profiles'
+    | 'inventory-samples'
 
   type Tab = { id: TabId; label: string }
 
@@ -28,7 +36,8 @@
     { id: 'integrity', label: 'Integritás' },
     { id: 'documentation', label: 'Documentation' },
     { id: 'professions', label: 'Professions' },
-    { id: 'level-profiles', label: 'Level Profiles' }
+    { id: 'level-profiles', label: 'Level Profiles' },
+    { id: 'inventory-samples', label: 'Inventory minta' }
   ]
 
   let activeTab = $state<TabId>('overview')
@@ -215,6 +224,8 @@
       <DocumentationPanel docsHomeUrl={docsHomeUrl} />
     {:else if activeTab === 'professions'}
       <ProfessionsPanel />
+    {:else if activeTab === 'inventory-samples'}
+      <InventorySamplesPanel />
     {:else}
       <LevelProfilesPanel />
     {/if}
@@ -262,16 +273,5 @@
   .overlay-close:hover {
     border-color: #f87171;
     color: #fecaca;
-  }
-  .muted {
-    margin: 0.35rem 0 0;
-    color: #9fb2d8;
-    font-size: 0.9rem;
-  }
-  .muted code {
-    font-size: 0.85em;
-    padding: 0.1em 0.35em;
-    border-radius: 4px;
-    background: #182746;
   }
 </style>

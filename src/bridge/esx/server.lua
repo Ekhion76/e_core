@@ -51,12 +51,13 @@ if ESX_CORE then
             xPlayer = ESX.GetPlayerFromId(xPlayer)
         end
 
-        if xPlayer then
-            xPlayer.addAccountMoney(account, amount, reason)
-            return true
+        -- QB ággal azonos szerződés: ne csak `false`, hanem explicit ok-string (consumer összehasonlítás).
+        if not xPlayer then
+            return false, eCoreErr.invalid_player
         end
 
-        return false
+        xPlayer.addAccountMoney(account, amount, reason)
+        return true
     end
 
     --- Auto-generated annotation. Refine behavior details if needed.
@@ -70,12 +71,12 @@ if ESX_CORE then
             xPlayer = ESX.GetPlayerFromId(xPlayer)
         end
 
-        if xPlayer then
-            xPlayer.removeAccountMoney(accountName, amount, reason)
-            return true -- no removeAccountMoney return :(
+        if not xPlayer then
+            return false, eCoreErr.invalid_player
         end
 
-        return false
+        xPlayer.removeAccountMoney(accountName, amount, reason)
+        return true -- no removeAccountMoney return :(
     end
 
     --- Auto-generated annotation. Refine behavior details if needed.
@@ -83,7 +84,11 @@ if ESX_CORE then
     --- @param account any
     --- @return any result
     function eCore:getAccounts(xPlayer, account)
-        -- `getAccounts` számvisszatéréses szerződés: hiányos xPlayer = „nincs ilyen számla” (0), nem runtime error a consumer felé.
+        if type(xPlayer) == 'number' then
+            xPlayer = ESX.GetPlayerFromId(xPlayer)
+        end
+
+        -- Számvisszatérés: offline / rossz id = nincs számla (0); QB ág `getAccounts`-szel összhang.
         if type(xPlayer) ~= 'table' or type(xPlayer.accounts) ~= 'table' then
             return 0
         end
@@ -102,6 +107,14 @@ if ESX_CORE then
     ------------------------------------------------------------------------
 
     function eCore:getInventory(xPlayer)
+        if type(xPlayer) == 'number' then
+            xPlayer = ESX.GetPlayerFromId(xPlayer)
+        end
+
+        if not xPlayer then
+            return {}
+        end
+
         return xPlayer.getInventory()
     end
 
@@ -109,6 +122,14 @@ if ESX_CORE then
     --- @param xPlayer table
     --- @return any result
     function eCore:getInventoryWeight(xPlayer)
+        if type(xPlayer) == 'number' then
+            xPlayer = ESX.GetPlayerFromId(xPlayer)
+        end
+
+        if not xPlayer then
+            return 0
+        end
+
         return xPlayer.getWeight()
     end
 
@@ -127,6 +148,14 @@ if ESX_CORE then
     --- @param metadata any
     --- @return any result
     function eCore:addItem(xPlayer, item, count, slot, metadata)
+        if type(xPlayer) == 'number' then
+            xPlayer = ESX.GetPlayerFromId(xPlayer)
+        end
+
+        if not xPlayer then
+            return false, eCoreErr.invalid_player
+        end
+
         xPlayer.addInventoryItem(item, count)
         return true
     end
@@ -139,6 +168,14 @@ if ESX_CORE then
     --- @param slot number
     --- @return any result
     function eCore:removeItem(xPlayer, item, count, metadata, slot)
+        if type(xPlayer) == 'number' then
+            xPlayer = ESX.GetPlayerFromId(xPlayer)
+        end
+
+        if not xPlayer then
+            return false, eCoreErr.invalid_player
+        end
+
         cLog('eCore:removeItem', {item = item, count = count}, 4)
         xPlayer.removeInventoryItem(item, count, metadata, slot)
         return true
@@ -149,8 +186,12 @@ if ESX_CORE then
     --- @param items table
     --- @return any result
     function eCore:removeItems(xPlayer, items)
+        if type(xPlayer) == 'number' then
+            xPlayer = ESX.GetPlayerFromId(xPlayer)
+        end
+
         if not xPlayer then
-            return false, eCoreErr.unknown_error
+            return false, eCoreErr.invalid_player
         end
 
         if not hf.hasEntries(items) then
@@ -181,7 +222,7 @@ if ESX_CORE then
 
             if not okRm then
                 cLog('eCore:removeItems:pcall', { item = item.name, err = tostring(errRm) }, 1)
-                return false, eCoreErr.unknown_error
+                return false, eCoreErr.inventory_export_exception
             end
         end
 

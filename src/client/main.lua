@@ -10,7 +10,8 @@ local function eCoreClientReady()
     return type(eCore) == 'table' and type(eCore.isLoggedIn) == 'function'
 end
 
-CORE_READY, REGISTERED_ITEMS = nil, nil
+-- `false` = még nem ready vagy timeout/IDLE; csak `true` ha item registry kész (`exports.e_core:isReady()` == true). Korábban `nil` volt, ami félrevezető truthy ellenőrzéseknél.
+CORE_READY, REGISTERED_ITEMS = false, nil
 
 CreateThread(function()
     cLog('CLIENT REGISTERED_ITEMS', 'Loading', 2)

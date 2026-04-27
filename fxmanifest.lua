@@ -1,7 +1,7 @@
 fx_version 'cerulean'
 game 'gta5'
 description 'ECO CORE'
-version '0.1.4'
+version '0.1.12'
 
 shared_scripts {
     '@ox_lib/init.lua',
@@ -100,12 +100,14 @@ server_scripts {
     'src/server/integrity_check.lua',
     'src/server/diagnostics.lua',
     'src/server/web.lua',
+    'src/server/admin_inventory_sample.lua',
     'src/server/nui_admin_bridge.lua',
     'src/server/nui_diagnostics_bridge.lua',
     'src/standalone/usableitem.lua',
 }
 
-ui_page 'src/web/dist/index.html'
+-- NUI dev: Vite (`npm run dev` a `src/web` mappában). Éles szerveren állíts vissza: `ui_page 'src/web/dist/index.html'` + `npm run build`.
+ui_page 'http://127.0.0.1:5173/'
 
 files {
     'src/imports/shared/core.lua',

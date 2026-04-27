@@ -75,7 +75,7 @@ flowchart LR
 
 **e_core resource:** a FiveM a `fxmanifest.lua` alapján **egyben** betölti az összes felsorolt `shared_scripts`, majd kontextus szerint a teljes `client_scripts` / `server_scripts` listát. Ez **nem lazy modulrendszer**: nincs beépített dinamikus „leválasztás”; a chunkok és táblák memóriában maradnak, amíg az `e_core` fut.
 
-**NUI:** `ui_page 'src/web/dist/index.html'` – a futó felület a **buildelt** `src/web/dist/` (forrás: `src/web/`, lásd [src/web/README.md](src/web/README.md)). A Lua oldal NUI bridge fájlokon keresztül kommunikál (`ecore_nui.lua`, `web.lua`, admin/diagnostics bridge).
+**NUI:** a `fxmanifest.lua` **`ui_page`** határozza meg a felületet. **Prod:** `src/web/dist/index.html` + `npm run build`. **Dev (Vite HMR):** `http://127.0.0.1:5173/` + `src/web`-ben `npm run dev` ugyanazon a gépen; részlet: [src/web/README.md](src/web/README.md). A Lua oldal NUI bridge fájlokon keresztül kommunikál (`ecore_nui.lua`, `web.lua`, admin/diagnostics bridge).
 
 **Consumer – két tipikus minta:**
 
@@ -86,7 +86,7 @@ flowchart LR
 
 A `full_import` által betöltött pathoknak szerepelniük kell az e_core **`files { }`** listájában (jelenleg többek között `src/imports/shared/*.lua`), különben `LoadResourceFile` üres.
 
-**Üzemkész jel:** `exports.e_core:isReady()`; kliensen az item registry és egyéb init után érdemes erre várni, nem csak a `getCore()` létezésére.
+**Üzemkész jel:** `exports.e_core:isReady()` (0.1.7+ mindig **boolean**: `false` induláskor / töltés / timeout / IDLE, `true` csak ha az item registry kész); kliensen az item registry és egyéb init után érdemes erre várni, nem csak a `getCore()` létezésére.
 
 ---
 

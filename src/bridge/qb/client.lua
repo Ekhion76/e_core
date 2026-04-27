@@ -136,48 +136,60 @@ if QB_CORE then
             and IsPedOnFoot(_PlayerPedId)
     end
 
-    --- Auto-generated annotation. Refine behavior details if needed.
-    --- @param vehicle any
-    --- @param amount number
-    --- @return any result
+    --- Sets local fuel via `qb-fuel` when validation passes.
+    --- @param vehicle number Vehicle entity handle.
+    --- @param amount any Numeric fuel level (must pass `tonumber`).
+    --- @return boolean ok `true` when fuel was set.
+    --- @return string|nil reason `eCoreErr.not_valid_amount` or `eCoreErr.invalid_vehicle_entity` on failure.
     function eCore:setFuelLevel(vehicle, amount)
-        if not tonumber(amount) or not DoesEntityExist(vehicle) then
-            return false
+        if not tonumber(amount) then
+            return false, eCoreErr.not_valid_amount
         end
-        -- exports['LegacyFuel']:SetFuel(vehicle, amount + 0.0)
+        if not DoesEntityExist(vehicle) then
+            return false, eCoreErr.invalid_vehicle_entity
+        end
         exports['qb-fuel']:SetFuel(vehicle, amount + 0.0)
+        return true
     end
 
-    --- Auto-generated annotation. Refine behavior details if needed.
-    --- @param rawPlate any
-    --- @param vehicle any
-    --- @return any result
+    --- Triggers QB-style client keys ownership for the normalized plate.
+    --- @param rawPlate any Plate string from props or UI.
+    --- @param vehicle any Optional vehicle entity (reserved for stack-specific keys scripts).
+    --- @return boolean ok `true` when plate is non-empty after checks.
+    --- @return string|nil reason `eCoreErr.invalid_vehicle_plate` when plate is empty.
     function eCore:vehicleKeys(rawPlate, vehicle)
         if not hf.hasContent(rawPlate) then
-            return false
+            return false, eCoreErr.invalid_vehicle_plate
         end
         local plate = hf.alphaNum(rawPlate)
         TriggerEvent("vehiclekeys:client:SetOwner", plate)
+        return true
     end
 
-    --- Auto-generated annotation. Refine behavior details if needed.
-    --- @param vehicle any
-    --- @param props table
-    --- @return any result
+    --- Applies QBCore vehicle properties to an existing local entity.
+    --- @param vehicle number Vehicle entity handle.
+    --- @param props table Non-empty property table (`hf.hasEntries`).
+    --- @return boolean ok
+    --- @return string|nil reason `eCoreErr.invalid_vehicle_props` or `eCoreErr.invalid_vehicle_entity`.
     function eCore:setVehicleProperties(vehicle, props)
-        if not hf.hasEntries(props) or not DoesEntityExist(vehicle) then
-            return
+        if not hf.hasEntries(props) then
+            return false, eCoreErr.invalid_vehicle_props
+        end
+        if not DoesEntityExist(vehicle) then
+            return false, eCoreErr.invalid_vehicle_entity
         end
         QBCore.Functions.SetVehicleProperties(vehicle, props)
+        return true
     end
 
-    --- Auto-generated annotation. Refine behavior details if needed.
-    --- @param netId number
-    --- @param props table
-    --- @return any result
+    --- Waits briefly for `netId` to resolve, then applies QBCore vehicle properties and optional fuel.
+    --- @param netId number Network id from server spawn flow.
+    --- @param props table Non-empty property table (`hf.hasEntries`).
+    --- @return boolean ok `true` when properties were applied (fuel errors are swallowed; see `setFuelLevel`).
+    --- @return string|nil reason `eCoreErr.invalid_vehicle_props` or `eCoreErr.vehicle_network_timeout`.
     function eCore:setVehiclePropertiesFromNetId(netId, props)
         if not hf.hasEntries(props) then
-            return
+            return false, eCoreErr.invalid_vehicle_props
         end
         local try = 300
         while try > 0 do
@@ -194,12 +206,13 @@ if QB_CORE then
                     if props.fuelLevel ~= nil then
                         eCore:setFuelLevel(vehicle, props.fuelLevel)
                     end
-                    break
+                    return true
                 end
             end
             Wait(0)
             try = try - 1
         end
+        return false, eCoreErr.vehicle_network_timeout
     end
 
     --- Auto-generated annotation. Refine behavior details if needed.

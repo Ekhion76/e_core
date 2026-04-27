@@ -337,13 +337,16 @@ function eCore:getAmountOfItems(inventory)
     return playerItems
 end
 
---- Meghatározza, hogy a játékos rendelkezik-e a megadott tárgyból elegendő mennyiséggel.
---- @param playerData table xPlayer objektum vagy playerData
---- @param itemName string tárgy neve
---- @param count number|nil minimálisan szükséges mennyiség (alap: 1)
---- @return boolean
+--- Returns whether the resolved inventory contains at least `count` of `itemName`.
+--- @param playerData table xPlayer or client `playerData` passed to `getInventory`.
+--- @param itemName string Item name (must be a Lua string).
+--- @param count number|nil Required amount (default **1**).
+--- @return boolean ok
+--- @return string|nil reason `eCoreErr.invalid_item_name` when `itemName` is not a string.
 function eCore:hasItem(playerData, itemName, count)
-    if type(itemName) ~= 'string' then return false end
+    if type(itemName) ~= 'string' then
+        return false, eCoreErr.invalid_item_name
+    end
     local amounts = self:getAmountOfItems(self:getInventory(playerData))
     return (amounts[itemName:lower()] or 0) >= (count or 1)
 end
@@ -366,8 +369,8 @@ function eCore:getRegisteredItem(name)
     return REGISTERED_ITEMS[name]
 end
 
---- Auto-generated annotation. Refine behavior details if needed.
---- @return any result
+--- Item registry + core bootstrap finished successfully (see `hfe.awaitItemRegistryReady`).
+--- @return boolean ready `true` only when registry is populated; `false` while waiting, on timeout, or when idle/init failed.
 function eCore:isReady()
-    return CORE_READY
+    return CORE_READY == true
 end

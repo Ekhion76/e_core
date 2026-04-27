@@ -31,17 +31,17 @@ end
 --- @return any result
 function eCore:removeItem(xPlayer, item, count, metadata, slot)
     if not xPlayer or not hf.isValidPlayerSource(xPlayer.source) then
-        return false, eCoreErr.unknown_error
+        return false, eCoreErr.invalid_player
     end
     local okCall, rmRes = pcall(function()
         return qs_inventory:RemoveItem(xPlayer.source, item, count)
     end)
     if not okCall then
         cLog('eCore:removeItem:qs', { err = tostring(rmRes) }, 1)
-        return false, eCoreErr.unknown_error
+        return false, eCoreErr.inventory_export_exception
     end
     if not rmRes then
-        return false, eCoreErr.unknown_error
+        return false, eCoreErr.inventory_operation_failed
     end
     return true
 end
@@ -51,8 +51,8 @@ end
 --- @param items table
 --- @return any result
 function eCore:removeItems(xPlayer, items)
-    if not xPlayer then
-        return false, eCoreErr.unknown_error
+    if not xPlayer or not hf.isValidPlayerSource(xPlayer.source) then
+        return false, eCoreErr.invalid_player
     end
 
     if not hf.hasEntries(items) then
@@ -78,10 +78,10 @@ function eCore:removeItems(xPlayer, items)
         end)
         if not okCall then
             cLog('eCore:removeItems:qs', { item = item.name, err = tostring(rmRes) }, 1)
-            return false, eCoreErr.unknown_error
+            return false, eCoreErr.inventory_export_exception
         end
         if not rmRes then
-            return false, eCoreErr.unknown_error
+            return false, eCoreErr.inventory_operation_failed
         end
     end
 
@@ -97,14 +97,14 @@ end
 --- @return any result
 function eCore:addItem(xPlayer, item, count, slot, metadata)
     if not xPlayer or not hf.isValidPlayerSource(xPlayer.source) then
-        return false, eCoreErr.unknown_error
+        return false, eCoreErr.invalid_player
     end
     local okCall, success, response = pcall(function()
         return qs_inventory:AddItem(xPlayer.source, item, count, nil, metadata)
     end)
     if not okCall then
         cLog('eCore:addItem:qs', { err = tostring(success) }, 1)
-        return false, eCoreErr.unknown_error
+        return false, eCoreErr.inventory_export_exception
     end
     if not success then
         return false, asEcoreInventoryReason(response)

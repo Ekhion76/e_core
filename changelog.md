@@ -8,6 +8,29 @@ A projekt új fázist kezd: a korábbi verziós napló helyett innen a **kiadás
 
 ## [Unreleased]
 
+- **Admin inventory minta:** ox blokk **csak** ha `ox_inventory` `started` (UI nem említ nem futó stacket); szerver hint ox nélkül rövidebb.
+
+- **Admin inventory minta:** `adminGetInventorySamples` játékbeli NUI-ban **mindig** szerver RPC (nem takarja a `VITE_USE_MOCK_REGISTRY` mock); mock csak böngészőben, NUI nélkül.
+
+- **NUI dev:** `fxmanifest.lua` `ui_page` → `http://127.0.0.1:5173/` + `vite.config.ts` `server` (host/port); élesen állíts vissza `dist`-re és build. `README` / `src/web/README.md` frissítve.
+
+- **Admin NUI — Inventory minta (0.1.12):** új fül „Inventory minta”; `eCoreAdminApi` action `getInventorySamples` (`server/admin_inventory_sample.lua`): legfeljebb 3 sor a bridge `eCore:getInventory(target)` listából + opcionálisan 3 nyers slot az `ox_inventory:GetInventory` `items` táblájából, JSON dump (mélység/méretkorlát) a `Config.fields` override-hoz. `registry.adminGetInventorySamples`, mock ha `VITE_USE_MOCK_REGISTRY`.
+
+- **Dokumentáció — `Config` sekély merge (0.1.11):** kanonikus szabály (`fxmanifest` sorrend, top-level tábla csere, `Config.operator` példa, `config_check` szintézis), operátori checklist §1.1 + kockázat tábla sor; `PUBLIC_API_HU.md` §1; `BRIDGE_LAYER_QUALITY_REVIEW_HU.md` config bekezdés frissítve.
+
+- **eCoreErr finomítás (0.1.10):** Új kulcsok: `invalid_item_name` (`global/shared.lua` `hasItem`), `inventory_export_exception`, `inventory_operation_failed`. ESX `removeItems` pcall hiba → `inventory_export_exception` (korábban `unknown_error`). **ox_inventory / qs_inventory / avp_grid_inventory** szerver override: érvénytelen játékos → `invalid_player`; export **Lua hiba** (`pcall`) → `inventory_export_exception`; ox/qs **falsy** `RemoveItem` válasz → `inventory_operation_failed`. Doksi: `PUBLIC_API` §5, `ECORE_ERR` §3.
+
+- **`getCore()` szerződés (0.1.9):** `eCoreLifecycle_buildPublicAPI()` merge-el **`ecoreVersion`** (`GetResourceMetadata(..., 'version', 0)`, üres esetén `0.0.0`) és **`bridgeContract`** (`schemaVersion`, `resource`, `lifecycleMergedKeys`) mezőket a facade-ra. Consumer gépi ellenőrzéshez; `bridgeContract.schemaVersion` változik, ha a tábla alakja / szemantikája változik. Doksi: `PUBLIC_API` §1, `BRIDGE_LAYER_QUALITY_REVIEW_HU.md` §2.
+
+- **Bridge / kliens jármű stubok (0.1.8):** ESX és QB `bridge/*/client.lua` — `setFuelLevel`, `vehicleKeys`, `setVehicleProperties`, `setVehiclePropertiesFromNetId` egységes **`true` / `false, eCoreErr.*`** szerződés (korábbi csupasz `false` vagy csendes `return`). Új `eCoreErr`: `invalid_vehicle_entity`, `invalid_vehicle_plate`, `invalid_vehicle_props`, `vehicle_network_timeout`; üzemanyag mennyiség: `not_valid_amount`. Doksi: `PUBLIC_API` §5, `ECORE_ERR` §3.
+- **Bridge / szerver `createVehicle`:** ha a negyedik param (`props`) meg van adva, de nem tábla → **`eCoreErr.invalid_vehicle_props`** (`bridge/global/server.lua`; korábban `unknown_error`).
+
+- **Ready állapot (0.1.7):** `CORE_READY` indulás **`false`** (`src/client/main.lua`, `src/server/main.lua`); `eCore:isReady()` mindig **boolean** (`CORE_READY == true`), nem ad `nil`-t (`bridge/global/shared.lua`). Export `isReady` továbbra is boolean. Típus stubok + doksik frissítve.
+
+- **ESX bridge (0.1.6):** `addMoney` / `removeMoney` nil `xPlayer` → `false`, `invalid_player` (korábban csak `false`). `getAccounts`: `source` szám → `GetPlayerFromId`. `getInventory` / `getInventoryWeight`: szám feloldás; nil → `{}` / `0`. `addItem` / `removeItem` / `removeItems`: szám feloldás + `invalid_player` (removeItems korábbi `unknown_error` nil helyett). Doksi: `PUBLIC_API` §5, `ECORE_ERR` §3, `AI_SUPPORT` ESX szerver blokk.
+
+- **QB bridge (0.1.5):** `removeMoney` nil játékos → `invalid_player` (mint `addMoney`). `getAccounts` / `getInventory`: `source` szám feloldás + nil-safe (`0` / `{}`). `addItem` / `removeItem` / `removeItems`: szám feloldás + `invalid_player`; `removeItems` korábbi `unknown_error` nil helyett `invalid_player`. Doksi: `PUBLIC_API` §5, `ECORE_ERR` §3.
+
 - **Bridge / init (0.1.4):** Ha induláskor egyik legacy core sem `started`, `_ECORE_INIT_FAILED = true` (korábban false maradt). ESX kliens `getRegisteredItems` nem használ játékos inventoryt; szerver `lib.callback.register('e_core:getRegisteredItems', …)` (`bridge/global/callbacks/server.lua`) + `eCoreErr.not_ready`. QB `addMoney` nil játékos: `false`, `eCoreErr.invalid_player`. ESX `getAccounts` nil-safe. `helper_ecore.awaitItemRegistryReady`: csak nem üres táblát ír `REGISTERED_ITEMS`-be. Új `eCoreErr`: `not_ready`, `invalid_player`. Doksi: `PUBLIC_API` §5/§9, `NET_EVENTS` §4, `ECORE_ERR` §3.
 
 - **eCore lifecycle (0.1.3):** `_eCoreInternal` + `src/bridge/ecore_lifecycle.lua` — explicit `registerExtensions` / `initExtensions`, PURE `buildPublicAPI`, merge az `eCore` táblára (`framework`, `config`, `i18n`, `util`, szerveren opcionálisan `log.discord`). Dev: `e_core_dev` + `getInternal` export. Szerver load order: `discord_log.lua` a `bridge/main.lua` elé került. Consumer: `imports/shared/core.lua` egy sor + legacy alias; opcionális `imports/shared/full_import.lua`. Doksi: `docs/EXTENSION_CONTRACT_HU.md`, `PUBLIC_API` §1/§4 frissítve.

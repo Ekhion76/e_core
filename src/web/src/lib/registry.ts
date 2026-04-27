@@ -82,7 +82,55 @@ export type LevelProfileUpdateInput = {
   easyGenerator?: unknown
 }
 
+/** Admin: raw inventory rows for `Config.fields` (bridge + optional ox_inventory). */
+export type InventorySamplesBridgeBlock = {
+  topLevelKeys: string[]
+  rowEstimate: number
+  sampleCount: number
+  samples: Record<string, unknown>[]
+  sampleJson: string[]
+}
+
+export type InventorySamplesOxBlock = {
+  resourceStarted: boolean
+  sampleCount: number
+  samples: Record<string, unknown>[]
+  sampleJson: string[]
+  inventoryMeta?: { weight?: number; maxWeight?: number; slots?: number }
+}
+
+export type InventorySamplesData = {
+  framework: string | null
+  ecoreInitFailed: boolean
+  targetSource: number
+  bridge: InventorySamplesBridgeBlock
+  oxInventory: InventorySamplesOxBlock
+}
+
 const useMock = import.meta.env.VITE_USE_MOCK_REGISTRY !== 'false'
+
+const MOCK_INVENTORY_SAMPLES: InventorySamplesData = {
+  framework: 'esx',
+  ecoreInitFailed: false,
+  targetSource: 1,
+  bridge: {
+    topLevelKeys: ['1', '2', 'cash'],
+    rowEstimate: 3,
+    sampleCount: 2,
+    samples: [
+      { name: 'bread', count: 5, weight: 120, slot: 1, metadata: { durability: 88 } },
+      { name: 'lockpick', amount: 2, weight: 40, slot: 2, metadata: {} }
+    ],
+    sampleJson: []
+  },
+  oxInventory: {
+    resourceStarted: true,
+    sampleCount: 1,
+    samples: [{ name: 'water', count: 3, weight: 300, slot: 5, metadata: { serial: 'OX-MOCK' } }],
+    sampleJson: [],
+    inventoryMeta: { weight: 1500, maxWeight: 24000, slots: 50 }
+  }
+}
 
 const MOCK_PROFESSIONS_TEMPLATE: ProfessionItem[] = [
   {
@@ -665,4 +713,36 @@ export async function deleteLevelProfile(profileKey: string): Promise<void> {
   if (!payload.ok) {
     throw new Error(payload.message ?? String(payload.code ?? 'level profile törlés'))
   }
+}
+
+/**
+ * Fetches up to three sanitized inventory row samples (bridge `eCore:getInventory` + optional ox raw slots).
+ * Same access as other admin NUI calls (`hf.webConsoleAccess`).
+ *
+ * @param payload Optional `targetSource` (defaults to caller on server).
+ * @returns Server hint message plus sample data.
+ */
+export async function adminGetInventorySamples(payload?: {
+  targetSource?: number
+}): Promise<{ message?: string; data: InventorySamplesData }> {
+  /** Professions mock (`VITE_USE_MOCK_REGISTRY`) must not shadow real inventory dumps in-game. */
+  if (useMock && !isFivemNui()) {
+    const data = structuredClone(MOCK_INVENTORY_SAMPLES)
+    data.bridge.sampleJson = data.bridge.samples.map((s) => JSON.stringify(s, null, 2))
+    data.oxInventory.sampleJson = data.oxInventory.samples.map((s) => JSON.stringify(s, null, 2))
+    return {
+      message:
+        'Mock (csak böngészős dev, NUI nélkül): második bridge sor `amount` kulccsal. Játékban mindig szerver `getInventorySamples`.',
+      data
+    }
+  }
+
+  const res = await invokeAdminApi<InventorySamplesData>({
+    action: 'getInventorySamples',
+    payload: { ...(payload ?? {}) }
+  })
+  if (!res.ok || !res.data) {
+    throw new Error(res.message ?? String(res.code ?? 'getInventorySamples'))
+  }
+  return { message: res.message, data: res.data }
 }

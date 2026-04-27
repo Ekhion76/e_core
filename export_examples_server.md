@@ -2,7 +2,7 @@
 
 ## getCore() curated fields (e_core 0.1.3+)
 
-Same as on the client: `eCore.framework`, `eCore.config`, `eCore.i18n`, `eCore.util` are merged onto the object returned by `exports.e_core:getCore()`.
+Same as on the client: `eCore.framework`, `eCore.config`, `eCore.i18n`, `eCore.util` are merged onto the object returned by `exports.e_core:getCore()`. **0.1.9+:** also `eCore.ecoreVersion` and `eCore.bridgeContract` (see `export_examples_client.md` table).
 
 Additionally, when `src/imports/server/discord_log.lua` is loaded by **e_core**, you can build webhooks via the thin wrapper:
 
@@ -190,7 +190,7 @@ exports.e_core:getConfig()
 
 ## isReady
 
-**@return**: boolean – `true` csak akkor, ha az item registry (`REGISTERED_ITEMS`) sikeresen betöltött. Betöltés alatt és timeout után `false`. Részletesebb állapot: `exports.e_core:getCore():isReady()` (`nil` töltés közben, `false` timeout, `true` kész).
+**@return**: boolean – `true` csak akkor, ha az item registry (`REGISTERED_ITEMS`) sikeresen betöltött. Betöltés alatt, timeout után és IDLE esetén `false`. **0.1.7+:** `getCore():isReady()` ugyanez a boolean szerződés (`CORE_READY == true` a `bridge/global/shared.lua`-ban); töltés közben **nem** `nil`.
 
 ```lua
 if exports.e_core:isReady() then

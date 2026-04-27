@@ -313,7 +313,7 @@ function hfe.auditAdminApiDenied(section, action, payload, reason)
 end
 
 --- Fills REGISTERED_ITEMS until eCore:getRegisteredItems() is non-empty or timeout.
---- Sets CORE_READY to true on success, false on timeout (nil while still waiting).
+--- Sets CORE_READY to true on success, false on timeout. Initial state is `false` (client/server `main.lua`); no `nil` „waiting” sentinel.
 ---@param logTag string cLog key (e.g. 'REGISTERED ITEMS')
 ---@return boolean success
 function hfe.awaitItemRegistryReady(logTag)

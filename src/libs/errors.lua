@@ -14,6 +14,14 @@ eCoreErr = {
     --- (weight/slot logic cannot be resolved).
     item_not_registered = 'item_not_registered',
 
+    --- `eCore:hasItem` (global shared): `itemName` is not a `string` Lua type.
+    invalid_item_name = 'invalid_item_name',
+
+    --- ESX `removeItems` `pcall` or inventory override: the stack export raised a Lua error (see server `cLog`).
+    inventory_export_exception = 'inventory_export_exception',
+    --- ox_inventory / qs_inventory: export returned **false** / falsy without a mapped `eCoreErr` reason string.
+    inventory_operation_failed = 'inventory_operation_failed',
+
     inventory_full = 'inventory_full',
     no_items_to_remove = 'no_items_to_remove',
     inventory_is_empty = 'inventory_is_empty',
@@ -25,10 +33,22 @@ eCoreErr = {
 
     --- ESX client `getRegisteredItems`: `REGISTERED_ITEMS` not yet filled (server/registry pipeline); do not use player inventory as item catalog.
     not_ready = 'not_ready',
-    --- Bridge money helpers: resolved player wrapper is missing (offline id, wrong source, etc.).
+    --- ESX/QB bridge: no resolved player after `ESX.GetPlayerFromId` / `QBCore.Functions.GetPlayer` (offline id, wrong source, etc.).
+    --- Money / inventory: `addMoney`, `removeMoney`, `addItem`, `removeItem`, `removeItems`. Not used where numeric `0` / `{}` contract applies (`getAccounts`, ESX `getInventory` nil, `getInventoryWeight` nil).
+    --- Inventory overrides (`ox_inventory` / `qs_inventory` / `avp_grid_inventory` server): missing or invalid `xPlayer.source` (`hf.isValidPlayerSource`).
     invalid_player = 'invalid_player',
 
     vehicle_no_plate_data = 'Failed: No data can be retrieved from the vehicle.',
+
+    --- Client bridge (`setFuelLevel`): vehicle entity handle does not exist or is not spawned.
+    invalid_vehicle_entity = 'invalid_vehicle_entity',
+    --- Client bridge (`vehicleKeys`): plate string empty / missing after content checks.
+    invalid_vehicle_plate = 'invalid_vehicle_plate',
+    --- Client bridge (`setVehicleProperties` / `setVehiclePropertiesFromNetId`): `props` is not a non-empty table.
+    --- Server `createVehicle`: `props` was provided but is not a table (must be `nil` or `table`).
+    invalid_vehicle_props = 'invalid_vehicle_props',
+    --- Client bridge (`setVehiclePropertiesFromNetId`): `netId` did not resolve to an entity within the wait budget.
+    vehicle_network_timeout = 'vehicle_network_timeout',
 
     the_system_is_turned_off = 'the_system_is_turned_off',
     not_found_metadata = 'not_found_metadata',

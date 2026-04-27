@@ -41,7 +41,7 @@ function eCore:createVehicle(pos, model, vType, props)
     local vehicle, netId
 
     if props ~= nil and not hf.isTable(props) then
-        return false, eCoreErr.unknown_error
+        return false, eCoreErr.invalid_vehicle_props
     end
     props = props or {}
 

@@ -22,17 +22,33 @@ Egy oldalnyi ellenőrzés **éles vagy teszt szerver** indítás előtt / után.
 
 ---
 
+## 1.1 `Config` felülírás — **sekély merge** (kanonikus szabály)
+
+Az e_core **`Config`** táblája több **Lua chunk**-ból épül fel (`fxmanifest.lua` `shared_scripts` sorrend: alapértelmezett bridge / `standalone/config/main.lua`, majd `overrides/**/config.lua` a glob szerint). **Nincs beépített rekurzív (mély) merge:** ha egy későbbi fájl **új táblát** rendel egy top-level kulcshoz (pl. `Config.operator = { … }`), az **lecseréli** az előző chunk ugyanilyen kulcs alatti **teljes** tábláját — az előző almezők, amiket nem másoltál át, **nem** maradnak „alapértelmezés alatt” automatikusan.
+
+| Szabály | Gyakorlat |
+|----------|-----------|
+| **Utóbbi győz** | Ugyanazon top-level kulcsnál a **később betöltött** fájl értéke érvényesül. |
+| **Beágyazott blokk = egy egység** | Pl. `Config.operator`: egy override **csak rész** admin beállítást ad vissza, de **nem** adja vissza a `integrityCheck` / `cleanup` ágakat → azok **eltűnhetnek** (üres / hiányzó), hacsak nem másolod be őket is az override-ba, vagy nem egy fájlban szerkeszted a teljes `operator` fát. |
+| **Szintézis után** | `src/libs/config_check.lua` induláskor `Config.operator` alapján tölti a **`Config.web`**, **`Config.integrityCheck`**, **`Config.adminApi`** stb. mezőket — ha az `operator` „hiányos” maradt, **default** ágak léphetnek fel (`applyOperatorConfig` logika); üzemeltetői cél: **ne** támaszkodj véletlenszerű defaultokra élesben, hanem **tudatos** `operator` tábla. |
+| **Mély merge igény** | Saját helper vagy **egyetlen** saját `config.lua`, ahol kézzel egyesíted a részfákat — az e_core **nem** ígér rekurzív merge-t. |
+
+**Ellenőrzés override után:** `Config.operator` (és más felülírt top-level kulcs) tartalmazza-e az összes **számodra szükséges** alkulcsot; ha csak „diffet” írtál, hasonlítsd össze a **`standalone/config/main.lua`** referenciával.
+
+---
+
 ## 2. Ismert kockázatok és mitigáció (rövid lista)
 
 | Kockázat | Mitigáció a repóban / üzemeltetésben |
 |----------|----------------------------------------|
 | **Két core + `auto`** | indulás `error`; kényszerített `esx` / `qb` ConVar |
-| **Végtelen várakozás** item registry-re | timeout + `CORE_READY`, `exports.e_core:isReady()`, indulási log |
+| **Végtelen várakozás** item registry-re | ConVar timeout + poll; **`CORE_READY`** indulás **`false`**, kész után `true` (0.1.7+); **`exports.e_core:isReady()`** mindig boolean; indulási összegzés log (`items=ready\|timeout\|pending`) |
 | **`ox_lib` hiány** | `@ox_lib` init – kötelező indítani `e_core` előtt/vele együtt |
 | **`dependencies` csak `oxmysql`** | ox_lib explicit `ensure` a cfg-ben; későbbi manifest bővítés opció |
 | **Hamis net `loadMeta` / abuse** | forrás ellenőrzés + rate limit (`e_core:loadmeta_rate_ms`) |
 | **Régi kliens `e_core:playerLoaded`** | csak szerver `TriggerEvent` + `AddEventHandler` – kliens hívás nem támogatott |
 | **Jármű spawn** | csak `e_core:createVehicle` **callback** + forrás check |
+| **Config „eltűnő” ágak** override után | §1.1 sekély merge: teljes `operator` (vagy érintett top-level kulcs) másolása / egy fájlban tartás; összevetés `standalone/config/main.lua`-val |
 
 ---
 

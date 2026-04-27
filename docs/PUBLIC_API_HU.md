@@ -12,6 +12,8 @@ Ez a fájl a **külső hívható** `exports.e_core:*` felületet és az **`eCore
 
 **Override:** ugyanazon `eCore:` név felülírható `standalone/overrides/<mappa>/` alatt; a betöltési sorrend a mappanevek lexikografikus `**/shared.lua` / `client.lua` / `server.lua` globja szerint dől el.
 
+**`Config` (sekély merge):** a **`Config`** tábla **több** `shared_scripts` chunkból épül (`fxmanifest` sorrend + `overrides/**/config.lua`). **Nincs** beépített **mély** merge: ha egy későbbi fájl `Config.operator = { … }`-ot ad, az **lecseréli** az egész korábbi `operator` táblát — a nem visszaírt almezők **nem** maradnak rejtett örökléssel. Üzemeltetői részletek és checklist: **`docs/SZERVER_OPERATOR_CHECKLIST_HU.md` §1.1**.
+
 ---
 
 ## 1. Mindkét oldalon (client + server)
@@ -20,10 +22,12 @@ Forrás: `bridge/main.lua` + `bridge/ecore_lifecycle.lua`. Exportok: **`getFrame
 
 **`getCore()` kurált mezők (0.1.3+):** az `eCore` táblára – a bridge metódusok mellett – **merge**-elve kerülnek: **`eCore.framework`** (string \| `nil`, ugyanaz mint `getFrameWork()`), **`eCore.config`** (referencia a futó `Config` táblára), **`eCore.i18n`** (`translate`, `translateU`), **`eCore.util`** (`cLog`, `print_r`, `createBlip`, `animDictLoader`, `modelLoader`, `fxLoader`). **Szerveren**, ha a Discord modul betöltött: **`eCore.log.discord.create(webhook, botName?, opts?)`** → thin wrapper a belső `createDiscordLog` köré. Részlet: `docs/EXTENSION_CONTRACT_HU.md`.
 
+**Gépi olvasható szerződés (0.1.9+):** ugyanebből a merge-ből kerül **`eCore.ecoreVersion`** (string, a futó **`e_core`** resource `fxmanifest` `version` mezője `GetResourceMetadata`-ból; üres / hiány esetén **`0.0.0`**) és **`eCore.bridgeContract`** (tábla: **`schemaVersion`** szám — a `bridgeContract` tábla alakjának változásakor nő; **`resource`** string — resource név; **`lifecycleMergedKeys`** — a merge által érintett top-level kulcsok listája, köztük **`log`**, ami csak szerveren + Discord esetén van jelen a facade-on). Consumer minta: `if eCore.bridgeContract and eCore.bridgeContract.schemaVersion >= 1 then …`
+
 | Export | Mire való | Visszatérés | Megjegyzés |
 |--------|-----------|-------------|------------|
 | `getFrameWork` | Aktív keretrendszer azonosítója (ESX vagy QB). | `string` \| `nil` | `'esx'`, `'qb'`. Nincs core induláskor: `nil`. |
-| `getCore` | Az egyesített **`eCore`** API / facade objektum (inventory, notify, target, stb. – lásd §6–§10), plusz a fenti kurált mezők. | `table` | |
+| `getCore` | Az egyesített **`eCore`** API / facade objektum (inventory, notify, target, stb. – lásd §6–§10), plusz a fenti kurált mezők; **0.1.9+** `ecoreVersion`, `bridgeContract` (lásd §1 bekezdés). | `table` | |
 | `getHelperBase` | Base, framework-agnostic helper tábla (`hf`). | `table` | `libs/helper.lua` |
 | `getHelperEcore` | e_core-specifikus helper tábla (`hfe`). | `table` | `libs/helper_ecore.lua` |
 | `getInternal` | Csak ha **`e_core_dev`** convar igaz: belső **`_eCoreInternal`** debug tábla. | `table` | Productionben ne használd; ne építs rá consumer logikát. |
@@ -42,7 +46,7 @@ A tábla névsora = a fájlban lévő `exports(...)` sorok sorrendje; közvetlen
 | `getLevel` | Szint számítása adott pontszámból (`standalone/config/levels.lua` tartományok). | `value` | |
 | `getDiscounts` | Kedvezmények százalékban, a pontszám / szint alapján. | `value` | |
 | `getConfig` | Teljes e_core `Config` tábla olvasása. | – | |
-| `isReady` | Item registry betöltve-e és a core késznek tekinti-e magát; itemhez kötött logika előtt érdemes ellenőrizni. | – | `true` csak ha kész. Részletesebb háromállapot: `eCore:isReady()` (`nil` / `false` / `true`). |
+| `isReady` | Item registry betöltve-e és a core késznek tekinti-e magát; itemhez kötött logika előtt érdemes ellenőrizni. | – | `true` csak ha kész; **`false`** induláskor / timeout / IDLE, **`eCore:isReady()`** csak boolean (0.1.7+, nincs `nil` „várakozás” sentinel). |
 | `registerHudElement` | HUD elem regisztrálása a hibrid DnD proxy réteghez (e_core edit mode + lokális preview sync). | `id`, `data` | `id`: nem üres string. `data.defaultPos`: normalizált `x,y,w,h` + `anchor` (`top-left`, `top-right`, `bottom-left`, `bottom-right`, `center`). Siker: `true`, effektív pozíció; hiba: `false`, reason. |
 | `unregisterHudElement` | HUD elem levétele az e_core edit/sync regiszterből. | `id` | Resource stopnál ajánlott hívni. |
 
@@ -95,7 +99,7 @@ A tábla névsora = a fájlban lévő `exports(...)` sorok sorrendje; közvetlen
 | `getLevel` | Szint számítása pontszámból (ugyanaz a logika, mint kliensen). | `value` |
 | `getDiscounts` | Kedvezmény tábla pontszám alapján. | `value` |
 | `getConfig` | Teljes `Config` olvasása. | – |
-| `isReady` | Szerver oldalon is: item registry kész-e indulás / timeout után. | – |
+| `isReady` | Szerver oldalon is: item registry kész-e; **`false`** induláskor / töltés / timeout / IDLE; **`eCore:isReady()`** csak boolean (0.1.7+, mint a kliensen). | – |
 | `getDbSchemaVersion` | Alkalmazott DB migrációk közül a legnagyobb `id` (`e_core_migrations`); séma „verzió” ellenőrzéshez. | – (visszaadás: max. migráció `id`; **0** ha üres tábla, lekérdezés sikertelen, vagy `MAX` `nil` – részlet és operátori sorrend: `docs/ECORE_ERR_HIBA_NYOMON_HU.md` §4.5) |
 
 ---
@@ -108,6 +112,8 @@ A **`SetHttpHandler` alapú külső HTTP admin (`/admin/...`) el lett távolítv
 
 - Válasz alakja változatlan: `professionAdminList`, `professionAdminCreate`, `levelProfileAdminList`, stb. ugyanazt az `{ ok, code, message, data }` szerződést adják, mint az exportok.
 - **Böngészős `npm run dev`:** valós CRUD nélkül használd a mock registry-t (`VITE_USE_MOCK_REGISTRY=true`, lásd `src/web/.env.example`).
+
+- **`getInventorySamples`:** `{ action: 'getInventorySamples', payload?: { targetSource?: number } }` — opcionális `targetSource` (alapértelmezés: a hívó `source`). Válasz `data`: `framework`, `targetSource`, `bridge` (`topLevelKeys`, `rowEstimate`, `sampleCount`, `samples`, `sampleJson`), `oxInventory` (`resourceStarted`, `sampleCount`, `samples`, `sampleJson`, `inventoryMeta?`). Cél: nyers inventory-sor kulcsok (`count` / `amount` / …) az `overrides/**/config.lua` `Config.fields` kitöltéséhez.
 
 ---
 
@@ -140,7 +146,7 @@ Forrás: **`libs/errors.lua`**. Az e_core belső kódja **`eCoreErr.xyz`** form�
 | `the_system_is_turned_off` | ugyanaz | labor / kliens olvasók |
 | `not_found_metadata` | ugyanaz | szerver meta / labor |
 | `no_valid_meta_name` | ugyanaz | szerver meta; kliens `getAbility` / `getMeta` (érvénytelen vagy üres kulcs param) |
-| `not_valid_amount` | ugyanaz | szerver labor (`addLabor` / `removeLabor`: nem pozitív vagy NaN mennyiség; `setLabor`: hiányzó / negatív / NaN); szerver jártasság (`addAbility` / `removeAbility` / `setAbility`) ha a `value` nem **szám** (`tonumber` szerint) |
+| `not_valid_amount` | ugyanaz | szerver labor (`addLabor` / `removeLabor`: nem pozitív vagy NaN mennyiség; `setLabor`: hiányzó / negatív / NaN); szerver jártasság (`addAbility` / `removeAbility` / `setAbility`) ha a `value` nem **szám** (`tonumber` szerint); **ESX / QB kliens** `setFuelLevel`: `amount` nem szám (`tonumber` nil) |
 | `not_enough_labor` | ugyanaz | szerver `removeLabor`: a levonás nagyobb, mint az aktuális egyenleg |
 | `not_levels_data` | ugyanaz | `getDiscounts` (shared `libs/meta.lua`): nincs érvényes `Config.levels` tábla |
 | `has_already_reached_the_limit` | ugyanaz | szerver meta / labor |
@@ -148,12 +154,19 @@ Forrás: **`libs/errors.lua`**. Az e_core belső kódja **`eCoreErr.xyz`** form�
 | `invalid_item_data` | ugyanaz | `canSwapItems` / `canCarryItem`: `itemData` nem tábla; `name` nem üres string (trim után); `amount` nem pozitív szám; `canSwapItems`: `swappingItems` megadva de nem tábla; swap sor ugyanilyen szerződés. **Keretrendszer `removeItems`:** lista elemei nem tábla, üres / hiányzó név, **`amount`** nem pozitív szám vagy NaN. **Override inventory (`ox_inventory` / `qs_inventory` / `avp_grid_inventory` szerver):** `removeItems` ugyanilyen sor-szerződés; **avp** `removeItem` / `addItem`: érvénytelen **`item`** / **`count`** |
 | `item_not_registered` | ugyanaz | `canSwapItems` / `canCarryItem`: az item név nincs a registry-ben (`REGISTERED_ITEMS`) |
 | `not_ready` | `'not_ready'` | ESX kliens `getRegisteredItems`: nincs még feltölthető katalógus (`REGISTERED_ITEMS` + szerver callback üres / timeout) |
-| `invalid_player` | `'invalid_player'` | QB szerver `addMoney`: `QBCore.Functions.GetPlayer` **nil** (offline / rossz id) |
+| `invalid_player` | `'invalid_player'` | ESX / QB szerver: `GetPlayerFromId` / `GetPlayer` **nil** után pénz / inventory; **ox_inventory / qs_inventory / avp_grid_inventory** szerver override: hiányzó vagy érvénytelen **`xPlayer.source`** (`hf.isValidPlayerSource`) |
 | `inventory_full`, `no_items_to_remove`, `inventory_is_empty`, `not_enough_items` | ugyanaz | QB bridge inventory |
 | `there_are_no_items_to_remove` | `'there are no items to remove'` | ESX / ox / qs `removeItems` üres lista |
-| `unknown_error` | ugyanaz | ox / qs removeItems hibaág; **ESX / QB `removeItems`:** hiányzó **`xPlayer`**; **ESX** továbbá **`removeInventoryItem`** kivétel (`pcall`); `eCore:createVehicle` (`bridge/global/server.lua`): érvénytelen `pos` / `model`, nem jött létre entitás, nincs érvényes **network id** (0 / `nil` a várakozás után), **network owner** továbbra is **-1**. **Override inventory szerver:** hiányos **`xPlayer`** / `pcall` kivétel a stack hívásban; **ox / qs `addItem`:** kivétel vagy olyan második érték, ami **nem** szerepel az `eCoreErr` stringek között (`cLog`); **avp** `canCarryItem` hívás kivétel, érvénytelen játékos forrás; **avp** stack egyedi hibaüzenet, ha nem egyezik egyetlen `eCoreErr` értékkel sem |
+| `invalid_item_name` | ugyanaz | Globális `eCore:hasItem` (`bridge/global/shared.lua`): `itemName` nem `string` |
+| `inventory_export_exception` | ugyanaz | ESX `removeItems`: `removeInventoryItem` **Lua kivétel** (`pcall`); ox/qs/avp szerver override: inventory export **Lua hiba** (részlet: `cLog`) |
+| `inventory_operation_failed` | ugyanaz | ox_inventory / qs_inventory szerver override: `RemoveItem` **sikeres `pcall`**, de az export **false** / falsy (nincs továbbított ok-string) |
+| `unknown_error` | ugyanaz | Fallback; `eCore:createVehicle` egyéb hibák; override **`asEcoreInventoryReason`** nem `eCoreErr` string; **avp** egyedi stack üzenet; egyéb nem leképezett ág (`cLog`) |
 | `ok` | `'ok'` | sikeres többes remove végén |
 | `vehicle_no_plate_data` | hosszú angol szöveg | `createVehicle` (global server) |
+| `invalid_vehicle_entity` | ugyanaz | ESX / QB kliens `setFuelLevel` / `setVehicleProperties`: entitás nem létezik (`DoesEntityExist`) |
+| `invalid_vehicle_plate` | ugyanaz | ESX / QB kliens `vehicleKeys`: üres / nem tartalmas rendszám (`hf.hasContent`) |
+| `invalid_vehicle_props` | ugyanaz | ESX / QB kliens `setVehicleProperties` / `setVehiclePropertiesFromNetId`: `props` nem üres tábla (`hf.hasEntries`); **szerver** `createVehicle`: `props` megadva, de nem tábla (`nil` vagy tábla lehet) |
+| `vehicle_network_timeout` | ugyanaz | ESX / QB kliens `setVehiclePropertiesFromNetId`: `netId` nem oldódott fel a beépített várakozási ciklusban |
 | `reserved_meta_category` | ugyanaz | `login` / `logout` / `labor` – szerver: tiltott kategória `registerMeta` / `setMeta` / jártasság exportoknál (`getAbility`, `setAbility`, …); laborhoz `getLabor` / labor exportok |
 | `meta_default_must_be_table` | ugyanaz | `registerMeta` – harmadik param nem `nil` és nem tábla |
 | `meta_value_must_be_table` | ugyanaz | `setMeta` – érték nem tábla |
@@ -204,7 +217,7 @@ ox_target jellegű globális opciók / zónák: `disableTargeting`, `addGlobalOp
 
 | Metódus | Visszatérés |
 |---------|-------------|
-| `createVehicle` | Param: **`pos`** tábla (`x`,`y`,`z` számok; `w` opcionális, alap **0**), **`model`** nemnulla **szám** (hash) vagy nemüres **string**, **`vType`** a `CreateVehicleServerSetter` ághoz (lásd `AI_SUPPORT_REFERENCE`), **`props`** csak **`nil`** vagy **tábla**. Siker: **`netId`**, jármű **entitás handle** (szerver); hiba: **`false`**, `reason` – **`vehicle_no_plate_data`** (rendszám nem olvasható); egyéb hiba: **`unknown_error`** (lásd §5). A **`e_core:createVehicle`** callback ugyanezt adja át a `cb`-nek. |
+| `createVehicle` | Param: **`pos`** tábla (`x`,`y`,`z` számok; `w` opcionális, alap **0**), **`model`** nemnulla **szám** (hash) vagy nemüres **string**, **`vType`** a `CreateVehicleServerSetter` ághoz (lásd `AI_SUPPORT_REFERENCE`), **`props`** csak **`nil`** vagy **tábla**. Siker: **`netId`**, jármű **entitás handle** (szerver); hiba: **`false`**, `reason` – **`invalid_vehicle_props`** (nem tábla és nem `nil`), **`vehicle_no_plate_data`** (rendszám nem olvasható); egyéb hiba: **`unknown_error`** (lásd §5). A **`e_core:createVehicle`** callback ugyanezt adja át a `cb`-nek. |
 
 ---
 
@@ -212,9 +225,9 @@ ox_target jellegű globális opciók / zónák: `disableTargeting`, `addGlobalOp
 
 **Shared (`bridge/esx/shared.lua`):** `convertPlayer` (egységes `job`/`gang` séma, `charName`, `firstName`/`lastName`, `position`, `metadata`, ESX-en neutral `gang` + opcionális `citizenid` alias), `convertItems` (központi `hf.convertItemsWithProfile(..., 'esx')` pipeline).
 
-**Client (`bridge/esx/client.lua`):** `triggerCallback`, `sendMessage`, `drawText`, `hideText`, `progressbar`, `cancelProgressbar`, `isLoggedIn`, `getInventory`, `getPlayerMaxWeight`, `getRegisteredItems`, `getPlayer`, `getAccounts`, `canInteract`, `setFuelLevel`, `vehicleKeys`, `setVehicleProperties`, `setVehiclePropertiesFromNetId`, `deleteVehicle`, `getClosestVehicle`. **`getRegisteredItems`:** ha a globális `REGISTERED_ITEMS` még üres, a szerver `e_core:getRegisteredItems` **ox_lib callback** (`bridge/global/callbacks/server.lua`) tölti a katalógust; sikertelen / üres válasz: **`false`**, **`eCoreErr.not_ready`** (nem a játékos inventory `convertItems` ága).
+**Client (`bridge/esx/client.lua`):** `triggerCallback`, `sendMessage`, `drawText`, `hideText`, `progressbar`, `cancelProgressbar`, `isLoggedIn`, `getInventory`, `getPlayerMaxWeight`, `getRegisteredItems`, `getPlayer`, `getAccounts`, `canInteract`, `setFuelLevel`, `vehicleKeys`, `setVehicleProperties`, `setVehiclePropertiesFromNetId`, `deleteVehicle`, `getClosestVehicle`. **`getRegisteredItems`:** ha a globális `REGISTERED_ITEMS` még üres, a szerver `e_core:getRegisteredItems` **ox_lib callback** (`bridge/global/callbacks/server.lua`) tölti a katalógust; sikertelen / üres válasz: **`false`**, **`eCoreErr.not_ready`** (nem a játékos inventory `convertItems` ága). **`setFuelLevel` / `vehicleKeys` / `setVehicleProperties` / `setVehiclePropertiesFromNetId` (0.1.8+, ESX és QB kliens bridge):** siker **`true`**; hiba **`false`**, **`eCoreErr.*`** — résletek: §5 (`invalid_vehicle_*`, `vehicle_network_timeout`, `not_valid_amount`).
 
-**Server (`bridge/esx/server.lua`):** `createCallback`, `createUsableItem`, `sendMessage`, `drawText`, `hideText`, `addMoney`, `removeMoney`, `getAccounts`, `getInventory`, `getInventoryWeight`, `getPlayerMaxWeight`, `addItem`, `removeItem`, `removeItems`, `getRegisteredItems`, `getPlayer`, `itemBox`, `addCommands`.
+**Server (`bridge/esx/server.lua`):** `createCallback`, `createUsableItem`, `sendMessage`, `drawText`, `hideText`, `addMoney`, `removeMoney`, `getAccounts`, `getInventory`, `getInventoryWeight`, `getPlayerMaxWeight`, `addItem`, `removeItem`, `removeItems`, `getRegisteredItems`, `getPlayer`, `itemBox`, `addCommands`. **Pénz / inventory:** `source` **szám** → `GetPlayerFromId`; nil játékos: `addMoney` / `removeMoney` / `addItem` / `removeItem` / `removeItems` → **`false`**, **`eCoreErr.invalid_player`**; `getAccounts` → **`0`**; `getInventory` / súly nil → **`{}`** / **`0`** (0.1.6+).
 
 ---
 

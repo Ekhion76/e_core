@@ -3,7 +3,14 @@
 --- Canonical method list: `docs/PUBLIC_API_HU.md` §6-10.
 --- Available keys can differ by framework (ESX/QB) and side (client/server).
 
+---@class eCoreBridgeContract
+---@field schemaVersion number Contract table shape / semantics version (bump when fields change).
+---@field resource string Resource name used for metadata (`GetCurrentResourceName()`).
+---@field lifecycleMergedKeys string[] Keys merged from `eCoreLifecycle_buildPublicAPI` onto the facade (`log` optional at runtime).
+
 ---@class eCore
+---@field ecoreVersion string Resource semver from manifest (`GetResourceMetadata`, fallback `0.0.0`).
+---@field bridgeContract eCoreBridgeContract Machine-readable lifecycle merge contract.
 ---@field framework string|nil Same as `getFrameWork()` (merged 0.1.3+).
 ---@field config table Live `Config` reference (merged 0.1.3+).
 ---@field i18n table|nil `{ translate, translateU }` (merged 0.1.3+).
@@ -12,7 +19,7 @@
 ---@field helper table
 ---@field GroupAccess table|nil Class-like helper: `GroupAccess` with `check(playerData, data)`.
 ---@field Err table<string, string>
----@field isReady fun(self: eCore): boolean|nil
+---@field isReady fun(self: eCore): boolean
 ---@field getInventoryWeight fun(self: eCore, playerData: table): number
 ---@field canSwapItems fun(self: eCore, swappingItems: table, itemData: table, playerData: table): boolean|nil, string|nil
 ---@field canCarryItem fun(self: eCore, itemData: table, playerData: table): boolean|nil, string|nil

@@ -19,23 +19,36 @@ Check out [SvelteKit](https://github.com/sveltejs/kit#readme), which is also pow
 
 This template contains as little as possible to get started with Vite + TypeScript + Svelte, while taking into account the developer experience with regards to HMR and intellisense. It demonstrates capabilities on par with the other `create-vite` templates and is a good starting point for beginners dipping their toes into a Vite + Svelte project.
 
-## e_core Admin NUI (Svelte)
+## e_core NUI (Svelte)
 
-A FiveM `ui_page` a **`src/web/dist/index.html`** buildre mutat (skills HUD + stat oldal + admin konzol egy bundle-ben).
+### Prod (éles)
+
+A `fxmanifest.lua` **`ui_page`** alapértelmezésben a buildre mutat: **`src/web/dist/index.html`**. Skills HUD + stat oldal + admin konzol egy bundle-ben.
 
 ```bash
 npm install
 npm run build
 ```
 
+UI módosítás után élesen futtasd újra a **`npm run build`** parancsot, állítsd a manifestet **`ui_page 'src/web/dist/index.html'`**-re, majd indítsd újra az `e_core` resource-ot.
+
+### Dev (FiveM + Vite HMR)
+
+A gyökér **`fxmanifest.lua`** jelenleg **`ui_page 'http://127.0.0.1:5173/'`** (lásd komment a fájlban). Ugyanazon a gépen:
+
+1. `cd src/web` → **`npm run dev`** (Vite figyel a `127.0.0.1:5173`-on, lásd `vite.config.ts`).
+2. Indítsd / restartold az **`e_core`** resource-ot a szerveren; a játék NUI a Vite dev szervert tölti be (HMR).
+
+Éles deploy előtt állíts vissza **`ui_page`**-et **`dist`**-re és buildelj.
+
 - **Admin konzol:** `Config.operator.admin.command` (alap: `ecore_admin`), ha `Config.operator.admin.enabled = true` és ACE / `allowedIdentifiers`. Runtime belső mező: `Config.web` (szintézis a `src/libs/config_check.lua`-ban). Override: `overrides/.../config.lua`.
 - **Integritás:** `Config.operator.integrityCheck.command` (alap: `ecore_diag`). Ha az admin NUI engedélyezve (`Config.operator.admin.enabled`), a jog **`hf.webConsoleAccess`** szerint; egyébként `integrityCheck` ACE + lista. Forrás: `Config.operator.integrityCheck`. Az admin **Integritás** fül `inlineAdmin` + opcionális `onlyStep` opciót küld a szervernek.
 
-### Dev böngésző (`npm run dev`)
+### Dev böngésző csak (NUI nélkül)
 
-A profession / level-profile panel **valós adattal csak FiveM NUI-ban** működik (`ecore_admin` → `eCoreAdminApi` bridge). Böngészőben állítsd a **`VITE_USE_MOCK_REGISTRY=true`** értéket (lásd `.env.example`).
+A profession / level-profile panel **valós adattal csak FiveM NUI-ban** működik (`ecore_admin` → `eCoreAdminApi` bridge). Csak böngészőben állítsd a **`VITE_USE_MOCK_REGISTRY=true`** értéket (lásd `.env.example`).
 
-UI módosítás után futtasd újra a `npm run build` parancsot, mielőtt a resource-ot újraindítod.
+Az **Inventory minta** fül: böngészőben (NUI nélkül) a mock példa látszik; **`ecore_admin`** NUI-ban **mindig** a szerver `getInventorySamples` válasza (`VITE_USE_MOCK_REGISTRY` ettől függetlenül). Az **ox_inventory** blokk csak akkor jelenik meg, ha az `ox_inventory` resource fut (`started`).
 
 Should you later need the extended capabilities and extensibility provided by SvelteKit, the template has been structured similarly to SvelteKit so that it is easy to migrate.
 

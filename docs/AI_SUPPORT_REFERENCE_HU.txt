@@ -269,21 +269,26 @@ Szerep röviden
       server.lua`); ha üres/timeout: false + eCoreErr.not_ready (nem inventory
       convertItems)
     getPlayer(newJob) → convertPlayer(ESX.GetPlayerData(), …)
-    getAccounts, canInteract, jármű: setFuelLevel (LegacyFuel komment), vehicleKeys
-    (komment), setVehicleProperties, setVehiclePropertiesFromNetId (hurok +
-    SetBoatAnchor), deleteVehicle, getClosestVehicle
+    getAccounts, canInteract, jármű (0.1.8+): setFuelLevel, vehicleKeys,
+    setVehicleProperties, setVehiclePropertiesFromNetId — siker `true`, hiba
+    `false` + `eCoreErr` (`not_valid_amount`, `invalid_vehicle_entity`,
+    `invalid_vehicle_plate`, `invalid_vehicle_props`, `vehicle_network_timeout`);
+    ESX stock: LegacyFuel / keys trigger kommentben, deleteVehicle, getClosestVehicle
 
   server.lua
     createCallback → ESX.RegisterServerCallback
     createUsableItem → ESX.RegisterUsableItem
     sendMessage / drawText / hideText → esx:showNotification, ESX:TextUI,
     ESX:HideUI kliens események
-    addMoney / removeMoney / getAccounts – xPlayer vagy source szám →
-    GetPlayerFromId
-    getInventory / getInventoryWeight / getPlayerMaxWeight – xPlayer
-    addItem – xPlayer.addInventoryItem(item, count) – slot/metadata nélkül
-    removeItem – xPlayer.removeInventoryItem(…, metadata, slot)
-    removeItems – tábla iteráció, item.amount mező
+    addMoney / removeMoney – source szám → GetPlayerFromId; nil xPlayer →
+    false, invalid_player (QB-vel azonos ok-string)
+    getAccounts – source szám → GetPlayerFromId; nil / nincs accounts → 0
+    getInventory / getInventoryWeight – source szám → GetPlayerFromId; nil →
+    {} / 0
+    getPlayerMaxWeight – Config (xPlayer nem kötelező a súly plafonhoz)
+    addItem / removeItem – source szám → GetPlayerFromId; nil → invalid_player
+    removeItems – source szám → GetPlayerFromId; nil → invalid_player; tábla
+    iteráció, item.amount mező
     getRegisteredItems – REGISTERED_ITEMS ha van, különben convertItems(
       ESX.Items); függvényen belül újra ESX =
       exports[ecore_framework_resource_esx()]:getSharedObject()
@@ -318,8 +323,9 @@ Fontos megjegyzések (hibakeresés / portolás)
   ESX.Items – ox_inventory vagy override esetén a globális REGISTERED_ITEMS és a
   standalone override réteg a mérvadó (lásd server loop; súly/slot közös logika:
   „Global bridge” szekció).
-  A jármű / kulcs / üzemanyag részek részben kikommentelt példák; éles
-  integrációhoz override kellhet.
+  A jármű / kulcs / üzemanyag ESX stock részekben a tényleges LegacyFuel / keys
+  hívások kommentben; éles integrációhoz override kellhet. A validációs ágak
+  0.1.8+ egységesen `eCoreErr`-et adnak (lásd fenti jármű sorok).
 
 ================================================================================
 QB bridge (src/bridge/qb)
@@ -373,9 +379,9 @@ Szerep röviden
     getAccounts – ESX2QB tábla: money→cash, black_money→crypto, egyébként
     playerData.money[account]
     canInteract – metadata inlaststand / isdead + ped feltételek
-    setFuelLevel → qb-fuel:SetFuel (aktív hívás, nem komment)
-    vehicleKeys → vehiclekeys:client:SetOwner
-    jármű: SetVehicleProperties, netId + fuelLevel opció, DeleteVehicle,
+    setFuelLevel → qb-fuel:SetFuel; vehicleKeys → vehiclekeys:client:SetOwner;
+    setVehicleProperties / setVehiclePropertiesFromNetId — 0.1.8+ `true` /
+    `false, eCoreErr.*` (lásd ESX kliens blokk jármű sor). DeleteVehicle,
     GetClosestVehicle
 
   server.lua
@@ -384,13 +390,19 @@ Szerep röviden
     sendMessage / drawText / hideText → QBCore:Notify, qb-core:client:DrawText/
     HideText (CHANGE ME)
     addMoney / removeMoney / getAccounts – ESX2QB account map (money→cash,
-    black_money→crypto); Functions.AddMoney / RemoveMoney
-    getInventory → xPlayer.items
-    addItem → Functions.AddItem; false → false, 'inventory_full'
+    black_money→crypto); Functions.AddMoney / RemoveMoney; xPlayer lehet
+    source szám → GetPlayer; nil játékos: addMoney/removeMoney → false,
+    invalid_player; getAccounts → 0
+    getInventory – source szám → GetPlayer; nil / nincs items → {}; különben
+    xPlayer.items
+    addItem – source szám → GetPlayer; nil → invalid_player; Functions.AddItem;
+    false → false, 'inventory_full'
     getPlayerMaxWeight → Config.maxInventoryWeight
-    removeItem – saját slotonkénti logika, majd Functions.SetInventory(temp,
-    true); hibakódok: no_items_to_remove, inventory_is_empty, not_enough_items
-    removeItems – előfeltétel ellenőrzés, majd ugyanilyen SetInventory mentés
+    removeItem – source szám → GetPlayer; nil → invalid_player; saját
+    slotonkénti logika, majd Functions.SetInventory(temp, true); hibakódok:
+    no_items_to_remove, inventory_is_empty, not_enough_items
+    removeItems – source szám → GetPlayer; nil → invalid_player; előfeltétel
+    ellenőrzés, majd ugyanilyen SetInventory mentés
     getPlayer(playerId) – convertPlayer(GetPlayer(playerId))
     itemBox – mint ESX, Config.itemBox
     addCommands → QBCore.Commands.Add
@@ -567,11 +579,11 @@ Betöltési sorrend (fxmanifest)
 
 main.lua – indulás és REGISTERED_ITEMS
   `ClientMetaStore` (`src/client/client_meta_store.lua`) – kliens meta cache + sync rev; **`eCoreNui`** (`src/client/ecore_nui.lua`) – NUI shell `isReady()` / `markShellReady()`.
-  CORE_READY és REGISTERED_ITEMS kezdetben nil; egy CreateThread meghívja
+  `CORE_READY` indulás **`false`**, `REGISTERED_ITEMS` indulás **`nil`**; egy CreateThread meghívja
   `hfe.awaitItemRegistryReady('CLIENT REGISTERED_ITEMS')` – ugyanaz a timeout /
   poll ConVar logika, mint a szerveren (`e_core:items_ready_*`), majd
   `hfe.logEcoreStartupSummary('client')`. A `CORE_READY` értékét a helper állítja
-  (true siker, false timeout); töltés alatt `eCore:isReady()` lehet nil.
+  (`true` siker, `false` timeout); töltés alatt `eCore:isReady()` **`false`** (0.1.7+).
 
 main.lua – meta / labor segédfüggvények (globálisok, exportnak)
   getAbility(category, name?) – `ClientMetaStore.getMeta()`-ból; hibák: category_does_not_exist,
@@ -610,7 +622,7 @@ exports.lua
   exports('getLevel', getLevel)        -- definíció: src/libs/meta.lua (shared)
   exports('getDiscounts', getDiscounts) -- definíció: src/libs/meta.lua (shared)
   exports('getConfig', function() return Config end)
-  exports('isReady', function() return eCore:isReady() == true end)
+  exports('isReady', function() return eCore:isReady() end)
 
 Összefüggés más részekkel
   REGISTERED_ITEMS feltöltése framework bridge getRegisteredItems-szel történik
@@ -994,9 +1006,11 @@ imports – consumer / eco resource ötletek (következő lépések, nem kötele
 src/imports/shared/core.lua (files – consumer include)
   Szerep
     **Minimális belépés** más resource-ból: egy `getCore()` hívás; a kurált
-    mezők (`framework`, `config`, `i18n`, `util`, szerveren opcionálisan
-    `log.discord`) az e_core indulásakor merge-elve vannak az `eCore` táblára
-    (`ecore_lifecycle.lua` + `bridge/main.lua`).
+    mezők (`ecoreVersion`, `bridgeContract`, `framework`, `config`, `i18n`,
+    `util`, szerveren opcionálisan `log.discord`) az e_core indulásakor merge-elve
+    vannak az `eCore` táblára (`ecore_lifecycle.lua` + `bridge/main.lua`).
+    A `bridgeContract` gépi ellenőrzéshez (`schemaVersion`, `lifecycleMergedKeys`);
+    részlet: `docs/PUBLIC_API_HU.md` §1.
   Tartalom (ajánlott)
     `eCore = exports.e_core:getCore()`
     Legacy alias (fokozatos migráció): `FRAMEWORK = eCore.framework`,
@@ -1299,15 +1313,15 @@ Mérvadó forrásfájlok (fxmanifest.lua → server_scripts sorrend, releváns r
 src/server/main.lua
   Globálisok
     `PlayerMetaStore` – külön fájlban inicializálva (`player_meta_store.lua`); a meta sorokat a `meta.lua` / `db.lua` / `labor.lua` API-n keresztül éri el.
-    `CORE_READY`, `REGISTERED_ITEMS` – induláskor nil; egy szál `hfe.awaitItemRegistryReady`
+    `CORE_READY` indulás **`false`**, `REGISTERED_ITEMS` indulás **`nil`**; egy szál `hfe.awaitItemRegistryReady`
     tölti a táblát `eCore:getRegisteredItems()` hívásokkal. Siker: `CORE_READY = true`.
     Timeout: `CORE_READY = false`, részletes `cLog` (nem végtelen ciklus).
   ConVarok (ugyanaz a kliensen)
     `e_core:items_ready_timeout_ms` – alap 120000, érvényes tartomány 30000–600000.
     `e_core:items_ready_poll_ms` – alap 1000, 200–5000 (két próba közötti Wait).
   Export
-    `exports.e_core:isReady()` – csak `true`, ha a registry kész; töltés közben és
-    timeout után `false`. Háromállapot: `eCore:isReady()` → nil / false / true.
+    `exports.e_core:isReady()` és `eCore:isReady()` – **mindig boolean** (0.1.7+): `true` csak ha a registry kész;
+    töltés közben és timeout után `false`.
   Kockázat (csökkentve)
     Üres registry esetén korábban végtelen várakozás; most timeout + napló.
   Indulási összegzés (egy sor)
@@ -1578,6 +1592,8 @@ getCore()
   Oldal: client + server.
   Paraméter: nincs.
   Visszaad: eCore tábla (metódusok: lentebb, ESX vs QB eltérhet).
+  0.1.9+: `eCore.ecoreVersion` (manifest `version` string), `eCore.bridgeContract`
+    (séma + merge kulcslista) — consumer feature gate / diagnosztika.
 
 getConfig()
   Oldal: client + server.
@@ -1613,10 +1629,10 @@ getLabor()
 
 isReady()
   Paraméter: nincs.
-  Vissza: `true` **csak** ha `eCore:isReady() == true` (item registry kész);
+  Vissza: `true` **csak** ha az item registry szál sikeresen befejeződött;
           egyébként `false` (töltés vagy timeout után is).
-  Megjegyzés: `eCore:isReady()` a globális `CORE_READY`-t adja (nil / false / true);
-          export explicit `== true` (lásd `src/bridge/global/shared.lua`).
+  Megjegyzés (0.1.7+): `eCore:isReady()` mindig **boolean** (`CORE_READY == true` a facade-ban);
+          export: `return eCore:isReady()` (`src/client/exports.lua` / `src/server/exports.lua`).
 
 getLevel(value)
   value: elért pontszám (szám).
@@ -1755,8 +1771,8 @@ A: A szerver/kliens item registry **nem** töltődött be a ConVar időkorlátig
 
 K: `exports.e_core:isReady()` mikor `true`?
 A: Csak ha a registry szál sikeresen befejeződött (`CORE_READY == true`). Timeout
-  után `false` marad; töltés közben is `false` (vagy belsőleg `eCore:isReady()`
-  lehet `nil`). Lásd `src/libs/helper_ecore.lua` `awaitItemRegistryReady`.
+  után `false` marad; töltés közben is `false` (0.1.7+ nincs `nil` „várakozás” állapot a facade-on).
+  Lásd `src/libs/helper_ecore.lua` `awaitItemRegistryReady`.
 
 K: Kliensen `getLabor()` ad `false, not_found_metadata` – hiba?
 A: Nem feltétlenül: **sync előtt** vagy üres kliens meta esetén várható. A szerver

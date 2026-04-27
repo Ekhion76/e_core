@@ -1,7 +1,8 @@
 local hf = hf
 local hfe = hfe
 
-CORE_READY, REGISTERED_ITEMS = nil, nil
+-- `false` indulásig / hiba után; `true` csak sikeres registry után (lásd kliens `main.lua` ugyanilyen komment).
+CORE_READY, REGISTERED_ITEMS = false, nil
 
 CreateThread(function()
     cLog('REGISTERED ITEMS', 'Loading...', 2)

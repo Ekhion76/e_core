@@ -75,7 +75,7 @@ flowchart LR
 
 **e_core resource:** FiveM loads every `shared_scripts` entry, then the full `client_scripts` / `server_scripts` lists from `fxmanifest.lua` as **one resource**. This is **not** a lazy module system: there is no built-in partial unload; Lua chunks and tables stay resident while `e_core` runs.
 
-**NUI:** `ui_page 'src/web/dist/index.html'` – the running UI is the **built** output under `src/web/dist/` (sources in `src/web/`; see [src/web/README.md](src/web/README.md)). Lua talks to it via NUI bridge files (`ecore_nui.lua`, `web.lua`, admin/diagnostics bridges).
+**NUI:** `fxmanifest.lua` **`ui_page`** selects the shell. **Prod:** `src/web/dist/index.html` + `npm run build`. **Dev (Vite HMR):** `http://127.0.0.1:5173/` + run `npm run dev` under `src/web` on the same machine; see [src/web/README.md](src/web/README.md). Lua talks to it via NUI bridge files (`ecore_nui.lua`, `web.lua`, admin/diagnostics bridges).
 
 **Consumer – two common patterns:**
 
@@ -86,7 +86,7 @@ flowchart LR
 
 Paths loaded via `full_import` must be listed in e_core’s **`files { }`** (currently includes `src/imports/shared/*.lua` among others), otherwise `LoadResourceFile` returns empty.
 
-**Readiness:** `exports.e_core:isReady()`; on the client, also wait for item registry / init where applicable—not only that `getCore()` exists.
+**Readiness:** `exports.e_core:isReady()` (0.1.7+: always a **boolean**—`false` at startup / while loading / on timeout / in IDLE; `true` only when the item registry is ready); on the client, also wait for item registry / init where applicable—not only that `getCore()` exists.
 
 ---
 

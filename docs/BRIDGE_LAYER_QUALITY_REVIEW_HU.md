@@ -8,8 +8,11 @@
 
 | Jel | Jelentés |
 |-----|----------|
-| **[Orvosolva 0.1.4]** | A szövegben említett konkrét hiba a repóban **meg van oldva** (`fxmanifest` **0.1.4**; részletek: `changelog.md` [Unreleased]). |
-| **[Nyitott]** | Javaslat vagy technikai adósság; **nincs** ehhez a ponthez kötött 0.1.4-es kódjavítás. |
+| **[Orvosolva 0.1.4]** | A szövegben említett konkrét hiba a repóban **meg van oldva** (lásd lenti lista; részletek: `changelog.md` [Unreleased]). |
+| **[Orvosolva 0.1.5]** | QB bridge további nil-guard / `source` → `GetPlayer` feloldás (`fxmanifest` **0.1.5**; `changelog.md`). |
+| **[Orvosolva 0.1.6]** | ESX szerver: pénz + inventory nil-guard / `source` → `GetPlayerFromId`, `invalid_player` / `0` / `{}` (`fxmanifest` **0.1.6**). |
+| **[Orvosolva 0.1.7]** | `CORE_READY` indulás **`false`**; `eCore:isReady()` mindig **boolean** (`fxmanifest` **0.1.7**). |
+| **[Nyitott]** | Javaslat vagy technikai adósság; **nincs** hozzá kötött kódjavítás a fenti patchekben. |
 | **[Bevált]** | Nem feltétlenül „hiba”; szándékos vagy jó gyakorlat. A fejezetcímben **[Bevált / megfigyelés]** = üzemeltetési megállapítás, nem kódos „javítás”. |
 
 **[Orvosolva 0.1.4] – rövid lista (fájl / viselkedés):**
@@ -17,9 +20,29 @@
 - `src/bridge/framework_config.lua` – ha induláskor egyik legacy core sem `started`: **`_ECORE_INIT_FAILED = true`** (korábban `false` maradt).
 - `src/bridge/esx/client.lua` + `src/bridge/global/callbacks/server.lua` – ESX kliens **`getRegisteredItems`**: szerver callback, nem játékos inventory `convertItems`; üres válas: **`false`**, **`eCoreErr.not_ready`**.
 - `src/libs/helper_ecore.lua` – **`awaitItemRegistryReady`**: `REGISTERED_ITEMS` csak **nem üres tábla** esetén íródik (a `false` / `not_ready` nem ragad be).
-- `src/bridge/qb/server.lua` – **`addMoney`**: nil játékos → **`false`**, **`eCoreErr.invalid_player`**.
-- `src/bridge/esx/server.lua` – **`getAccounts`**: `xPlayer` / `accounts` nil-safe → **`0`**.
+- `src/bridge/qb/server.lua` – **0.1.4:** `addMoney` → **`invalid_player`** ha nil játékos; **0.1.5:** további QB metódusok – lentebbi lista.
+- `src/bridge/esx/server.lua` – **0.1.4:** `getAccounts` tábla nil-safe **`0`**; **0.1.6:** pénz + inventory + `source` szám – lentebbi ESX lista.
 - `src/libs/errors.lua` – új kulcsok: **`not_ready`**, **`invalid_player`**.
+
+**[Orvosolva 0.1.5] – rövid lista (`src/bridge/qb/server.lua`):**
+
+- **`removeMoney`:** nil játékos → **`false`**, **`eCoreErr.invalid_player`** (ugyanaz, mint `addMoney`).
+- **`getAccounts`:** `source` szám → `GetPlayer`; nil / hiányzó `money` tábla → **`0`**; számla kulcs → **`or 0`**.
+- **`getInventory`:** `source` szám → `GetPlayer`; nil / nem tábla `items` → **`{}`**.
+- **`addItem` / `removeItem` / `removeItems`:** `source` szám feloldás; nil játékos → **`invalid_player`** (`removeItems` korábban `unknown_error` volt nilnél).
+
+**[Orvosolva 0.1.6] – rövid lista (`src/bridge/esx/server.lua`):**
+
+- **`addMoney` / `removeMoney`:** nil `xPlayer` → **`false`**, **`invalid_player`** (korábban csak `false`).
+- **`getAccounts`:** `source` szám → `GetPlayerFromId` (korábban a szám miatt csendben **0**).
+- **`getInventory` / `getInventoryWeight`:** szám feloldás; nil → **`{}`** / **`0`**.
+- **`addItem` / `removeItem` / `removeItems`:** szám feloldás; nil → **`invalid_player`** (`removeItems` korábbi `unknown_error` nil helyett).
+
+**[Orvosolva 0.1.7] – rövid lista:**
+
+- `src/client/main.lua`, `src/server/main.lua` – **`CORE_READY`** indulás **`false`** (korábban `nil`).
+- `src/bridge/global/shared.lua` – **`eCore:isReady()`** → **`CORE_READY == true`** (mindig boolean).
+- `src/client/exports.lua`, `src/server/exports.lua` – **`isReady`** export a facade booleanját adja.
 
 ---
 
@@ -73,13 +96,13 @@ Korábban: ha egyik core sem `started` az `e_core` betöltésekor, **nem** hív�
 
 **További jegyzet:** Külön `_ECORE_NO_FRAMEWORK` kulcs továbbra is opcionális, ha finomabb diagnosztikát szeretnél a consumerben.
 
-### `isReady()`
+### [Orvosolva 0.1.7] `isReady()`
 
-A facade `CORE_READY`-t adja vissza; a szerver export szigorúan `== true`.
+A facade **mindig boolean**-t ad: **`true`** csak ha a registry szál sikeresen befejeződött; **`false`** induláskor, timeoutnál, IDLE-nél. A `CORE_READY` globál indulás **`false`** (`client`/`server` `main.lua`).
 
 ```371:373:src/bridge/global/shared.lua
 function eCore:isReady()
-    return CORE_READY
+    return CORE_READY == true
 end
 ```
 
@@ -94,21 +117,22 @@ function hfe.awaitItemRegistryReady(logTag)
 ```
 
 - **[Bevált]** IDLE esetén a várakozás nem timeoutol feleslegesen: azonnal `CORE_READY = false`.
-- **[Nyitott]** `CORE_READY` indulhat `nil`-en; a helyes consumer minta: `exports.e_core:isReady()` (boolean), ne csak truthy `eCore:isReady()`.
+- **[Bevált]** Consumer minta: `exports.e_core:isReady()` vagy `eCore:isReady()` – mindkettő **tiszta boolean** (0.1.7+).
 
 ---
 
 ## 2. API design és verziókövetés
 
-**Publikus slice:** `ecore_lifecycle.lua` sekély merge: `framework`, `config`, `i18n`, `util`, opcionálisan `log.discord`.
+**Publikus slice:** `ecore_lifecycle.lua` sekély merge: `ecoreVersion`, `bridgeContract`, majd `framework`, `config`, `i18n`, `util`, opcionálisan `log.discord`.
 
-```98:135:src/bridge/ecore_lifecycle.lua
+**[Orvosolva 0.1.9]** **`eCore.ecoreVersion`:** `GetResourceMetadata(GetCurrentResourceName(), 'version', 0)` (üres → `0.0.0`). **`eCore.bridgeContract`:** `schemaVersion` (séma bump, ha a tábla alakja változik), `resource`, `lifecycleMergedKeys` — gépi consumer ellenőrzés; nem helyettesíti a `PUBLIC_API` névsort, csak a **lifecycle merge** kulcsait rögzíti.
+
+```100:150:src/bridge/ecore_lifecycle.lua
 function eCoreLifecycle_buildPublicAPI()
     local out = {}
-    -- ...
-    out.framework = rt.frameworkKey
-    out.config = rt.config
-    -- i18n, util, log...
+    out.ecoreVersion = ...
+    out.bridgeContract = { schemaVersion = ..., resource = ..., lifecycleMergedKeys = { ... } }
+    -- framework, config, i18n, util, optional log...
     return out
 end
 ```
@@ -126,9 +150,13 @@ Korábbi hiba: `REGISTERED_ITEMS` hiányában a kliens a játékos inventoryra h
 
 **Javítás:** szerver `lib.callback` (`e_core:getRegisteredItems`, `bridge/global/callbacks/server.lua`) + kliensen `lib.callback.await`; ha továbbra sincs adat: **`false`**, **`eCoreErr.not_ready`**. A `helper_ecore.awaitItemRegistryReady` csak **nem üres táblát** ír a globális `REGISTERED_ITEMS`-be (`helper_ecore.lua`).
 
-### [Orvosolva 0.1.4] QB `addMoney` nil játékos
+### [Orvosolva 0.1.4–0.1.6] QB és ESX szerver – játékos feloldás és nil-guard
 
-**Javítás:** `GetPlayer` után `if not xPlayer then return false, eCoreErr.invalid_player end` (`bridge/qb/server.lua`).
+**QB – 0.1.4 `addMoney`:** `GetPlayer` után `if not xPlayer then return false, eCoreErr.invalid_player end`.
+
+**QB – 0.1.5:** `removeMoney`; továbbá `getAccounts` / `getInventory` (`source` szám + nil-safe visszatérések), `addItem` / `removeItem` / `removeItems` (`invalid_player`, `removeItems` nilkor korábbi `unknown_error` helyett).
+
+**ESX – 0.1.6:** ugyanilyen `invalid_player` / `source` → `GetPlayerFromId` / `0` / `{}` szerződés a szerver `bridge/esx/server.lua` pénz + inventory metódusain (`addMoney`, `removeMoney`, `getAccounts`, `getInventory`, `getInventoryWeight`, `addItem`, `removeItem`, `removeItems`).
 
 ### [Nyitott] Bridge verzió a consumernek
 
@@ -165,7 +193,7 @@ function eCore:getRegisteredItems()
 end
 ```
 
-**Config merge:** Több fájl egymás után fut; ugyanazon kulcs utóbbi felülírja. **[Nyitott] Javaslat:** beágyazott tábláknál (`Config.operator`) egy override fájl **teljes** új táblát adva felülírhatja az egész blokkot – rekurzív merge nincs. Mély merge-hez explicit helper + dokumentált policy.
+**Config merge (sekély):** Több fájl egymás után fut; ugyanazon **top-level** kulcsnál az utóbbi chunk **teljes táblacserét** jelenthet — **rekurzív merge nincs**. **[Dokumentálva 0.1.11]** Kanonikus szabály + operátori checklist: **`docs/SZERVER_OPERATOR_CHECKLIST_HU.md` §1.1**, összefoglaló **`docs/PUBLIC_API_HU.md`** (Override blokk alatti `Config` bekezdés).
 
 **Új inventory (pl. Quasar):** Minta: `overrides/example_custom_inventory/` – saját globál flag + `config.lua` + `shared.lua` / `server.lua` / `client.lua`, `GetResourceState('<resource>') == 'started'`.
 
@@ -180,11 +208,13 @@ if not CUSTOM_INVENTORY then return end
 
 ## 4. Hibakezelés és diagnosztika
 
-**[Nyitott]** A bridge sok helyen `false` / `0` / `nil` visszatéréssel él `eCoreErr` nélkül (pl. ESX `addMoney`), míg másutt `(ok, err)` minta van – a publikus metódusokra érdemes egységes szerződést írni.
+**[Nyitott]** A bridge egyéb pontjain még lehet `false` / `0` / `nil` `eCoreErr` nélkül, illetve `(ok, err)` vs. egyszeri visszatérés keveredése – a publikus metódusokra érdemes egységes szerződést írni (lásd changelog 0.1.4–0.1.6 bridge sorok). **Részben (0.1.8):** ESX / QB **kliens** jármű stubok (`setFuelLevel`, `vehicleKeys`, `setVehicleProperties`, `setVehiclePropertiesFromNetId`) — `PUBLIC_API` §5 / §9.
 
-### [Orvosolva 0.1.4] ESX `getAccounts` nil `xPlayer`
+### [Orvosolva 0.1.4–0.1.6] ESX `getAccounts` és társai
 
-**Javítás:** `xPlayer` és `xPlayer.accounts` tábla ellenőrzés; hiány esetén **`0`** (megtartott szám szerződés), nincs runtime error (`bridge/esx/server.lua`).
+**0.1.4 – tábla szerződés:** `xPlayer` és `xPlayer.accounts` ellenőrzés; hiány esetén **`0`**, nincs runtime error.
+
+**0.1.6 – `source` szám:** `GetPlayerFromId` feloldás `getAccounts` / `getInventory` / `getInventoryWeight` előtt; továbbra is **`0`** / **`{}`**, ha nincs játékos vagy nincs `accounts`.
 
 **Integrity / env lépés:** `getFrameWork()` + `isReady` + item convert diagnosztika – alap környezet; nem teszteli külön az összes exportot / mindkét framework ágat egy futásban.
 
@@ -305,6 +335,12 @@ A QBox ökoszisztéma verziófüggő; tipikus **irányú** eltérések a klasszi
 
 | Státusz | Téma |
 |--------|------|
-| **[Orvosolva 0.1.4]** | „Nincs core induláskor”: `_ECORE_INIT_FAILED = true` (`framework_config.lua`). ESX kliens `getRegisteredItems`: szerver `e_core:getRegisteredItems` callback, `not_ready`, `helper_ecore` tábla-guard. QB `addMoney` nil: `invalid_player`. ESX `getAccounts`: nil-safe. Új `eCoreErr`: `not_ready`, `invalid_player`. |
-| **[Nyitott]** | Bridge API / hibakód aszimmetria (pl. ESX `addMoney` vs többi metódus); `CORE_READY` nil vs boolean; config sekély merge; detektálás pillanatkép-alapú; nincs explicit `bridgeContract` a `getCore()`-ban; QBox = új ág vagy szigorú kompat réteg + event audit; NUI throttle; `IPlayerFacade`. |
-| **[Bevált]** | ConVar-alapú választás + két core + auto → kontrollált IDLE (`framework_config.lua`); explicit fw kényszerítés két core mellett; override sorrend teljes metóduscserehez (`fxmanifest.lua`); `example_custom_inventory` minta új inventoryhoz; `imports/shared/core.lua` consumer minta; `exports.e_core:isReady()` szigorú boolean (`src/server/exports.lua` 63–65). |
+| **[Orvosolva 0.1.4]** | „Nincs core induláskor”: `_ECORE_INIT_FAILED = true` (`framework_config.lua`). ESX kliens `getRegisteredItems`: szerver `e_core:getRegisteredItems` callback, `not_ready`, `helper_ecore` tábla-guard. ESX `getAccounts`: tábla nil-safe **`0`**. Új `eCoreErr`: `not_ready`, `invalid_player`. |
+| **[Orvosolva 0.1.5]** | QB `removeMoney` + `getAccounts` / `getInventory` / `addItem` / `removeItem` / `removeItems`: nil-guard, `source` szám feloldás, `invalid_player` / `0` / `{}` szerződés (`bridge/qb/server.lua`). |
+| **[Orvosolva 0.1.6]** | ESX szerver: `addMoney` / `removeMoney` + inventory/pénz segédek – ugyanilyen `invalid_player` / szám feloldás / `0` / `{}` (`bridge/esx/server.lua`). |
+| **[Orvosolva 0.1.7]** | `CORE_READY` indulás `false`; `eCore:isReady()` mindig boolean; export `isReady` (`main.lua`, `global/shared.lua`, `exports.lua`). |
+| **[Orvosolva 0.1.9]** | `getCore()` facade: **`ecoreVersion`** + **`bridgeContract`** (`ecore_lifecycle.lua` merge; `fxmanifest` **0.1.9**). |
+| **[Dokumentálva 0.1.11]** | `Config` sekély merge — `SZERVER_OPERATOR` §1.1, `PUBLIC_API` §1, `BRIDGE_LAYER…` §3 (`fxmanifest` **0.1.11**). |
+| **[Részben 0.1.10]** | Globális `hasItem`, ESX `removeItems` pcall, ox/qs/avp szerver override inventory ágak — részletezett `eCoreErr` (`PUBLIC_API` §5). |
+| **[Nyitott]** | Bridge API / hibakód aszimmetria (további metódusok / `createVehicle` részletezés később); detektálás pillanatkép-alapú; QBox; NUI throttle; `IPlayerFacade`. |
+| **[Bevált]** | ConVar-alapú választás + két core + auto → kontrollált IDLE (`framework_config.lua`); explicit fw kényszerítés két core mellett; override sorrend teljes metóduscserehez (`fxmanifest.lua`); `example_custom_inventory` minta új inventoryhoz; `imports/shared/core.lua` consumer minta. |

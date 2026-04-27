@@ -16,7 +16,7 @@ Egy fejlesztő / AI asszisztens számára elég innen kinavigálni. A cél: **ox
 
 | Fájl | Szerep |
 |------|--------|
-| [SZERVER_OPERATOR_CHECKLIST_HU.md](SZERVER_OPERATOR_CHECKLIST_HU.md) | `ensure`, ConVar, indulási log, kockázatok |
+| [SZERVER_OPERATOR_CHECKLIST_HU.md](SZERVER_OPERATOR_CHECKLIST_HU.md) | `ensure`, ConVar, indulási log, kockázatok; **`Config` sekély merge** (§1.1) |
 | [FRAMEWORK_CONFIG_REFACTOR_TERVEZES_HU.md](FRAMEWORK_CONFIG_REFACTOR_TERVEZES_HU.md) | `e_core:framework`, két core eset |
 | [FRAMEWORK_IDLE_GUARD_STRATEGY_HU.md](FRAMEWORK_IDLE_GUARD_STRATEGY_HU.md) | Framework detect hibaegyesítés, `idle` állapot, guard és ready-state stratégia |
 | [SUPPORTED_STACK_MATRIX_HU.md](SUPPORTED_STACK_MATRIX_HU.md) | Tier / override / támogatott kombinációk |

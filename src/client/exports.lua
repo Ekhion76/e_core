@@ -25,7 +25,7 @@ end)
 --- @return boolean ready True if core is fully ready for consumers.
 exports('isReady', function()
 
-    return eCore:isReady() == true
+    return eCore:isReady()
 end)
 
 --- Registers one HUD element for e_core edit-mode synchronization.

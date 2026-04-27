@@ -91,7 +91,7 @@ Igy nincs azonnali hiba, de nincs vegtelen blokkolas sem.
 
 A consumer oldalon ne legyen vegtelen:
 
-- `while not eCore:isReady() do Wait(...) end`
+- `while not eCore:isReady() do Wait(...) end` — **0.1.7+** az `isReady()` **mindig boolean** (`false` töltés alatt is), ezért a ciklus technikailag elindulhat, de **véletlenül sem** jó végtelen várakozás (IDLE / timeout esetén örökké `false`).
 
 Helyette legyen idokorlatos helper, ami visszaadja az okot is:
 
@@ -102,7 +102,7 @@ local function waitForEcoreReady(timeoutMs, pollMs)
     local deadline = GetGameTimer() + timeout
 
     while GetGameTimer() < deadline do
-        if eCore:isReady() == true then
+        if eCore:isReady() then
             return true
         end
         Wait(poll)

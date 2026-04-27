@@ -33,7 +33,7 @@ Ezt a sorrendet végigfuttatva a legtöbb „véletlen” hiba kiszűrhető **fu
 |---|--------|-----------|
 | 1 | **Resource indulás** | `ensure` sorrend: legacy core → `e_core` → consumer. `changelog.md` / `fxmanifest` `version`. |
 | 2 | **Keretrendszer** | `e_core:framework` ConVar (két core esetén). |
-| 3 | **Kész állapot** | `exports.e_core:isReady()` – item registry; meta/labor előtt is érdemes. |
+| 3 | **Kész állapot** | `exports.e_core:isReady()` – item registry (0.1.7+: mindig **boolean**, `true` csak ha kész); meta/labor előtt is érdemes. |
 | 4 | **Oldal** | Client export vs server export – pl. `setMeta` **csak szerveren** van. |
 | 5 | **Játékos** | Van-e `source` / betöltött meta (`e_core:playerLoaded` után)? `not_found_metadata` gyakran „még nincs sor” vagy rossz `playerId`. |
 | 6 | **Config** | `standalone/config/main.lua` – `systemMode`, `labor`, `abilityLimit`, `metaFields`. |
@@ -54,18 +54,25 @@ Az `exports.e_core:*` **vékony réteg** (`client/exports.lua`, `server/exports.
 | `invalid_item_data` | ugyanaz | Rossz `itemData` / swap sor vagy nem tábla `swappingItems`; **`removeItems`** listaelem nem tábla / üres név / nem pozitív **`amount`** (NaN elutasítva); **override** ox/qs/avp `removeItems` ugyanígy; **avp** `removeItem` / `addItem` rossz **`item`** / **`count`** | `bridge/global/shared.lua`; `bridge/esx/server.lua`, `bridge/qb/server.lua` (`removeItems`); `standalone/overrides/ox_inventory|qs_inventory|avp_grid_inventory/server.lua` |
 | `item_not_registered` | ugyanaz | Item név nincs a registry-ben | `bridge/global/shared.lua` |
 | `not_ready` | `'not_ready'` | ESX kliens `getRegisteredItems`: szerver callback nem adott nem üres katalógust | `bridge/esx/client.lua` |
-| `invalid_player` | `'invalid_player'` | QB `addMoney`: `GetPlayer` nil | `bridge/qb/server.lua` |
+| `invalid_player` | `'invalid_player'` | ESX / QB: offline játékos (`addMoney`, `removeMoney`, `addItem`, `removeItem`, `removeItems`); **ox / qs / avp** szerver override: érvénytelen forrás | `bridge/esx/server.lua`, `bridge/qb/server.lua`; `standalone/overrides/ox_inventory|qs_inventory|avp_grid_inventory/server.lua` |
 | `inventory_full` | ugyanaz | QB addItem | `bridge/qb/server.lua` |
 | `no_items_to_remove` | ugyanaz | Üres lista / nincs mit | `bridge/qb/server.lua` |
 | `inventory_is_empty` | ugyanaz | QB | `bridge/qb/server.lua` |
 | `not_enough_items` | ugyanaz | QB kevesebb mennyiség | `bridge/qb/server.lua` |
 | `there_are_no_items_to_remove` | **`'there are no items to remove'`** (szóköz!) | ESX / ox / qs / avp üres remove | `bridge/esx/server.lua`, override `server.lua` |
-| `unknown_error` | ugyanaz | ox/qs remove belső hiba; **ESX `removeItems`:** hiányzó **`xPlayer`** vagy **`removeInventoryItem`** kivétel; **QB `removeItems`:** hiányzó **`xPlayer`**; `createVehicle`: rossz `pos`/`model`/`props`, nincs entitás, netId 0/`nil`, owner **-1** marad; **override** ox/qs/avp: hiányos **`xPlayer`**, `pcall` kivétel, sikertelen törlés; **ox/qs `addItem`:** kivétel vagy nem `eCoreErr` második string; **avp** `RemoveItemBy` / `AddItem` egyedi üzenet (nem `eCoreErr` érték), `canCarryItem` kivétel / érvénytelen forrás | `standalone/overrides/ox_inventory|qs_inventory|avp_grid_inventory/server.lua`; `bridge/esx/server.lua`, `bridge/qb/server.lua`; `bridge/global/server.lua` |
+| `invalid_item_name` | ugyanaz | Globális `hasItem`: `itemName` nem string | `bridge/global/shared.lua` |
+| `inventory_export_exception` | ugyanaz | ESX `removeItems` `pcall` körül `removeInventoryItem` kivétel; ox/qs/avp override: inventory export `pcall` hiba | `bridge/esx/server.lua`; `standalone/overrides/ox_inventory|qs_inventory|avp_grid_inventory/server.lua` |
+| `inventory_operation_failed` | ugyanaz | ox / qs override: `RemoveItem` sikeres `pcall` mellett falsy válasz | `standalone/overrides/ox_inventory|qs_inventory/server.lua` |
+| `unknown_error` | ugyanaz | Fallback; **override** `asEcoreInventoryReason` nem `eCoreErr` string; avp egyedi üzenet; `createVehicle` egyéb ág; stb. | `standalone/overrides/...`; `bridge/global/server.lua` |
 | `vehicle_no_plate_data` | hosszú angol szöveg | Jármű létrehozás, rendszám adat | `bridge/global/server.lua` (`createVehicle`) |
+| `invalid_vehicle_entity` | ugyanaz | ESX / QB kliens: `setFuelLevel` / `setVehicleProperties` — nincs érvényes jármű entitás | `bridge/esx/client.lua`, `bridge/qb/client.lua` |
+| `invalid_vehicle_plate` | ugyanaz | ESX / QB kliens: `vehicleKeys` — üres / nem tartalmas rendszám | `bridge/esx/client.lua`, `bridge/qb/client.lua` |
+| `invalid_vehicle_props` | ugyanaz | ESX / QB kliens: `setVehicleProperties` / `setVehiclePropertiesFromNetId` — üres vagy hiányzó `props` tábla; **szerver** `createVehicle`: `props` nem tábla és nem `nil` | `bridge/esx/client.lua`, `bridge/qb/client.lua`; `bridge/global/server.lua` |
+| `vehicle_network_timeout` | ugyanaz | ESX / QB kliens: `setVehiclePropertiesFromNetId` — `netId` nem oldódott fel a várakozási ciklusban | `bridge/esx/client.lua`, `bridge/qb/client.lua` |
 | `the_system_is_turned_off` | ugyanaz | `Config.systemMode` kikapcsolva | `server/labor.lua`, `client/main.lua` (`getLabor`) |
 | `not_found_metadata` | ugyanaz | Nincs `PlayerMetaStore.get(player)` sor / nincs kulcs / sync előtt (kliens: üres cache) | `server/meta.lua`, `server/labor.lua`, kliens `getLabor` |
 | `no_valid_meta_name` | ugyanaz | Nem string / üres név trim után | `server/meta.lua` (meta segédek); kliens `client/main.lua` (`getAbility`, `getMeta` param) |
-| `not_valid_amount` | ugyanaz | Labor: `addLabor` / `removeLabor` nem pozitív mennyiség (vagy NaN); jártasság `value` nem szám | `server/labor.lua`, `server/meta.lua` (`addAbility` / `removeAbility` / `setAbility`) |
+| `not_valid_amount` | ugyanaz | Labor: `addLabor` / `removeLabor` nem pozitív mennyiség (vagy NaN); jártasság `value` nem szám; **ESX / QB kliens** `setFuelLevel`: `amount` nem szám (`tonumber` nil) | `server/labor.lua`, `server/meta.lua` (`addAbility` / `removeAbility` / `setAbility`); `bridge/esx/client.lua`, `bridge/qb/client.lua` |
 | `not_enough_labor` | ugyanaz | `removeLabor`: kevesebb a egyenleg, mint a levonandó | `server/labor.lua` |
 | `not_levels_data` | ugyanaz | Hiányzó / üres `Config.levels` | `libs/meta.lua` (`getDiscounts`) |
 | `has_already_reached_the_limit` | ugyanaz | `abilityLimit` / labor plafon | `server/meta.lua`, `server/labor.lua` |

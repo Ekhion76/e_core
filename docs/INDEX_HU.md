@@ -7,6 +7,7 @@ Egy fejlesztő / AI asszisztens számára elég innen kinavigálni. A cél: **ox
 | Fájl | Szerep |
 |------|--------|
 | [PUBLIC_API_HU.md](PUBLIC_API_HU.md) | `exports.e_core:*` + `eCore:` névsor, deprec szabály |
+| [EXTENSION_CONTRACT_HU.md](EXTENSION_CONTRACT_HU.md) | Belső `extensions` + publikus thin wrapper szerződés |
 | [AI_SUPPORT_REFERENCE_HU.txt](AI_SUPPORT_REFERENCE_HU.txt) | Részletes magyar leírás: struktúra, exportok, GYIK |
 | [export_examples_client.md](../export_examples_client.md) / [export_examples_server.md](../export_examples_server.md) | Másolható hívásminták (angol) |
 | [changelog.md](../changelog.md) | Verziókövetés (újraindítva) |
@@ -32,6 +33,7 @@ Egy fejlesztő / AI asszisztens számára elég innen kinavigálni. A cél: **ox
 
 | Fájl | Szerep |
 |------|--------|
+| [BRIDGE_LAYER_QUALITY_REVIEW_HU.md](BRIDGE_LAYER_QUALITY_REVIEW_HU.md) | Bridge réteg minőség (IDLE / isReady, overrides, QBox jegyzetek, kódhivatkozások) |
 | [LABOR_KEZELES_MUNKAFIL_HU.md](LABOR_KEZELES_MUNKAFIL_HU.md) | Labor + meta szinkron részletek |
 | [PROFESSION_REGISTRY_ES_META_CLEANUP_TERV_HU.md](PROFESSION_REGISTRY_ES_META_CLEANUP_TERV_HU.md) | Profession registry határ: e_core = source of truth |
 

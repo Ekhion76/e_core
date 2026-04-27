@@ -58,7 +58,7 @@ function eCore:getInventoryWeight(playerData)
     local inventory = self:getInventory(playerData)
     local countIdx, weightIdx = Config.fields.count, Config.fields.weight
 
-    if not hf.isPopulatedTable(inventory) then
+    if not hf.hasEntries(inventory) then
         return 0
     end
 
@@ -253,7 +253,7 @@ function eCore:getItemWeight(itemName, metadata)
     local weightIdx = Config.fields.weight
     local weight = item[weightIdx]
 
-    if hf.isPopulatedTable(metadata) then
+    if hf.hasEntries(metadata) then
         -- AMMO
         if item.ammoname and metadata.ammo then
             local ammoWeight = 0
@@ -268,7 +268,7 @@ function eCore:getItemWeight(itemName, metadata)
         end
 
         -- COMPONENTS
-        if hf.isPopulatedTable(metadata.components) then
+        if hf.hasEntries(metadata.components) then
             for i = 1, #metadata.components do
                 local component = REGISTERED_ITEMS[metadata.components[i]]
 
@@ -296,7 +296,7 @@ function eCore:getFirstSlotByItem(inventory, itemName)
         return nil
     end
 
-    if not hf.isPopulatedTable(inventory) then
+    if not hf.hasEntries(inventory) then
         return nil
     end
 
@@ -320,7 +320,7 @@ function eCore:getAmountOfItems(inventory)
     local nameIdx, countIdx = Config.fields.name, Config.fields.count
     local name, amount
 
-    if not hf.isPopulatedTable(inventory) then
+    if not hf.hasEntries(inventory) then
         return playerItems
     end
 

@@ -8,6 +8,26 @@
 --- That file is loaded immediately after this one in manifest order; after load,
 --- `eCore.helper` still points to the full merged `hf` table (`bridge/main.lua`).
 
+--- Rename map (old -> new)
+--- hf.randomStr            → hf.randomAlpha
+--- hf.randomInt            → hf.randomDigits      (returns string, not number)
+--- hf.getSerialNumber      → hf.genSerial
+--- hf.findingFirstMatch    → hf.hasCommonValue
+--- hf.strToTable           → hf.wrap
+--- hf.tableToStr           → hf.joinValues
+--- hf.isPopulatedTable     → hf.hasEntries
+--- hf.isPopulatedString    → hf.hasContent
+--- hf.inTable              → hf.contains
+--- hf.tableToVector        → hf.toVector
+--- hf.removePrefix         → hf.stripPrefix
+--- hf.numberFormat         → hf.formatNumber
+--- hf.copy                 → removed (it was an alias of hf.shallowCopy)
+--- hf.rangeLimit           → hf.clamp
+--- hf.draw                 → hf.chance
+--- hf.stringSplit          → hf.split
+--- hf.getKeys              → hf.keys
+--- hf.removeNonAlphaNumeric → hf.alphaNum
+
 hf = {}
 hf.stringCharset = {}
 hf.numberCharset = {}
@@ -22,10 +42,11 @@ for i = 97, 122 do
     hf.stringCharset[#hf.stringCharset + 1] = string.char(i)
 end
 
---- Auto-generated annotation. Refine behavior details if needed.
---- @param length any
---- @return any result
-function hf.randomStr(length)
+---returns a random alphabetic string of the given length
+---@param length number
+---@return string
+function hf.randomAlpha(length)
+    length = math.max(0, math.floor(tonumber(length) or 0))
     local result = {}
     for i = 1, length do
         result[i] = hf.stringCharset[math.random(#hf.stringCharset)]
@@ -33,10 +54,11 @@ function hf.randomStr(length)
     return table.concat(result)
 end
 
---- Auto-generated annotation. Refine behavior details if needed.
---- @param length any
---- @return any result
-function hf.randomInt(length)
+---returns a random digit string of the given length (returns string, not number)
+---@param length number
+---@return string
+function hf.randomDigits(length)
+    length = math.max(0, math.floor(tonumber(length) or 0))
     local result = {}
     for i = 1, length do
         result[i] = hf.numberCharset[math.random(#hf.numberCharset)]
@@ -44,49 +66,52 @@ function hf.randomInt(length)
     return table.concat(result)
 end
 
---- Auto-generated annotation. Refine behavior details if needed.
---- @return any result
-function hf.getSerialNumber()
-    return tostring(
-        hf.randomInt(2) ..
-        hf.randomStr(3) ..
-        hf.randomInt(1) ..
-        hf.randomStr(2) ..
-        hf.randomInt(3) ..
-        hf.randomStr(4))
+---generates a random serial number string
+---@return string
+function hf.genSerial()
+    return hf.randomDigits(2) ..
+        hf.randomAlpha(3) ..
+        hf.randomDigits(1) ..
+        hf.randomAlpha(2) ..
+        hf.randomDigits(3) ..
+        hf.randomAlpha(4)
 end
 
----searches for the first match between the values of two tables
+---returns true if the two tables share at least one common value
 ---@param t1 table
 ---@param t2 table
 ---@return boolean
-function hf.findingFirstMatch(t1, t2)
+function hf.hasCommonValue(t1, t2)
     if not t1 or not t2 then
         return false
     end
 
-    if hf.isEmpty(t1) or hf.isEmpty(t2) then
+    t1 = hf.wrap(t1)
+    t2 = hf.wrap(t2)
+
+    if hf.isEmptyTable(t1) or hf.isEmptyTable(t2) then
         return false
     end
 
-    t1 = hf.strToTable(t1)
-    t2 = hf.strToTable(t2)
+    -- Build a membership lookup first, then scan the other side once (O(n+m)).
+    local lookup = {}
+    for _, v in pairs(t2) do
+        lookup[v] = true
+    end
 
-    for _, v1 in pairs(t1) do
-        for _, v2 in pairs(t2) do
-            if v1 == v2 then
-                return true
-            end
+    for _, v in pairs(t1) do
+        if lookup[v] then
+            return true
         end
     end
 
     return false
 end
 
----returns the text as a table
----@param v string
+---wraps a non-table value into a single-element table; tables are returned as-is
+---@param v string|table
 ---@return table
-function hf.strToTable(v)
+function hf.wrap(v)
     if type(v) == 'table' then
         return v
     end
@@ -94,73 +119,71 @@ function hf.strToTable(v)
     return { v }
 end
 
----returns the values of the table separated by commas
----@param v table
+---joins table values into a comma-separated string; non-tables are returned as-is
+---@param v any
 ---@return string
-function hf.tableToStr(v)
+function hf.joinValues(v)
     if type(v) ~= 'table' then
-        return v
+        return tostring(v)
     end
 
-    return table.concat(v, ", ")
+    if not next(v) then
+        return ''
+    end
+
+    local parts = {}
+    for _, value in pairs(v) do
+        parts[#parts + 1] = tostring(value)
+    end
+
+    return table.concat(parts, ', ')
 end
 
---- Auto-generated annotation. Refine behavior details if needed.
---- @param t any
---- @return any result
+---@param t any
+---@return boolean
 function hf.isTable(t)
     return type(t) == 'table'
 end
 
---- Auto-generated annotation. Refine behavior details if needed.
---- @param t any
---- @return any result
-function hf.isPopulatedTable(t)
+---returns true if t is a table with at least one entry
+---@param t any
+---@return boolean
+function hf.hasEntries(t)
     return type(t) == 'table' and (next(t)) ~= nil
 end
 
---- Auto-generated annotation. Refine behavior details if needed.
---- @param s any
---- @return any result
-function hf.isPopulatedString(s)
-    if type(s) ~= 'string' then
-        return false
-    end
-
-    return string.gsub(s, '^%s*(.-)%s*$', '%1') ~= ''
+---returns true if s is a string containing at least one non-whitespace character
+---@param s any
+---@return boolean
+function hf.hasContent(s)
+    return type(s) == 'string' and s:match('%S') ~= nil
 end
 
---- Auto-generated annotation. Refine behavior details if needed.
---- @param v any
---- @return any result
-function hf.isEmpty(v)
-    if v == nil then
-        return true
-    end
-
-    local tType = type(v)
-
-    if tType == 'boolean' or tType == 'function' or tType == 'number' then
+--- Checks whether player source currently exists (server-side).
+---@param src number|string
+---@return boolean
+function hf.isValidPlayerSource(src)
+    src = tonumber(src)
+    if src == nil or src < 1 then
         return false
     end
-
-    if tType == 'table' then
-        return (next(v)) == nil
-    end
-
-    if tType == 'string' then
-        return string.gsub(v, '^%s*(.-)%s*$', '%1') == ''
-    end
-
-    return true
+    local name = GetPlayerName(src)
+    return name ~= nil and name ~= ''
 end
 
---- Auto-generated annotation. Refine behavior details if needed.
---- @param needs any
---- @param t any
---- @return any result
-function hf.inTable(needs, t)
-    if needs and type(t) == 'table' and next(t) then
+---returns true if t is a table without any entries
+---@param t any
+---@return boolean
+function hf.isEmptyTable(t)
+    return type(t) == 'table' and next(t) == nil
+end
+
+---returns true if needs is found among the values of t
+---@param needs any
+---@param t table
+---@return boolean
+function hf.contains(needs, t)
+    if type(t) == 'table' and next(t) then
         for _, v in pairs(t) do
             if v == needs then
                 return true
@@ -171,17 +194,17 @@ function hf.inTable(needs, t)
     return false
 end
 
---- Auto-generated annotation. Refine behavior details if needed.
---- @param v any
---- @return any result
+---trims leading and trailing whitespace from a string; non-strings are returned as-is
+---@param v any
+---@return any
 function hf.trim(v)
-    return type(v) == 'string' and (string.gsub(v, '^%s*(.-)%s*$', '%1')) or v
+    return type(v) == 'string' and v:match('^%s*(.-)%s*$') or v
 end
 
---- Auto-generated annotation. Refine behavior details if needed.
---- @param num any
---- @param numDecimalPlaces any
---- @return any result
+---rounds num to numDecimalPlaces decimal places; rounds to integer if omitted
+---@param num number
+---@param numDecimalPlaces number|nil
+---@return number
 function hf.round(num, numDecimalPlaces)
     if not numDecimalPlaces then
         return math.floor(num + 0.5)
@@ -190,10 +213,29 @@ function hf.round(num, numDecimalPlaces)
     return math.floor(num * mul + 0.5) / mul
 end
 
---- Auto-generated annotation. Refine behavior details if needed.
---- @param t any
---- @return any result
-function hf.tableToVector(t)
+---linearly interpolates between a and b using t in [0..1]
+---@param a number
+---@param b number
+---@param t number
+---@return number
+function hf.lerp(a, b, t)
+    local na = tonumber(a) or 0
+    local nb = tonumber(b) or 0
+    local nt = tonumber(t)
+    if nt == nil then
+        nt = 0
+    elseif nt < 0 then
+        nt = 0
+    elseif nt > 1 then
+        nt = 1
+    end
+    return na + (nb - na) * nt
+end
+
+---converts a table with x/y/z(/w) fields to a vector; returns false if coords are missing
+---@param t any
+---@return vector|boolean
+function hf.toVector(t)
     if type(t) ~= 'table' then
         return t
     end
@@ -210,29 +252,30 @@ function hf.tableToVector(t)
     return w and vec(x, y, z, w) or vec(x, y, z)
 end
 
---- Auto-generated annotation. Refine behavior details if needed.
---- @param str any
---- @param prefix any
---- @return any result
-function hf.removePrefix(str, prefix)
-    return (str:sub(0, #prefix) == prefix) and str:sub(#prefix + 1) or str
+---removes the given prefix from str if present; otherwise returns str unchanged
+---@param str string
+---@param prefix string
+---@return string
+function hf.stripPrefix(str, prefix)
+    return (str:sub(1, #prefix) == prefix) and str:sub(#prefix + 1) or str
 end
 
---- Auto-generated annotation. Refine behavior details if needed.
---- @param number any
---- @return any result
-function hf.numberFormat(number)
+---formats a number with space-separated thousands groups
+---@param number any
+---@return any
+function hf.formatNumber(number)
     if not tonumber(number) then
         return number
     end
 
-    local i, j, minus, int, fraction = tostring(number):find('([-]?)(%d+)([.]?%d*)')
+    local _, _, minus, int, fraction = tostring(number):find('([-]?)(%d+)([.]?%d*)')
     int = int:reverse():gsub("(%d%d%d)", "%1 ")
     return minus .. int:reverse():gsub("^ ", "") .. fraction
 end
 
---- Shallow table copy via `pairs`; non-table input is returned unchanged.
---- Environment-agnostic alternative to `table.clone`.
+---shallow table copy via pairs; non-table input is returned unchanged
+---@param t any
+---@return any
 function hf.shallowCopy(t)
     if type(t) ~= 'table' then
         return t
@@ -244,24 +287,17 @@ function hf.shallowCopy(t)
     return out
 end
 
---- Auto-generated annotation. Refine behavior details if needed.
---- @param t any
---- @return any result
-function hf.copy(t)
-    return hf.shallowCopy(t)
-end
-
---- Auto-generated annotation. Refine behavior details if needed.
---- @param orig any
---- @param copies any
---- @return any result
+---deep copy with cyclic reference handling
+---@param orig any
+---@param copies table|nil
+---@return any
 function hf.deepCopy(orig, copies)
     copies = copies or {}
 
     if type(orig) ~= 'table' then
         return orig
     elseif copies[orig] then
-        return copies[orig] -- return existing copy for cyclic references
+        return copies[orig]
     end
 
     local copy = {}
@@ -276,42 +312,203 @@ function hf.deepCopy(orig, copies)
     return copy
 end
 
-
---- Auto-generated annotation. Refine behavior details if needed.
---- @param v any
---- @param max any
---- @return any result
-function hf.rangeLimit(v, max)
-    return v < 0 and 0 or v > max and max or v
+---clamps v between 0 and max
+---@param v number
+---@param max number
+---@return number
+function hf.clamp(v, max)
+    local nv = tonumber(v) or 0
+    local nmax = tonumber(max) or 0
+    if nmax < 0 then
+        nmax = 0
+    end
+    return nv < 0 and 0 or nv > nmax and nmax or nv
 end
 
---- Auto-generated annotation. Refine behavior details if needed.
---- @param chance any
---- @return any result
-function hf.draw(chance)
+---returns true with the given percentage chance (0–100); always false below 1, always true at 100+
+---@param chance number
+---@return boolean
+function hf.chance(chance)
     chance = tonumber(chance) or 100
     if chance < 1 then return false end
     if chance >= 100 then return true end
     return math.random(100) <= chance
 end
 
---- Auto-generated annotation. Refine behavior details if needed.
---- @param input any
---- @param sep any
---- @return any result
-function hf.stringSplit(input, sep)
-    sep = sep or "%s"
-    local t = {}
-    for str in input:gmatch("([^" .. sep .. "]+)") do
-        t[#t + 1] = str
+---splits input string by sep (default: whitespace); returns a table of tokens
+---@param input string
+---@param sep string|nil
+---@return table tokens
+function hf.split(input, sep)
+    if type(input) ~= 'string' then
+        return {}
     end
-    return t
+
+    local out = {}
+    if sep == nil then
+        for token in input:gmatch('%S+') do
+            out[#out + 1] = token
+        end
+        return out
+    end
+
+    sep = tostring(sep)
+    if sep == '' then
+        out[1] = input
+        return out
+    end
+
+    -- Plain delimiter scan to avoid Lua pattern edge-cases in separators.
+    local startPos = 1
+    while true do
+        local hitStart, hitEnd = string.find(input, sep, startPos, true)
+        if not hitStart then
+            local tail = string.sub(input, startPos)
+            if tail ~= '' then
+                out[#out + 1] = tail
+            end
+            break
+        end
+        if hitStart > startPos then
+            out[#out + 1] = string.sub(input, startPos, hitStart - 1)
+        end
+        startPos = hitEnd + 1
+        if startPos > #input then
+            break
+        end
+    end
+
+    return out
 end
 
---- Auto-generated annotation. Refine behavior details if needed.
---- @param t any
---- @return any result
-function hf.getKeys(t)
+---returns true when v is within inclusive [minValue, maxValue] range
+---@param v number
+---@param minValue number
+---@param maxValue number
+---@return boolean
+function hf.inRange(v, minValue, maxValue)
+    local nv = tonumber(v)
+    local nmin = tonumber(minValue)
+    local nmax = tonumber(maxValue)
+    if not nv or not nmin or not nmax then
+        return false
+    end
+    if nmin > nmax then
+        nmin, nmax = nmax, nmin
+    end
+    return nv >= nmin and nv <= nmax
+end
+
+---executes fn protected by pcall and returns ok, resultOrError
+---@param fn function
+---@return boolean ok
+---@return any resultOrError
+function hf.try(fn)
+    if type(fn) ~= 'function' then
+        return false, 'invalid_function'
+    end
+    return pcall(fn)
+end
+
+---returns true when distance between vectors is <= radius
+---@param v1 vector3|vector4
+---@param v2 vector3|vector4
+---@param radius number
+---@return boolean
+function hf.isNearby(v1, v2, radius)
+    local r = tonumber(radius)
+    if not r or r < 0 then
+        return false
+    end
+    local ok, distance = pcall(function()
+        return #(v1 - v2)
+    end)
+    return ok and distance <= r or false
+end
+
+---maps table values through fn(value, key)
+---@param t table
+---@param fn function
+---@return table mapped
+function hf.map(t, fn)
+    if type(t) ~= 'table' or type(fn) ~= 'function' then
+        return {}
+    end
+    local out = {}
+    for k, v in pairs(t) do
+        out[k] = fn(v, k)
+    end
+    return out
+end
+
+---filters table values by predicate fn(value, key)
+---@param t table
+---@param fn function
+---@return table filtered
+function hf.filter(t, fn)
+    if type(t) ~= 'table' or type(fn) ~= 'function' then
+        return {}
+    end
+    local out = {}
+    -- Keep array shape for list-like input; keep keys for map-like input.
+    local isArray = #t > 0
+    for k, v in pairs(t) do
+        if fn(v, k) then
+            if isArray then
+                out[#out + 1] = v
+            else
+                out[k] = v
+            end
+        end
+    end
+    return out
+end
+
+---finds first value matching predicate fn(value, key)
+---@param t table
+---@param fn function
+---@return any value
+---@return any key
+function hf.find(t, fn)
+    if type(t) ~= 'table' or type(fn) ~= 'function' then
+        return nil, nil
+    end
+    for k, v in pairs(t) do
+        if fn(v, k) then
+            return v, k
+        end
+    end
+    return nil, nil
+end
+
+--- Simple player+key rate limit (server net-event guard).
+---@param src number|string player source
+---@param name string unique key, e.g. event name
+---@param cooldownMs number
+---@return boolean true when call is allowed
+function hf.netRateLimit(src, name, cooldownMs)
+    if not hf.isValidPlayerSource(src) then
+        return false
+    end
+    cooldownMs = tonumber(cooldownMs) or 0
+    if cooldownMs < 0 then
+        cooldownMs = 0
+    end
+    hf.__netRate = hf.__netRate or {}
+    local k = tostring(src) .. '|' .. tostring(name)
+    local now = GetGameTimer()
+    local last = hf.__netRate[k] or 0
+    if now - last < cooldownMs then
+        return false
+    end
+    hf.__netRate[k] = now
+    return true
+end
+
+---returns all keys of t as an array
+---@param t table
+---@return table
+function hf.keys(t)
     local keys = {}
     for key in pairs(t) do
         keys[#keys + 1] = key
@@ -319,19 +516,19 @@ function hf.getKeys(t)
     return keys
 end
 
---- Auto-generated annotation. Refine behavior details if needed.
---- @param inputString any
---- @return any result
-function hf.removeNonAlphaNumeric(inputString)
-    if type(inputString) ~= "string" or inputString == nil then
+---strips all non-alphanumeric characters from inputString; returns nil for non-strings
+---@param inputString any
+---@return string|nil
+function hf.alphaNum(inputString)
+    if type(inputString) ~= "string" then
         return nil
     end
     return inputString:gsub("[^%w]", "")
 end
 
---- Auto-generated annotation. Refine behavior details if needed.
---- @param t any
---- @return any result
+---Fisher-Yates shuffle in-place; returns false for non-tables or empty tables
+---@param t table
+---@return table|boolean
 function hf.shuffle(t)
     if type(t) ~= 'table' or not next(t) then
         return false

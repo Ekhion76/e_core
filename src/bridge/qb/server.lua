@@ -53,6 +53,11 @@ if QB_CORE then
             xPlayer = QBCore.Functions.GetPlayer(xPlayer)
         end
 
+        -- Offline / hibás source esetén `GetPlayer` nil; különben `Functions.AddMoney` runtime error (lásd bridge review).
+        if not xPlayer then
+            return false, eCoreErr.invalid_player
+        end
+
         local convert = { -- ESX2QB
             money = 'cash',
             black_money = 'crypto',
@@ -135,7 +140,7 @@ if QB_CORE then
     --- @return any result
     function eCore:removeItem(xPlayer, itemName, count, metadata, slot)
         count = tonumber(count)
-        if not hf.isPopulatedString(itemName) or not count or count < 1 then
+        if not hf.hasContent(itemName) or not count or count < 1 then
             return false, eCoreErr.no_items_to_remove
         end
 
@@ -146,7 +151,7 @@ if QB_CORE then
         local itemLowerName = itemName:lower()
         local inventory = xPlayer.items
 
-        if hf.isEmpty(inventory) then
+        if hf.isEmptyTable(inventory) then
             return false, eCoreErr.inventory_is_empty
         end
 
@@ -196,7 +201,7 @@ if QB_CORE then
     --- @param items table
     --- @return any result
     function eCore:removeItems(xPlayer, items)
-        if not hf.isPopulatedTable(items) then
+        if not hf.hasEntries(items) then
             return false, eCoreErr.no_items_to_remove
         end
 
@@ -205,7 +210,7 @@ if QB_CORE then
                 return false, eCoreErr.invalid_item_data
             end
 
-            if not hf.isPopulatedString(item.name) then
+            if not hf.hasContent(item.name) then
                 return false, eCoreErr.invalid_item_data
             end
 
@@ -222,7 +227,7 @@ if QB_CORE then
         local count
         local inventory = xPlayer.items
 
-        if hf.isEmpty(inventory) then
+        if hf.isEmptyTable(inventory) then
             return false, eCoreErr.inventory_is_empty
         end
 

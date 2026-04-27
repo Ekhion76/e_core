@@ -1,4 +1,5 @@
 local hf = hf
+local hfe = hfe
 
 --- Returns whether `eCore:isLoggedIn()` can be called (init not aborted and method exists).
 ---@return boolean
@@ -14,12 +15,12 @@ CORE_READY, REGISTERED_ITEMS = nil, nil
 CreateThread(function()
     cLog('CLIENT REGISTERED_ITEMS', 'Loading', 2)
 
-    if hf.awaitItemRegistryReady('CLIENT REGISTERED_ITEMS') then
+    if hfe.awaitItemRegistryReady('CLIENT REGISTERED_ITEMS') then
         cLog('CLIENT REGISTERED_ITEMS', 'Loaded', 2)
         cLog('CLIENT CORE', 'READY', 2)
     end
 
-    hf.logEcoreStartupSummary('client')
+    hfe.logEcoreStartupSummary('client')
 end)
 
 local init

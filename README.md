@@ -1,57 +1,160 @@
 # e_core
 
-#### What is e_core for?
-The e_core is an adapter that provides support for compatibility with ESX and QBCore, QBox frameworks.
+## What is it?
 
-##### Its goal:
-- to ensure framework-independent operation for eco_crafting and future scripts
-- to provide users with customization
-- **SDK-style layer:** not merely internal glue—a documented, versioned public surface that external resources and eco scripts can rely on (API contract, changelog, supported stack matrix, predictable startup and errors)
+**e_core** is a **FiveM resource** and a standalone **core platform**: not only internal glue, but a **documented, versioned surface** for other scripts. The goal is a thoughtful architecture for **reliability**, **ease of use**, and **adoption** (public, free distribution on GitHub).
 
-##### It provides a connecting surface:
-- to insert your own inventory functions/exports (addItem, removeItem, etc..)
-- for inserting message systems (sendNotify, drawText, hideText, progressbar)
-- in addition, various core functions can be adapted using the examples shown in the script
+**Stack:** Lua **5.4** / FiveM natives; **ox_lib** and **oxmysql** dependencies; NUI built with **Svelte 5** (Runes: `$state`, `$derived`) and **TypeScript**, shipped as a static build.
 
-##### Contain:
-- a skill (xp) and labor system that uses a built-in metadata repository.
-- lua helper functions
-- fiveM utility functions
+**Goal:** **Consistent behaviour** alongside ESX and QBCore / QBox: same concepts (player, item, notification, progress), same call patterns where possible, **framework-agnostic** at the contract layer.
 
-If you have a basic server, no changes are necessary.
-If you use ox_inventory, no changes are needed.
+**Principle (e_core first):** the public **contract** (what you can call, what errors mean, how startup works) is defined **in e_core first**; consumers align to it. Profession / meta / registry style data is typically **owned by e_core**, not a parallel “second source of truth” in consumers. See [docs/PUBLIC_API_HU.md](docs/PUBLIC_API_HU.md) (API is Hungarian-indexed but export names are canonical), [docs/EXTENSION_CONTRACT_HU.md](docs/EXTENSION_CONTRACT_HU.md), [docs/INDEX_HU.md](docs/INDEX_HU.md).
 
-Config files:
-- src/standalone/config/ - global settings
-- overrides/custom_inventory/config.lua - Inventory specific settings
+---
 
-**IMPORTANT!** Start e_core before eco scripts in `server.cfg`. Start the **legacy core** (`es_extended` or `qb-core`) before e_core so framework globals and item registry can initialise.
+## What does it include?
 
-If both cores are running by mistake, set `setr e_core:framework "esx"` or `"qb"` (default `auto` will **error**). See `docs/FRAMEWORK_CONFIG_REFACTOR_TERVEZES_HU.md`.
+- **`src/bridge/`** – ESX / QB / global adapters; framework selection via config (see **Bridge** below).
+- **`overrides/`** – per-stack customisation (inventory, notify, progressbar, …): keep local changes here across upgrades, not by forking `src/`.
+- **`src/standalone/config/`** – global settings and level profiles.
+- **Other resources:** typically bootstrap via `exports['e_core']:getCore()` and documented exports; optional `full_import` (see **Loading and memory**).
+- **Proficiency + labor + learned recipes** and **meta** storage; **oxmysql** schema migrations.
+- **Central HUD positioning:** consumers can register HUD elements; e_core moves and persists positions (`registerHudElement` and related API).
+- **Whitelist / blacklist AccessGate** by job / gang and grade ([src/libs/GroupAccess.lua](src/libs/GroupAccess.lua)).
+- **Errors:** structured `eCoreErr`, file-backed event logging ([docs/ECORE_ERR_HIBA_NYOMON_HU.md](docs/ECORE_ERR_HIBA_NYOMON_HU.md)).
+- **i18n:** locale files + `translate` / `translateU` on the public `eCore` facade.
+- **Client–server:** **ox_lib** callback patterns; NUI / UX: modal, notification, progress, form; grid snapping, presets, export/import.
+- **Discord log** helper on the server when the `createDiscordLog` hook is available.
+- **Profession registry** admin: CRUD, delete dry-run/apply, cleanup jobs, audit lists.
+- **Level profile** admin API.
+- **Diagnostics** admin: list tests, run, fetch/cancel runs.
+- **Labor quote** – quoting / time-estimate path for labor.
+- **Item convert pipeline** + console/diagnostic sinks.
+- **Integrity check** on client and server.
+- **Admin API denied audit** – track/purge denied admin calls.
+- **NUI admin and diagnostics bridge** for operator/dev tooling.
+- **Usable item** hook (`src/standalone/usableitem.lua`).
+- **Central DB migrations**; export: `getDbSchemaVersion`.
+- **Dev-only:** with `setr e_core_dev true`, `getInternal()` exists – **not** a production contract.
+
+**Ideas / roadmap (not necessarily implemented):** log viewer; AccessGate extensions (level, hasItem); planned 3D object placer with gizmo / keyboard controls.
+
+---
+
+## Bridge: how it works
+
+The **`src/bridge/`** layer establishes shared state and adapters: which legacy core is active (`FRAMEWORK`, `ESX_CORE` / `QB_CORE`), where **`Config`** lives, and how ESX/QB **shared**, **client/server**, and **events** modules wire up.
+
+- **`framework_config.lua`** + **`framework_resource_registry.lua`:** startup mode. ConVars: **`setr e_core:framework "auto"`** | **`"esx"`** | **`"qb"`**; optional **`e_core:framework_resource`** for a custom legacy core resource name (only when not `auto`). If both cores run with `auto`, e_core enters a **controlled IDLE** state (`_ECORE_INIT_FAILED`) without calling `error()` on the whole server—consumers should wait on `exports.e_core:isReady()` / readiness signals.
+- **`overrides/**/(shared|client|server).lua`** loads **after** bridge modules but **before** core `src/client/*` / `src/server/*` runtime in [`fxmanifest.lua`](fxmanifest.lua), so stack-specific code can extend or override behaviour without copying `src/bridge/` into your fork.
+
+**Consumer entrypoint:** [`src/bridge/main.lua`](src/bridge/main.lua) registers QB/ESX net events, assembles the **`eCore`** facade (`eCoreLifecycle_buildPublicAPI`: e.g. `framework`, `config`, `i18n`, `util`; on server optionally `log.discord`), and exports **`getCore()`**, **`getFrameWork()`**, **`getHelperBase()`**, **`getHelperEcore()`**, among others.
+
+**Contract:** do not read **`_eCoreInternal`** from consumer code; use **`exports['e_core']:getCore()`** (or the documented `@e_core/.../core.lua` import).
+
+```mermaid
+flowchart LR
+  subgraph shared [SharedScripts]
+    FW[framework_config]
+    CFG[standalone config and overrides config]
+    LIBS[libs errors meta helpers]
+    LIFE[ecore_lifecycle]
+  end
+  subgraph side [Client or Server]
+    BG[bridge global esx qb]
+    OV[overrides stack]
+    EV[bridge events]
+    MAIN[bridge main.lua]
+  end
+  shared --> BG --> OV --> EV --> MAIN
+```
+
+---
+
+## Loading, memory, and consumer import
+
+**e_core resource:** FiveM loads every `shared_scripts` entry, then the full `client_scripts` / `server_scripts` lists from `fxmanifest.lua` as **one resource**. This is **not** a lazy module system: there is no built-in partial unload; Lua chunks and tables stay resident while `e_core` runs.
+
+**NUI:** `ui_page 'src/web/dist/index.html'` – the running UI is the **built** output under `src/web/dist/` (sources in `src/web/`; see [src/web/README.md](src/web/README.md)). Lua talks to it via NUI bridge files (`ecore_nui.lua`, `web.lua`, admin/diagnostics bridges).
+
+**Consumer – two common patterns:**
+
+| Pattern | What happens | Memory / cost |
+|--------|----------------|---------------|
+| **Minimal** | Manifest: `shared_script '@e_core/src/imports/shared/core.lua'` → `eCore = exports.e_core:getCore()` | Does **not** copy e_core’s full Lua into the consumer; references tables/functions already loaded inside `e_core`. |
+| **Full import** | Manifest: `shared_script '@e_core/src/imports/shared/full_import.lua'` → `LoadResourceFile('e_core', …)` + `load(..., _G)` for several files | Those chunks **execute again** in the consumer’s `_G`; the `e_core` resource **still** stays fully loaded. This does **not** shrink e_core’s own footprint; it trades a uniform bootstrap for extra consumer startup work. |
+
+Paths loaded via `full_import` must be listed in e_core’s **`files { }`** (currently includes `src/imports/shared/*.lua` among others), otherwise `LoadResourceFile` returns empty.
+
+**Readiness:** `exports.e_core:isReady()`; on the client, also wait for item registry / init where applicable—not only that `getCore()` exists.
+
+---
+
+## Operations
+
+**Start order:** legacy core (`es_extended` or `qb-core`) → **`ensure e_core`** → dependent scripts.
+
+If **both** cores run with `auto`: controlled IDLE + log message; force branch with `setr e_core:framework "esx"` or `"qb"`. Details: [docs/FRAMEWORK_CONFIG_REFACTOR_TERVEZES_HU.md](docs/FRAMEWORK_CONFIG_REFACTOR_TERVEZES_HU.md), [docs/FRAMEWORK_IDLE_GUARD_STRATEGY_HU.md](docs/FRAMEWORK_IDLE_GUARD_STRATEGY_HU.md).
 
 ```
-    # ECO SCRIPTS
-    ensure e_core
-    ensure eco_crafting
+# ECO SCRIPTS
+ensure e_core
+ensure eco_crafting
 ```
-**IMPORTANT!** To keep updates safe, do all customizations in the `overrides/` folder.
-The `overrides/` folder is the customization layer. Functions from `src/bridge/` can be copied there and overridden when needed.
-**IMPORTANT!** Override bridge behavior only inside `overrides/`.
 
-#### For developers / AI and Cursor context
+**IMPORTANT:** keep customisations in **`overrides/`** so updates do not overwrite your work. Override bridge behaviour **only** there (per-stack `shared.lua` / `client.lua` / `server.lua` + `config.lua`).
+
+**Config:** global – `src/standalone/config/`; stack/inventory – `overrides/<stack>/config.lua` (e.g. `overrides/ox_inventory/config.lua`).
+
+Stock ESX/QB or **ox_inventory** often needs no extra edits; other inventories: pick the right override tier in [docs/SUPPORTED_STACK_MATRIX_HU.md](docs/SUPPORTED_STACK_MATRIX_HU.md).
+
+---
+
+## Simplified folder layout
+
+```
+e_core/
+  fxmanifest.lua          # load order, deps, files{} (imports + NUI dist)
+  src/
+    bridge/               # ESX / QB / global adapters, framework_config, events, main.lua
+    client/               # client runtime, NUI Lua bridges, HUD registry, exports
+    server/               # server: db, migrations, labor, meta, profession, diagnostics, exports
+    libs/                 # shared Lua: helpers, errors, GroupAccess, meta, logging, itemconvert, …
+    imports/              # other resources: @e_core/... includes + LoadResourceFile targets
+    locales/              # translations
+    standalone/config/    # global config + levels
+    web/                    # Svelte + TS NUI sources (npm run build → dist)
+    web/dist/               # build output (ui_page points here)
+  overrides/              # per-stack Lua + config (inventory, notify, …)
+  docs/                     # canonical internal contract + ops docs (not runtime) — start: INDEX_HU.md
+  types/                    # LuaLS stubs
+  scripts/                  # CI / dev helpers
+```
+
+For NUI / Svelte work: **`src/web/`**, then build → **`src/web/dist/`**.
+
+---
+
+## SDK surface
+
+Inventory exports (addItem, removeItem, …), message systems (sendNotify, drawText, hideText, progressbar), and other core hooks—see `export_examples_*.md` in the repo and `overrides/` samples.
+
+---
+
+## For developers / AI and Cursor context
 
 When starting a new chat or refactor, link or attach:
 
-- [docs/INDEX_HU.md](docs/INDEX_HU.md) – documentation map (start here)
+- [docs/INDEX_HU.md](docs/INDEX_HU.md) – documentation map (**start here**)
 - [docs/PROJECT_STRUCTURE.txt](docs/PROJECT_STRUCTURE.txt) – folder roles and file tree
 - [docs/PUBLIC_API_HU.md](docs/PUBLIC_API_HU.md) – public `exports.e_core:*` + `eCore:` contract
-- [docs/AI_SUPPORT_REFERENCE_HU.txt](docs/AI_SUPPORT_REFERENCE_HU.txt) – deep reference (Hungarian) + GYIK
+- [docs/AI_SUPPORT_REFERENCE_HU.txt](docs/AI_SUPPORT_REFERENCE_HU.txt) – deep reference (Hungarian) + FAQ
 - [docs/SUPPORTED_STACK_MATRIX_HU.md](docs/SUPPORTED_STACK_MATRIX_HU.md) – supported stack tiers / overrides
 - [docs/SZERVER_OPERATOR_CHECKLIST_HU.md](docs/SZERVER_OPERATOR_CHECKLIST_HU.md) – server operator checklist (Hungarian)
 - [docs/DB_MIGRATIONS_HU.md](docs/DB_MIGRATIONS_HU.md) – MySQL migrations, `e_core_migrations`, `getDbSchemaVersion` (Hungarian)
 - [docs/LUA_LS_AND_CI_HU.md](docs/LUA_LS_AND_CI_HU.md) – LuaLS, luacheck, GitHub Actions (Hungarian)
 
-Example of customization:
+### Example: message override
 
 ```lua
     function eCore:sendMessage(message, mType, mSec) -- src/bridge/esx/client.lua
@@ -59,14 +162,16 @@ Example of customization:
         ESX.ShowNotification(message, mSec, mType)
     end
 
-    --- OVERRIDE in the 'overrides/core' folder:
+    --- OVERRIDE in the 'overrides/...' folder:
     
     function eCore:sendMessage(message, mType, mSec) -- overrides/core/client.lua
 
         EXAMPLE.MyOwnNotify(message, mSec, mType)
     end
 ```
-Example of overriding an inventory function:
+
+### Example: inventory override
+
 ```lua
     function eCore:removeItem(xPlayer, item, count, metadata, slot) -- src/bridge/esx/server.lua
     
@@ -80,17 +185,17 @@ Example of overriding an inventory function:
         return exports["avp_grid_inventory"]:RemoveItemBy(xPlayer.source, count, item)
     end
 ```
-## Labor and skill system:
 
-The concept works along the lines of the ArcheAge MMORPG. Completing each job costs labor points, which also increases the character's skill.
+---
 
-For example, if you harvest a vegetable with my collecting script, it costs 5 lab points and it is added to the harvesting skill. This way, you can later receive discounts according to the rank setting, for example: faster harvesting, for fewer work points.
+## Labor and skill system
 
-In the crafting system, it can be set that an item can only be produced after acquiring a certain skill and how many labor points it costs to make it.
+The design follows an ArcheAge-style pattern: actions spend **labor** and raise **skills** (proficiency / meta).
 
-With the help of exports, you can incorporate this into any of your own scripts. See:
+Example: harvesting might cost 5 labor and increase harvesting skill; later, rank/discount profiles can reduce labor or speed up work.
 
-- export_examples_server.md
-- export_examples_client.md
+Crafting can gate recipes by skill and attach labor costs per craft.
 
-The e_core uses both ESX and QBCore script details.
+Export samples: [export_examples_server.md](export_examples_server.md), [export_examples_client.md](export_examples_client.md).
+
+e_core uses ESX and QBCore details through the bridge layer.

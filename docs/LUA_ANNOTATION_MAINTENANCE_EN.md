@@ -42,8 +42,8 @@ When touching annotations for a big change, prefer checking these areas first â€
 - `src/server/exports.lua`
 - `src/client/exports.lua`
 - `src/bridge/main.lua`
-- `src/imports/discordlog.lua`
-- `src/imports/utils.lua`
+- `src/imports/server/discord_log.lua`
+- `src/imports/shared/utils.lua`
 
 ### B â€” Bridge + domain core
 

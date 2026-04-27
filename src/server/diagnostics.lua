@@ -1,6 +1,7 @@
 --- Server-side registry diagnostics admin (`diagnosticsAdmin*`, queued runs).
 --- Integrity checklist lives in `src/server/integrity_check.lua` (`e_core:integrityCheck:*`).
 local hf = hf
+local hfe = hfe
 
 local diagnosticsRuns = {}
 local diagnosticsRunSeq = 0
@@ -66,7 +67,7 @@ end
 --- @param payload table
 --- @return any result
 local function diagnostics_admin_can_access(payload)
-    return hf.adminApiCanAccess('diagnostics', payload)
+    return hfe.adminApiCanAccess('diagnostics', payload)
 end
 
 --- Auto-generated annotation. Refine behavior details if needed.
@@ -75,8 +76,8 @@ end
 --- @param reason string
 --- @return any result
 local function diagnostics_access_denied(action, payload, reason)
-    if type(hf.auditAdminApiDenied) == 'function' then
-        hf.auditAdminApiDenied('diagnostics', action, payload, reason)
+    if type(hfe.auditAdminApiDenied) == 'function' then
+        hfe.auditAdminApiDenied('diagnostics', action, payload, reason)
     end
     return diagnostics_admin_response(false, eCoreErr.access_denied, reason or 'Nincs jogosultság.')
 end

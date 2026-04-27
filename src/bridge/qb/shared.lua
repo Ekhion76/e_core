@@ -4,75 +4,13 @@ if QB_CORE then
     -- this way, your changes will not be lost in future e_core updates
 
     local hf = hf
+    local hfe = hfe
 
-    ---@return {name: string, label: string, isUnique: boolean, isWeapon: boolean, weight: number, image: string, ammoname: string}
+---@return table<string, {name: string, originalName: string, label: string, weight: number, isUnique: boolean, isWeapon: boolean, image: string, ammoname: string|nil, _source: string}>
     function eCore:convertItems(items)
-        if not hf.isPopulatedTable(items) then
-            return items
-        end
-
-        local temp = {}
-        local rowCount = 0
-        if hf.itemConvertDiagStartRun then
-            for _ in pairs(items) do rowCount = rowCount + 1 end
-            hf.itemConvertDiagStartRun('qb.convertItems', rowCount)
-        end
-
-        for item, data in pairs(items) do
-            if hf.isPopulatedTable(data) then
-                local okConv, errConv = pcall(function()
-                    local name = type(item) == 'string' and item:lower()
-                        or (type(data.name) == 'string' and data.name:lower())
-                        or tostring(item):lower()
-                    if temp[name] ~= nil and hf.itemConvertDiagRecord then
-                        hf.itemConvertDiagRecord({
-                            source = 'qb.convertItems',
-                            code = 'duplicate_lower_key',
-                            severity = 'warning',
-                            item = name,
-                            reason = ('Duplicate lower-case key during convert (raw key=%s)'):format(tostring(item)),
-                        })
-                    end
-                    temp[name] = data
-                    if type(data.label) == 'string' then
-                        temp[name].label = data.label:gsub("'", "\\'")
-                    else
-                        temp[name].label = ''
-                    end
-                    temp[name].isUnique = data.unique == true
-                    temp[name].isWeapon = data.type == 'weapon'
-                    hf.normalizeRegisteredItemDef(name, temp[name], { source = 'qb.convertItems' })
-                end)
-                if not okConv and cLog then
-                    cLog('eCore:convertItems(QB)', { err = tostring(errConv), item = tostring(item) }, 1)
-                    if hf.itemConvertDiagRecord then
-                        hf.itemConvertDiagRecord({
-                            source = 'qb.convertItems',
-                            code = 'convert_row_error',
-                            severity = 'error',
-                            item = tostring(item),
-                            reason = tostring(errConv),
-                        })
-                    end
-                end
-            else
-                print("^3* Not valid item: *", item)
-                print_r(data)
-                if hf.itemConvertDiagRecord then
-                    hf.itemConvertDiagRecord({
-                        source = 'qb.convertItems',
-                        code = 'invalid_item_row',
-                        severity = 'warning',
-                        item = tostring(item),
-                        reason = ('Expected table row, got %s'):format(type(data)),
-                    })
-                end
-            end
-        end
-        if hf.itemConvertDiagFinishRun then
-            hf.itemConvertDiagFinishRun()
-        end
-        return temp
+        return hf.convertItemsWithProfile(items, 'qb', {
+            sourceTag = 'qb.convertItems',
+        })
     end
 
     --- It returns the entire registered item list, unified and filtering out unnecessary information
@@ -98,10 +36,10 @@ if QB_CORE then
                 playerData = playerData.PlayerData
             end
 
-            playerData.job = hf.normalizePlayerJobForEcore(newJob or playerData.job)
-            playerData.gang = hf.normalizePlayerGangForEcore(newGang or playerData.gang)
+            playerData.job = hfe.normalizePlayerJobForEcore(newJob or playerData.job)
+            playerData.gang = hfe.normalizePlayerGangForEcore(newGang or playerData.gang)
             playerData.identifier = playerData.citizenid
-            hf.applyEcorePlayerDisplayFields(playerData)
+            hfe.applyEcorePlayerDisplayFields(playerData)
             playerData.Functions = functions
         end
 

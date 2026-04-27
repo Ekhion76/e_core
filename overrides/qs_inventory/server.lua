@@ -55,7 +55,7 @@ function eCore:removeItems(xPlayer, items)
         return false, eCoreErr.unknown_error
     end
 
-    if not hf.isPopulatedTable(items) then
+    if not hf.hasEntries(items) then
         return false, eCoreErr.there_are_no_items_to_remove
     end
 
@@ -63,7 +63,7 @@ function eCore:removeItems(xPlayer, items)
         if type(item) ~= 'table' then
             return false, eCoreErr.invalid_item_data
         end
-        if not hf.isPopulatedString(item.name) then
+        if not hf.hasContent(item.name) then
             return false, eCoreErr.invalid_item_data
         end
         local amt = tonumber(item.amount)

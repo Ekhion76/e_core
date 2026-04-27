@@ -1,5 +1,6 @@
 --- NUI -> server diagnostics admin bridge (`eCoreDiagnosticsApi`), guarded by `hf.webConsoleAccess`.
 local hf = hf
+local hfe = hfe
 
 --- Auto-generated annotation. Refine behavior details if needed.
 --- @param value any
@@ -25,7 +26,7 @@ RegisterNetEvent('e_core:nuiDiagnosticsRpc', function(requestId, data)
         return
     end
 
-    local okAccess, errAccess = hf.webConsoleAccess(src)
+    local okAccess, errAccess = hfe.webConsoleAccess(src)
     if not okAccess then
         TriggerClientEvent(
             'e_core:nuiDiagnosticsRpcResult',

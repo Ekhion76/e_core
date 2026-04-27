@@ -4,7 +4,7 @@ local hf = hf
 --- @param playerId number
 --- @param category any
 --- @param name string
---- @return any result
+--- @return boolean exists
 function checkMetaExists(playerId, category, name)
     if not tonumber(playerId) then
         return false
@@ -36,7 +36,7 @@ function getLevel(value)
 
     local levels = Config.levels
 
-    if not hf.isPopulatedTable(levels) or not tonumber(value) or value < 1 then
+    if not hf.hasEntries(levels) or not tonumber(value) or value < 1 then
 
         return 0
     end
@@ -61,7 +61,7 @@ end
 --- @return number|nil baseLevel
 --- @return number|nil newLevel
 function checkLevelChange(baseValue, newValue)
-    if not hf.isPopulatedTable(Config.levels) then
+    if not hf.hasEntries(Config.levels) then
         return false
     end
 
@@ -113,7 +113,7 @@ function getDiscounts(value)
     value = tonumber(value) or 0
     local levels = Config.levels
 
-    if not hf.isPopulatedTable(levels) then
+    if not hf.hasEntries(levels) then
 
         return false, eCoreErr.not_levels_data
     end

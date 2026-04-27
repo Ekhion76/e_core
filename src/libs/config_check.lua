@@ -9,9 +9,9 @@ local INTEGRITY_COOLDOWN_DEFAULT_MS = 1500
 
 --- Auto-generated annotation. Refine behavior details if needed.
 --- @param list any
---- @return any result
+--- @return string[] cleanedIdentifiers
 local function copyIdList(list)
-    if not hf.isPopulatedTable(list) then
+    if not hf.hasEntries(list) then
         return {}
     end
     local out = {}
@@ -24,24 +24,24 @@ local function copyIdList(list)
 end
 
 --- Auto-generated annotation. Refine behavior details if needed.
---- @return any result
+--- @return boolean applied
 local function applyOperatorConfig()
-    local op = hf.isPopulatedTable(Config.operator) and Config.operator or nil
+    local op = hf.hasEntries(Config.operator) and Config.operator or nil
     if not op then
         return false
     end
 
     local ids = copyIdList(op.identifiers)
     --- Admin NUI (`ecore_admin`): new `operator.admin`, legacy `operator.web`.
-    local admin = hf.isPopulatedTable(op.admin) and op.admin or hf.isPopulatedTable(op.web) and op.web or nil
-    if not hf.isPopulatedTable(admin) then
+    local admin = hf.hasEntries(op.admin) and op.admin or hf.hasEntries(op.web) and op.web or nil
+    if not hf.hasEntries(admin) then
         admin = { enabled = true, command = 'ecore_admin', acePermission = 'ecore.admin' }
     end
     --- Integrity: new `operator.integrityCheck`, legacy `operator.diagnostics`.
-    local integ = hf.isPopulatedTable(op.integrityCheck) and op.integrityCheck
-        or hf.isPopulatedTable(op.diagnostics) and op.diagnostics
+    local integ = hf.hasEntries(op.integrityCheck) and op.integrityCheck
+        or hf.hasEntries(op.diagnostics) and op.diagnostics
         or nil
-    if not hf.isPopulatedTable(integ) then
+    if not hf.hasEntries(integ) then
         integ = { enabled = true, acePermission = 'ecore.diagnostics' }
     end
 
@@ -65,23 +65,23 @@ local function applyOperatorConfig()
         cooldownMs = tonumber(integ.cooldownMs),
     }
 
-    local api = hf.isPopulatedTable(op.adminApi) and op.adminApi or {}
-    local cleanup = hf.isPopulatedTable(op.cleanup) and op.cleanup or hf.isPopulatedTable(api.cleanup) and api.cleanup or {}
-    local diagApi = hf.isPopulatedTable(op.registryDiagnostics) and op.registryDiagnostics
-        or hf.isPopulatedTable(api.diagnostics) and api.diagnostics
+    local api = hf.hasEntries(op.adminApi) and op.adminApi or {}
+    local cleanup = hf.hasEntries(op.cleanup) and op.cleanup or hf.hasEntries(api.cleanup) and api.cleanup or {}
+    local diagApi = hf.hasEntries(op.registryDiagnostics) and op.registryDiagnostics
+        or hf.hasEntries(api.diagnostics) and api.diagnostics
         or {}
-    local denied = hf.isPopulatedTable(op.deniedAudit) and op.deniedAudit or hf.isPopulatedTable(api.deniedAudit) and api.deniedAudit or {}
+    local denied = hf.hasEntries(op.deniedAudit) and op.deniedAudit or hf.hasEntries(api.deniedAudit) and api.deniedAudit or {}
 
     Config.adminApi = {
         cleanup = {
             acePermission = tostring(cleanup.acePermission or 'ecore.admin.cleanup'),
-            allowedIdentifiers = hf.isPopulatedTable(cleanup.allowedIdentifiers) and copyIdList(cleanup.allowedIdentifiers)
+            allowedIdentifiers = hf.hasEntries(cleanup.allowedIdentifiers) and copyIdList(cleanup.allowedIdentifiers)
                 or copyIdList(ids),
             allowServerWithoutSource = cleanup.allowServerWithoutSource ~= false,
         },
         diagnostics = {
             acePermission = tostring(diagApi.acePermission or 'ecore.admin.diagnostics'),
-            allowedIdentifiers = hf.isPopulatedTable(diagApi.allowedIdentifiers) and copyIdList(diagApi.allowedIdentifiers)
+            allowedIdentifiers = hf.hasEntries(diagApi.allowedIdentifiers) and copyIdList(diagApi.allowedIdentifiers)
                 or copyIdList(ids),
             allowServerWithoutSource = diagApi.allowServerWithoutSource ~= false,
         },
@@ -115,22 +115,22 @@ local function applyIntegrityCheckFixedDefaults()
 end
 
 --- Auto-generated annotation. Refine behavior details if needed.
---- @return any result
+--- @return nil
 function configCheck()
     Config.debugLevel = tonumber(Config.debugLevel) or false
     Config.maxInventoryWeight = tonumber(Config.maxInventoryWeight) or 24000
     Config.maxInventorySlots = tonumber(Config.maxInventorySlots) or 41
 
-    Config.systemMode = hf.isPopulatedTable(Config.systemMode) and Config.systemMode or {}
-    Config.displayComponent = hf.isPopulatedTable(Config.displayComponent) and Config.displayComponent or {}
-    Config.currency = hf.isPopulatedTable(Config.currency) and Config.currency or {}
-    Config.metaFields = hf.isPopulatedTable(Config.metaFields) and Config.metaFields or {}
+    Config.systemMode = hf.hasEntries(Config.systemMode) and Config.systemMode or {}
+    Config.displayComponent = hf.hasEntries(Config.displayComponent) and Config.displayComponent or {}
+    Config.currency = hf.hasEntries(Config.currency) and Config.currency or {}
+    Config.metaFields = hf.hasEntries(Config.metaFields) and Config.metaFields or {}
 
     Config.defaultLabor = tonumber(Config.defaultLabor) or 0
     Config.laborLimit = tonumber(Config.laborLimit) or 0
     Config.abilityLimit = tonumber(Config.abilityLimit) or 0
-    Config.progression = hf.isPopulatedTable(Config.progression) and Config.progression or {}
-    Config.progression.maxByProfession = hf.isPopulatedTable(Config.progression.maxByProfession)
+    Config.progression = hf.hasEntries(Config.progression) and Config.progression or {}
+    Config.progression.maxByProfession = hf.hasEntries(Config.progression.maxByProfession)
         and Config.progression.maxByProfession
         or {}
 
@@ -138,16 +138,16 @@ function configCheck()
     Config.laborIncrease = tonumber(Config.laborIncrease) or 0
     Config.laborIncreaseOffline = tonumber(Config.laborIncreaseOffline) or 0
 
-    Config.keyBind = hf.isPopulatedTable(Config.keyBind) and Config.keyBind or {}
+    Config.keyBind = hf.hasEntries(Config.keyBind) and Config.keyBind or {}
 
     Config.discordBotName = Config.discordBotName or 'ECOBOT'
-    Config.discordWebHook = hf.isPopulatedTable(Config.discordWebHook) and Config.discordWebHook or {}
+    Config.discordWebHook = hf.hasEntries(Config.discordWebHook) and Config.discordWebHook or {}
 
     if not applyOperatorConfig() then
         --- Legacy mapping: `Config.diagnostics` -> `Config.integrityCheck`
         --- (temporary breaking transition for one override cycle).
-        local legacyDiag = hf.isPopulatedTable(Config.diagnostics) and Config.diagnostics or {}
-        Config.integrityCheck = hf.isPopulatedTable(Config.integrityCheck) and Config.integrityCheck or {}
+        local legacyDiag = hf.hasEntries(Config.diagnostics) and Config.diagnostics or {}
+        Config.integrityCheck = hf.hasEntries(Config.integrityCheck) and Config.integrityCheck or {}
         for k, v in pairs(legacyDiag) do
             if Config.integrityCheck[k] == nil then
                 Config.integrityCheck[k] = v
@@ -157,12 +157,12 @@ function configCheck()
         --- execution moved to admin NUI Integrity tab.
         Config.integrityCheck.command = nil
         Config.integrityCheck.acePermission = type(Config.integrityCheck.acePermission) == 'string' and Config.integrityCheck.acePermission or ''
-        Config.integrityCheck.allowedIdentifiers = hf.isPopulatedTable(Config.integrityCheck.allowedIdentifiers)
+        Config.integrityCheck.allowedIdentifiers = hf.hasEntries(Config.integrityCheck.allowedIdentifiers)
                 and Config.integrityCheck.allowedIdentifiers
             or {}
         Config.integrityCheck.enabled = Config.integrityCheck.enabled == true
 
-        Config.web = hf.isPopulatedTable(Config.web) and Config.web or {}
+        Config.web = hf.hasEntries(Config.web) and Config.web or {}
         Config.web.enabled = Config.web.enabled == true
         Config.web.command = tostring(Config.web.command or 'ecore_admin'):gsub('^%s+', ''):gsub('%s+$', '')
         if Config.web.command == '' then
@@ -172,13 +172,13 @@ function configCheck()
         if Config.web.acePermission == '' then
             Config.web.acePermission = 'ecore.admin'
         end
-        Config.web.allowedIdentifiers = hf.isPopulatedTable(Config.web.allowedIdentifiers) and Config.web.allowedIdentifiers
+        Config.web.allowedIdentifiers = hf.hasEntries(Config.web.allowedIdentifiers) and Config.web.allowedIdentifiers
             or {}
 
-        Config.adminApi = hf.isPopulatedTable(Config.adminApi) and Config.adminApi or {}
-        Config.adminApi.cleanup = hf.isPopulatedTable(Config.adminApi.cleanup) and Config.adminApi.cleanup or {}
-        Config.adminApi.diagnostics = hf.isPopulatedTable(Config.adminApi.diagnostics) and Config.adminApi.diagnostics or {}
-        Config.adminApi.deniedAudit = hf.isPopulatedTable(Config.adminApi.deniedAudit) and Config.adminApi.deniedAudit or {}
+        Config.adminApi = hf.hasEntries(Config.adminApi) and Config.adminApi or {}
+        Config.adminApi.cleanup = hf.hasEntries(Config.adminApi.cleanup) and Config.adminApi.cleanup or {}
+        Config.adminApi.diagnostics = hf.hasEntries(Config.adminApi.diagnostics) and Config.adminApi.diagnostics or {}
+        Config.adminApi.deniedAudit = hf.hasEntries(Config.adminApi.deniedAudit) and Config.adminApi.deniedAudit or {}
     end
 
     applyIntegrityCheckFixedDefaults()

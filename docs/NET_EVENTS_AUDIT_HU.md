@@ -7,7 +7,7 @@ Cél: **kisebb abuse felület**, dokumentált **szerver** határok. Frissítés:
 | Esemény | Szerep | Védelem |
 |---------|---------|---------|
 | `e_core:loadMeta` | Meta betöltés kérés spawn után | `hf.isValidPlayerSource(source)`; `hf.netRateLimit(source, 'e_core:loadMeta', cooldown)`; `eCore:getPlayer` kötelező; ConVar: `e_core:loadmeta_rate_ms` (alap 2500, min 500). |
-| `e_core:web:requestOpen` | Admin NUI megnyitás (`Config.web.command`, alap `ecore_admin`) | `Config.operator.admin.enabled` (runtime: szintetizált `Config.web.enabled`); `hf.webConsoleAccess(source)`; `hf.netRateLimit`. |
+| `e_core:web:requestOpen` | Admin NUI megnyitás (`Config.web.command`, alap `ecore_admin`) | `Config.operator.admin.enabled` (runtime: szintetizált `Config.web.enabled`); `hfe.webConsoleAccess(source)`; `hf.netRateLimit`. |
 | `e_core:integrityCheck:request` | Integritás checklist indul (`Config.integrityCheck.command`, alap `ecore_diag`) | `Config.integrityCheck.enabled`; ha `Config.operator.admin.enabled` → `hf.webConsoleAccess`, különben `integrityCheck` ACE + `allowedIdentifiers`; opc. `opts.inlineAdmin` / `opts.onlyStep` (admin Integritás fül); `hf.netRateLimit` burst; cooldown; `eCore:getPlayer` + read-only / opc. add-remove. |
 | `e_core:integrityCheck:progressResult` | Progress teszt befejezés jelzése | Csak ha `awaitingProgress[source]` aktív (`server/integrity_check.lua`); `hf.netRateLimit`. |
 
@@ -28,6 +28,7 @@ Cél: **kisebb abuse felület**, dokumentált **szerver** határok. Frissítés:
 | Név | Védelem |
 |-----|----------|
 | `e_core:createVehicle` | `hf.isValidPlayerSource(source)` hamis esetén `cb(nil, nil)`. |
+| `e_core:getRegisteredItems` | `lib.callback.register` (szerver): csak `hf.isValidPlayerSource(source)`; visszaadja a nem üres szerver `eCore:getRegisteredItems()` táblát, különben `nil`. **Cél:** ESX kliens item bootstrap (`bridge/esx/client.lua`) – read-only katalógus; nem helyettesíti a játékos inventoryt. |
 | `e_core:getCanSwap` / `e_core:getCanCarry` (avp override) | Ugyanígy forrás ellenőrzés. |
 
 ## 5. Bridge: regisztrált keretrendszer NetEventek (`bridge/main.lua`)

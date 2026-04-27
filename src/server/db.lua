@@ -1,5 +1,6 @@
 local UPDATE_META = 'UPDATE `users` SET `e_core` = ? WHERE `identifier` = ?'
 local SELECT_META = 'SELECT `e_core` FROM `users` WHERE `identifier` = ?'
+local hfe = hfe
 
 if QB_CORE then
     UPDATE_META = 'UPDATE `players` SET `e_core` = ? WHERE `citizenid` = ?'
@@ -26,7 +27,7 @@ function saveMeta(xPlayer, dropMeta)
     local row = PlayerMetaStore.get(playerId)
 
     if row then
-        local ok = hf.mysqlAwait(('saveMeta:%s'):format(xPlayer.identifier), function()
+        local ok = hfe.mysqlAwait(('saveMeta:%s'):format(xPlayer.identifier), function()
             MySQL.update.await(UPDATE_META, {
                 json.encode(row),
                 xPlayer.identifier,
@@ -57,7 +58,7 @@ function saveAllMeta()
     end
 
     if #parameters > 0 then
-        local ok = hf.mysqlAwait('saveAllMeta:prepare', function()
+        local ok = hfe.mysqlAwait('saveAllMeta:prepare', function()
             MySQL.prepare.await(UPDATE_META, parameters)
         end)
         if ok then
@@ -74,7 +75,7 @@ end
 function loadMeta(xPlayer)
     local playerId = xPlayer.source
 
-    local ok, result = hf.mysqlAwait(('loadMeta:%s'):format(xPlayer.identifier), function()
+    local ok, result = hfe.mysqlAwait(('loadMeta:%s'):format(xPlayer.identifier), function()
         return MySQL.scalar.await(SELECT_META, { xPlayer.identifier })
     end)
     if not ok then

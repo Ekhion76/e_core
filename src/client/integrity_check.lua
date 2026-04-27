@@ -18,7 +18,7 @@ local function integrityPrintConsole(lines)
     if integrityUseNui() and Config.integrityCheck.printToConsole ~= true then
         return
     end
-    if not hf.isPopulatedTable(lines) then
+    if not hf.hasEntries(lines) then
         return
     end
     for _, line in ipairs(lines) do
@@ -46,7 +46,7 @@ RegisterNetEvent('e_core:integrityCheck:clientPrint', function(lines, section, m
 
     integrityPrintConsole(lines)
 
-    if not hf.isPopulatedTable(lines) then
+    if not hf.hasEntries(lines) then
         return
     end
 

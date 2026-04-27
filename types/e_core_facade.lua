@@ -4,6 +4,11 @@
 --- Available keys can differ by framework (ESX/QB) and side (client/server).
 
 ---@class eCore
+---@field framework string|nil Same as `getFrameWork()` (merged 0.1.3+).
+---@field config table Live `Config` reference (merged 0.1.3+).
+---@field i18n table|nil `{ translate, translateU }` (merged 0.1.3+).
+---@field util table|nil Shared debug / loader helpers (merged 0.1.3+).
+---@field log table|nil Server-only when Discord module active: `{ discord = { create = fun(...) } }`.
 ---@field helper table
 ---@field GroupAccess table|nil Class-like helper: `GroupAccess` with `check(playerData, data)`.
 ---@field Err table<string, string>
@@ -13,7 +18,7 @@
 ---@field canCarryItem fun(self: eCore, itemData: table, playerData: table): boolean|nil, string|nil
 ---@field getAmountOfItems fun(self: eCore, inventory: table): table
 ---@field getRegisteredItem fun(self: eCore, name: string): table|nil
----@field getRegisteredItems fun(self: eCore): table
+---@field getRegisteredItems fun(self: eCore): table|false|nil, string|nil
 ---@field convertItems fun(self: eCore, items: table): table
 ---@field convertPlayer fun(self: eCore, playerData: table, newJob?: table, newGang?: table): table
 ---@field triggerCallback fun(self: eCore, name: string, cb: fun(...), ...): nil

@@ -23,6 +23,11 @@ eCoreErr = {
 
     unknown_error = 'unknown_error',
 
+    --- ESX client `getRegisteredItems`: `REGISTERED_ITEMS` not yet filled (server/registry pipeline); do not use player inventory as item catalog.
+    not_ready = 'not_ready',
+    --- Bridge money helpers: resolved player wrapper is missing (offline id, wrong source, etc.).
+    invalid_player = 'invalid_player',
+
     vehicle_no_plate_data = 'Failed: No data can be retrieved from the vehicle.',
 
     the_system_is_turned_off = 'the_system_is_turned_off',

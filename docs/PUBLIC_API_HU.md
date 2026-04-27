@@ -1,4 +1,4 @@
-# e_core – publikus API (szerződés v0.3)
+# e_core – publikus API (szerződés v0.4)
 
 Ez a fájl a **külső hívható** `exports.e_core:*` felületet és az **`eCore:`** facade **névsorát** rögzíti (forrásfájl szerint). Az alábbi táblákban **exportonként egy rövid „mire való”** sor is van (ugyanaz a szemantika, mint az **`export_examples_client.md`** / **`export_examples_server.md`** fájlokban – ott angolul, példakóddal). Viselkedés-részletek, paraméterek, GYIK: **`docs/AI_SUPPORT_REFERENCE_HU.txt`**. **`eCoreErr` / hibanyomozás lépésenként:** **`docs/ECORE_ERR_HIBA_NYOMON_HU.md`**. **Dokumentáció navigáció:** **`docs/INDEX_HU.md`**.
 
@@ -16,12 +16,17 @@ Ez a fájl a **külső hívható** `exports.e_core:*` felületet és az **`eCore
 
 ## 1. Mindkét oldalon (client + server)
 
-Forrás: `bridge/main.lua`. Itt csak a **`getFrameWork`** és **`getCore`** export van; a QB/ESX ciklusok **kizárólag** `RegisterNetEvent`-et hívnak, nem rejtett export-elágazás. **`eCore.helper`** a globális **`hf`**-re mutat (`libs/helper.lua` + `libs/helper_ecore.lua`), **`eCore.Err`** a globális **`eCoreErr`**-re (azonos string értékek a visszaadott `reason`-ökkel).
+Forrás: `bridge/main.lua` + `bridge/ecore_lifecycle.lua`. Exportok: **`getFrameWork`**, **`getCore`**, **`getHelperBase`**, **`getHelperEcore`**; opcionálisan dev módban **`getInternal`** (lásd lentebb). A QB/ESX ciklusok **kizárólag** `RegisterNetEvent`-et hívnak, nem rejtett export-elágazás. **`eCore.helper`** a base **`hf`**-re (`libs/helper.lua`) mutat, **`eCore.Err`** a globális **`eCoreErr`**-re (azonos string értékek a visszaadott `reason`-ökkel). Az e_core-specifikus helper (`hfe`) dedikált exporton érhető el.
+
+**`getCore()` kurált mezők (0.1.3+):** az `eCore` táblára – a bridge metódusok mellett – **merge**-elve kerülnek: **`eCore.framework`** (string \| `nil`, ugyanaz mint `getFrameWork()`), **`eCore.config`** (referencia a futó `Config` táblára), **`eCore.i18n`** (`translate`, `translateU`), **`eCore.util`** (`cLog`, `print_r`, `createBlip`, `animDictLoader`, `modelLoader`, `fxLoader`). **Szerveren**, ha a Discord modul betöltött: **`eCore.log.discord.create(webhook, botName?, opts?)`** → thin wrapper a belső `createDiscordLog` köré. Részlet: `docs/EXTENSION_CONTRACT_HU.md`.
 
 | Export | Mire való | Visszatérés | Megjegyzés |
 |--------|-----------|-------------|------------|
 | `getFrameWork` | Aktív keretrendszer azonosítója (ESX vagy QB). | `string` \| `nil` | `'esx'`, `'qb'`. Nincs core induláskor: `nil`. |
-| `getCore` | Az egyesített **`eCore`** API / facade objektum (inventory, notify, target, stb. – lásd §6–§10). | `table` | |
+| `getCore` | Az egyesített **`eCore`** API / facade objektum (inventory, notify, target, stb. – lásd §6–§10), plusz a fenti kurált mezők. | `table` | |
+| `getHelperBase` | Base, framework-agnostic helper tábla (`hf`). | `table` | `libs/helper.lua` |
+| `getHelperEcore` | e_core-specifikus helper tábla (`hfe`). | `table` | `libs/helper_ecore.lua` |
+| `getInternal` | Csak ha **`e_core_dev`** convar igaz: belső **`_eCoreInternal`** debug tábla. | `table` | Productionben ne használd; ne építs rá consumer logikát. |
 
 ---
 
@@ -109,14 +114,18 @@ A **`SetHttpHandler` alapú külső HTTP admin (`/admin/...`) el lett távolítv
 ## 4. Nem export – ajánlott belépés
 
 ```lua
-FRAMEWORK = exports.e_core:getFrameWork()
 eCore = exports.e_core:getCore()
-eCoreConfig = exports.e_core:getConfig()
+-- eCore.framework, eCore.config, eCore.i18n.*, eCore.util.* már mergeelve (0.1.3+)
+-- Szerver: opcionálisan eCore.log.discord.create(...) ha a Discord modul aktív
 ```
 
-`imports/core.lua`. **`eCore.helper`** = **`hf`**: `libs/helper.lua` (általános segédek) + `libs/helper_ecore.lua` (e_core kiterjesztés: item normalizálás, registry várakozás, `mysqlAwait`, indulási log, net rate limit, `moneyFormat`). **`eCore.GroupAccess:check(playerData, data)`**: `src/libs/GroupAccess.lua` (job/gang whitelist–blacklist; lásd §6). **`eCore.Err`** = `libs/errors.lua` → **`eCoreErr`** (azonos kulcsok / string értékek); külső resource összehasonlíthat: `reason == exports.e_core:getCore().Err.inventory_full`.
+`imports/shared/core.lua` – egy sor `getCore()`, és opcionálisan **deprecated** globál alias: `FRAMEWORK = eCore.framework`, `eCoreConfig = eCore.config` (fokozatos migrációhoz). **Egy soros bootstrap:** `imports/shared/full_import.lua` (`shared_script '@e_core/src/imports/shared/full_import.lua'`) – sorrend: `core` → `locale` → `utils`; a `full_import` a **`e_core` resource nevet** feltételezi (`LoadResourceFile('e_core', …)`).
 
-**HUD import-helper esemény:** az import réteg hallgatja az `e_core:hud:clientPreview` eseményt, és ha az `id` benne van a consumer oldali `RegisteredElements` map-ben, `SendNUIMessage({ action = 'ECORE_HUD_SYNC', id, pos })` üzenetet küld. Így a consumer oldali NUI üzenetkezelő egyetlen központi rune-state-ből (`.svelte.ts`) frissíthet minden komponenst.
+`imports/shared/helper_base.lua`. Opcionális helper-import: globális `hf = exports.e_core:getHelperBase()` inicializálás consumer oldalon.
+
+`imports/client/hud_drag.lua`. Opcionális HUD drag preview proxy: az import réteg hallgatja az `e_core:hud:clientPreview` eseményt, és ha az `id` benne van a consumer oldali `RegisteredElements` map-ben, `SendNUIMessage({ action = 'ECORE_HUD_SYNC', id, pos })` üzenetet küld. Így a consumer oldali NUI üzenetkezelő egyetlen központi rune-state-ből (`.svelte.ts`) frissíthet minden komponenst.
+
+**Megjegyzés:** **`eCore.helper`** = base **`hf`** (`libs/helper.lua`) – változatlan bridge viselkedés. **`eCore.GroupAccess:check(playerData, data)`**: `src/libs/GroupAccess.lua` (job/gang whitelist–blacklist; lásd §6). **`eCore.Err`** = `libs/errors.lua` → **`eCoreErr`** (azonos kulcsok / string értékek); külső resource összehasonlíthat: `reason == exports.e_core:getCore().Err.inventory_full`.
 
 ---
 
@@ -138,6 +147,8 @@ Forrás: **`libs/errors.lua`**. Az e_core belső kódja **`eCoreErr.xyz`** form�
 | `too_heavy`, `not_enough_space` | ugyanaz | `canSwapItems` / `canCarryItem` (global shared). **avp_grid_inventory** szerver override: a stack csak booleant ad — „nem vihető” ág **`too_heavy`** (a kliens override is ezt a mintát használja) |
 | `invalid_item_data` | ugyanaz | `canSwapItems` / `canCarryItem`: `itemData` nem tábla; `name` nem üres string (trim után); `amount` nem pozitív szám; `canSwapItems`: `swappingItems` megadva de nem tábla; swap sor ugyanilyen szerződés. **Keretrendszer `removeItems`:** lista elemei nem tábla, üres / hiányzó név, **`amount`** nem pozitív szám vagy NaN. **Override inventory (`ox_inventory` / `qs_inventory` / `avp_grid_inventory` szerver):** `removeItems` ugyanilyen sor-szerződés; **avp** `removeItem` / `addItem`: érvénytelen **`item`** / **`count`** |
 | `item_not_registered` | ugyanaz | `canSwapItems` / `canCarryItem`: az item név nincs a registry-ben (`REGISTERED_ITEMS`) |
+| `not_ready` | `'not_ready'` | ESX kliens `getRegisteredItems`: nincs még feltölthető katalógus (`REGISTERED_ITEMS` + szerver callback üres / timeout) |
+| `invalid_player` | `'invalid_player'` | QB szerver `addMoney`: `QBCore.Functions.GetPlayer` **nil** (offline / rossz id) |
 | `inventory_full`, `no_items_to_remove`, `inventory_is_empty`, `not_enough_items` | ugyanaz | QB bridge inventory |
 | `there_are_no_items_to_remove` | `'there are no items to remove'` | ESX / ox / qs `removeItems` üres lista |
 | `unknown_error` | ugyanaz | ox / qs removeItems hibaág; **ESX / QB `removeItems`:** hiányzó **`xPlayer`**; **ESX** továbbá **`removeInventoryItem`** kivétel (`pcall`); `eCore:createVehicle` (`bridge/global/server.lua`): érvénytelen `pos` / `model`, nem jött létre entitás, nincs érvényes **network id** (0 / `nil` a várakozás után), **network owner** továbbra is **-1**. **Override inventory szerver:** hiányos **`xPlayer`** / `pcall` kivétel a stack hívásban; **ox / qs `addItem`:** kivétel vagy olyan második érték, ami **nem** szerepel az `eCoreErr` stringek között (`cLog`); **avp** `canCarryItem` hívás kivétel, érvénytelen játékos forrás; **avp** stack egyedi hibaüzenet, ha nem egyezik egyetlen `eCoreErr` értékkel sem |
@@ -199,9 +210,9 @@ ox_target jellegű globális opciók / zónák: `disableTargeting`, `addGlobalOp
 
 ## 9. `eCore:` – ESX ág (`ESX_CORE`)
 
-**Shared (`bridge/esx/shared.lua`):** `convertPlayer` (egységes `job`/`gang` séma, `charName`, `firstName`/`lastName`, `position`, `metadata`, ESX-en neutral `gang` + opcionális `citizenid` alias), `convertItems`.
+**Shared (`bridge/esx/shared.lua`):** `convertPlayer` (egységes `job`/`gang` séma, `charName`, `firstName`/`lastName`, `position`, `metadata`, ESX-en neutral `gang` + opcionális `citizenid` alias), `convertItems` (központi `hf.convertItemsWithProfile(..., 'esx')` pipeline).
 
-**Client (`bridge/esx/client.lua`):** `triggerCallback`, `sendMessage`, `drawText`, `hideText`, `progressbar`, `cancelProgressbar`, `isLoggedIn`, `getInventory`, `getPlayerMaxWeight`, `getRegisteredItems`, `getPlayer`, `getAccounts`, `canInteract`, `setFuelLevel`, `vehicleKeys`, `setVehicleProperties`, `setVehiclePropertiesFromNetId`, `deleteVehicle`, `getClosestVehicle`.
+**Client (`bridge/esx/client.lua`):** `triggerCallback`, `sendMessage`, `drawText`, `hideText`, `progressbar`, `cancelProgressbar`, `isLoggedIn`, `getInventory`, `getPlayerMaxWeight`, `getRegisteredItems`, `getPlayer`, `getAccounts`, `canInteract`, `setFuelLevel`, `vehicleKeys`, `setVehicleProperties`, `setVehiclePropertiesFromNetId`, `deleteVehicle`, `getClosestVehicle`. **`getRegisteredItems`:** ha a globális `REGISTERED_ITEMS` még üres, a szerver `e_core:getRegisteredItems` **ox_lib callback** (`bridge/global/callbacks/server.lua`) tölti a katalógust; sikertelen / üres válasz: **`false`**, **`eCoreErr.not_ready`** (nem a játékos inventory `convertItems` ága).
 
 **Server (`bridge/esx/server.lua`):** `createCallback`, `createUsableItem`, `sendMessage`, `drawText`, `hideText`, `addMoney`, `removeMoney`, `getAccounts`, `getInventory`, `getInventoryWeight`, `getPlayerMaxWeight`, `addItem`, `removeItem`, `removeItems`, `getRegisteredItems`, `getPlayer`, `itemBox`, `addCommands`.
 
@@ -209,7 +220,7 @@ ox_target jellegű globális opciók / zónák: `disableTargeting`, `addGlobalOp
 
 ## 10. `eCore:` – QB ág (`QB_CORE`)
 
-**Shared (`bridge/qb/shared.lua`):** `convertItems`, `getRegisteredItems`, `convertPlayer` (ugyanaz a `job`/`gang`/név/`metadata`/`position` szerződés mint ESX ágon, normalizálva).
+**Shared (`bridge/qb/shared.lua`):** `convertItems` (központi `hf.convertItemsWithProfile(..., 'qb')` pipeline), `getRegisteredItems`, `convertPlayer` (ugyanaz a `job`/`gang`/név/`metadata`/`position` szerződés mint ESX ágon, normalizálva).
 
 **Client (`bridge/qb/client.lua`):** ESX-hez hasonló készlet; eltérések: `sendMessage` opcionális `image`; `getPlayer(newJob, newGang)`; további metódusok mint ESX kliensnél (`triggerCallback`, `progressbar`, `getInventory`, jármű, stb.).
 

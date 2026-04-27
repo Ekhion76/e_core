@@ -3,6 +3,7 @@
 --- Add new migration by extending `ECORE_DB_MIGRATIONS` and bumping `ECORE_DB_SCHEMA_TARGET` (export/docs).
 
 ECORE_DB_SCHEMA_TARGET = 4
+local hfe = hfe
 
 local MIGRATIONS_DDL = [[
 CREATE TABLE IF NOT EXISTS `e_core_migrations` (
@@ -15,7 +16,7 @@ CREATE TABLE IF NOT EXISTS `e_core_migrations` (
 --- Auto-generated annotation. Refine behavior details if needed.
 --- @return any result
 local function ensure_migrations_table()
-    local ok, err = hf.mysqlAwait('migration:ensure_table', function()
+    local ok, err = hfe.mysqlAwait('migration:ensure_table', function()
         MySQL.query.await(MIGRATIONS_DDL)
     end)
     if not ok then
@@ -27,7 +28,7 @@ end
 --- @param id number
 --- @return any result
 local function migration_applied(id)
-    local ok, rows = hf.mysqlAwait(('migration:has_%d'):format(id), function()
+    local ok, rows = hfe.mysqlAwait(('migration:has_%d'):format(id), function()
         return MySQL.query.await('SELECT `id` FROM `e_core_migrations` WHERE `id` = ? LIMIT 1', { id })
     end)
     if not ok then
@@ -42,7 +43,7 @@ end
 --- @param name string
 --- @return any result
 local function mark_migration_applied(id, name)
-    local ok, err = hf.mysqlAwait(('migration:mark_%d'):format(id), function()
+    local ok, err = hfe.mysqlAwait(('migration:mark_%d'):format(id), function()
         MySQL.query.await(
             'INSERT IGNORE INTO `e_core_migrations` (`id`, `name`) VALUES (?, ?)',
             { id, name }
@@ -62,7 +63,7 @@ local function migration_001_add_e_core_column()
     else
         sql = 'ALTER TABLE `users` ADD COLUMN IF NOT EXISTS `e_core` LONGTEXT NULL DEFAULT NULL'
     end
-    local ok, err = hf.mysqlAwait('migration:001_alter_e_core', function()
+    local ok, err = hfe.mysqlAwait('migration:001_alter_e_core', function()
         MySQL.query.await(sql)
     end)
     if not ok then
@@ -108,14 +109,14 @@ CREATE TABLE IF NOT EXISTS `e_core_professions` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 ]]
 
-    local ok1, err1 = hf.mysqlAwait('migration:002_create_level_profiles', function()
+    local ok1, err1 = hfe.mysqlAwait('migration:002_create_level_profiles', function()
         MySQL.query.await(createLevelProfilesSql)
     end)
     if not ok1 then
         error(tostring(err1))
     end
 
-    local ok2, err2 = hf.mysqlAwait('migration:002_create_professions', function()
+    local ok2, err2 = hfe.mysqlAwait('migration:002_create_professions', function()
         MySQL.query.await(createProfessionsSql)
     end)
     if not ok2 then
@@ -153,7 +154,7 @@ CREATE TABLE IF NOT EXISTS `e_core_cleanup_jobs` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 ]]
 
-    local ok, err = hf.mysqlAwait('migration:003_create_cleanup_jobs', function()
+    local ok, err = hfe.mysqlAwait('migration:003_create_cleanup_jobs', function()
         MySQL.query.await(createCleanupJobsSql)
     end)
     if not ok then
@@ -179,7 +180,7 @@ CREATE TABLE IF NOT EXISTS `e_core_admin_denied_audit` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 ]]
 
-    local ok, err = hf.mysqlAwait('migration:004_create_admin_denied_audit', function()
+    local ok, err = hfe.mysqlAwait('migration:004_create_admin_denied_audit', function()
         MySQL.query.await(createDeniedAuditSql)
     end)
     if not ok then
@@ -189,7 +190,7 @@ end
 
 --- @return number Highest applied migration `id`, or 0 when empty/error.
 function e_core_get_applied_migration_id()
-    local ok, rows = hf.mysqlAwait('migration:max_id', function()
+    local ok, rows = hfe.mysqlAwait('migration:max_id', function()
         return MySQL.query.await('SELECT MAX(`id`) AS `m` FROM `e_core_migrations`', {})
     end)
     if not ok or not rows or not rows[1] or rows[1].m == nil then

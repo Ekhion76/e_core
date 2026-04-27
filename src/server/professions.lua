@@ -23,6 +23,7 @@ local CLEANUP_AUDIT_LOG = {}
 local CLEANUP_AUDIT_LIMIT = 100
 local CLEANUP_MAX_CONCURRENT = 1
 local CLEANUP_ACTIVE_RUNS = 0
+local hfe = hfe
 local db_execute
 local db_single
 local db_query
@@ -76,18 +77,18 @@ end
 --- @param payload table
 --- @return any result
 local function cleanup_admin_can_access(payload)
-    return hf.adminApiCanAccess('cleanup', payload)
+    return hfe.adminApiCanAccess('cleanup', payload)
 end
 
 --- Auto-generated annotation. Refine behavior details if needed.
 --- @param payload table
 --- @return any result
 local function admin_audit_can_access(payload)
-    local okCleanup = hf.adminApiCanAccess('cleanup', payload)
+    local okCleanup = hfe.adminApiCanAccess('cleanup', payload)
     if okCleanup then
         return true, nil
     end
-    local okDiagnostics = hf.adminApiCanAccess('diagnostics', payload)
+    local okDiagnostics = hfe.adminApiCanAccess('diagnostics', payload)
     if okDiagnostics then
         return true, nil
     end
@@ -100,8 +101,8 @@ end
 --- @param reason string
 --- @return any result
 local function cleanup_access_denied(action, payload, reason)
-    if type(hf.auditAdminApiDenied) == 'function' then
-        hf.auditAdminApiDenied('cleanup', action, payload, reason)
+    if type(hfe.auditAdminApiDenied) == 'function' then
+        hfe.auditAdminApiDenied('cleanup', action, payload, reason)
     end
     append_cleanup_audit(
         'access_denied',
@@ -602,7 +603,7 @@ end
 --- Auto-generated annotation. Refine behavior details if needed.
 --- @return any result
 local function get_registry_counts()
-    local ok, rows = hf.mysqlAwait('professions:bootstrap:counts', function()
+    local ok, rows = hfe.mysqlAwait('professions:bootstrap:counts', function()
         return MySQL.query.await([[
             SELECT
                 (SELECT COUNT(*) FROM `e_core_level_profiles`) AS `profilesCount`,
@@ -626,7 +627,7 @@ end
 --- @param levelsJson any
 --- @return any result
 local function ensure_default_profile(levelsJson)
-    local okInsert = hf.mysqlAwait('professions:bootstrap:profile:insert', function()
+    local okInsert = hfe.mysqlAwait('professions:bootstrap:profile:insert', function()
         MySQL.query.await(
             [[
                 INSERT INTO `e_core_level_profiles` (`profile_key`, `display_name`, `mode`, `levels_json`, `created_by`)
@@ -646,7 +647,7 @@ local function ensure_default_profile(levelsJson)
         return nil
     end
 
-    local okId, row = hf.mysqlAwait('professions:bootstrap:profile:id', function()
+    local okId, row = hfe.mysqlAwait('professions:bootstrap:profile:id', function()
         return MySQL.single.await(
             'SELECT `id` FROM `e_core_level_profiles` WHERE `profile_key` = ? LIMIT 1',
             { DEFAULT_PROFILE_KEY }
@@ -666,7 +667,7 @@ end
 --- @return any result
 local function seed_default_professions(profileId)
     for _, profession in ipairs(DEFAULT_PROFESSIONS) do
-        local ok = hf.mysqlAwait(
+        local ok = hfe.mysqlAwait(
             ('professions:bootstrap:seed:%s.%s'):format(profession.category, profession.name),
             function()
                 MySQL.query.await(
@@ -772,7 +773,7 @@ end
 --- Auto-generated annotation. Refine behavior details if needed.
 --- @return any result
 local function load_profession_registry_from_db()
-    local ok, rows = hf.mysqlAwait('professions:registry:load', function()
+    local ok, rows = hfe.mysqlAwait('professions:registry:load', function()
         return MySQL.query.await([[
             SELECT
                 p.`category`,
@@ -814,7 +815,7 @@ local function get_cached_registry(forceRefresh)
 end
 
 db_execute = function(tag, sql, params)
-    local ok = hf.mysqlAwait(tag, function()
+    local ok = hfe.mysqlAwait(tag, function()
         MySQL.query.await(sql, params or {})
     end)
     if not ok then
@@ -824,7 +825,7 @@ db_execute = function(tag, sql, params)
 end
 
 db_single = function(tag, sql, params)
-    local ok, row = hf.mysqlAwait(tag, function()
+    local ok, row = hfe.mysqlAwait(tag, function()
         return MySQL.single.await(sql, params or {})
     end)
     if not ok then
@@ -834,7 +835,7 @@ db_single = function(tag, sql, params)
 end
 
 db_query = function(tag, sql, params)
-    local ok, rows = hf.mysqlAwait(tag, function()
+    local ok, rows = hfe.mysqlAwait(tag, function()
         return MySQL.query.await(sql, params or {})
     end)
     if not ok then
@@ -1774,7 +1775,7 @@ end
 --- @return any result
 local function denied_audit_access_denied(action, payload, reason)
     if type(hf.auditAdminApiDenied) == 'function' then
-        hf.auditAdminApiDenied('deniedAudit', action, payload, reason)
+        hfe.auditAdminApiDenied('deniedAudit', action, payload, reason)
     end
     return admin_response(false, eCoreErr.access_denied, reason or 'Nincs jogosultság.')
 end
@@ -1806,7 +1807,7 @@ function e_core_purge_admin_denied_audit_once()
         return true, 0
     end
 
-    local ok, affected = hf.mysqlAwait('admin_denied_audit:purge', function()
+    local ok, affected = hfe.mysqlAwait('admin_denied_audit:purge', function()
         return MySQL.update.await(
             [[
                 DELETE FROM `e_core_admin_denied_audit`
@@ -1844,7 +1845,7 @@ local function e_core_count_admin_denied_audit_candidates()
         return true, 0
     end
 
-    local ok, rows = hf.mysqlAwait('admin_denied_audit:purge_count', function()
+    local ok, rows = hfe.mysqlAwait('admin_denied_audit:purge_count', function()
         return MySQL.query.await(
             [[
                 SELECT COUNT(*) AS `count`

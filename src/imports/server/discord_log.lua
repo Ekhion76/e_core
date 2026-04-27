@@ -1,7 +1,7 @@
 -- luacheck: push ignore 131
 --- Discord webhook message builder (server-side). `createDiscordLog(url, botName [, opts])` -> builder object;
 --- returns `false` for invalid webhook URL. String fields are clamped to Discord limits.
-local hf = eCore.helper
+local hf = hf or exports.e_core:getHelperBase()
 
 local FIELD_NAME_MAX = 256
 local FIELD_VALUE_MAX = 1024
@@ -88,7 +88,6 @@ local function resolveColor(c)
     return NAMED_COLORS.green
 end
 
--- ---------------------------------------------------------------------------
 local DiscordLog = {}
 DiscordLog.__index = DiscordLog
 
@@ -125,9 +124,6 @@ function DiscordLog:_init(webhook, botName, opts)
     self:reset()
 end
 
--- ---------------------------------------------------------------------------
--- Private helpers
-
 --- Appends an empty rich embed and sets it as active embed.
 --- @return nil
 function DiscordLog:_appendEmbed()
@@ -147,9 +143,6 @@ function DiscordLog:_ensureEmbed()
         self:_appendEmbed()
     end
 end
-
--- ---------------------------------------------------------------------------
--- Public API
 
 --- Resets current message payload to a clean state.
 --- @return nil

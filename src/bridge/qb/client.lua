@@ -153,10 +153,10 @@ if QB_CORE then
     --- @param vehicle any
     --- @return any result
     function eCore:vehicleKeys(rawPlate, vehicle)
-        if not hf.isPopulatedString(rawPlate) then
+        if not hf.hasContent(rawPlate) then
             return false
         end
-        local plate = hf.removeNonAlphaNumeric(rawPlate)
+        local plate = hf.alphaNum(rawPlate)
         TriggerEvent("vehiclekeys:client:SetOwner", plate)
     end
 
@@ -165,7 +165,7 @@ if QB_CORE then
     --- @param props table
     --- @return any result
     function eCore:setVehicleProperties(vehicle, props)
-        if not hf.isPopulatedTable(props) or not DoesEntityExist(vehicle) then
+        if not hf.hasEntries(props) or not DoesEntityExist(vehicle) then
             return
         end
         QBCore.Functions.SetVehicleProperties(vehicle, props)
@@ -176,7 +176,7 @@ if QB_CORE then
     --- @param props table
     --- @return any result
     function eCore:setVehiclePropertiesFromNetId(netId, props)
-        if not hf.isPopulatedTable(props) then
+        if not hf.hasEntries(props) then
             return
         end
         local try = 300

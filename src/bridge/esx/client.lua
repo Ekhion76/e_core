@@ -74,14 +74,22 @@ if ESX_CORE then
         return Config.maxInventoryWeight
     end
 
-    --- It returns the entire registered item list
-    ---@return {name: string, label: string, isUnique: boolean, isWeapon: boolean, weight: number, image: string, ammoname: string}
+    --- Returns the merged registered item catalog when `REGISTERED_ITEMS` is populated by the server/registry wait loop.
+    --- Never treats player inventory rows as the global item definition list (wrong semantics and corrupts weight/slot logic).
+    --- @return table|boolean items Registry table on success, or `false` when not ready.
+    --- @return string|nil reason `eCoreErr.not_ready` when `REGISTERED_ITEMS` is still nil.
     function eCore:getRegisteredItems()
         if REGISTERED_ITEMS then
             return REGISTERED_ITEMS
         end
 
-        return self:convertItems(ESX.GetPlayerData().inventory)
+        -- Szerver oldali katalógus (lib callback): ugyanaz a séma, mint `bridge/esx/server.lua` `getRegisteredItems`-nél; a kliens inventory nem item-definíció lista.
+        local fromServer = lib.callback.await('e_core:getRegisteredItems', 12000)
+        if type(fromServer) == 'table' and hf.hasEntries(fromServer) then
+            return fromServer
+        end
+
+        return false, eCoreErr.not_ready
     end
 
     ------------------------------------------------------------------------
@@ -140,10 +148,10 @@ if ESX_CORE then
     --- @param vehicle any
     --- @return any result
     function eCore:vehicleKeys(rawPlate, vehicle)
-        if not hf.isPopulatedString(rawPlate) then
+        if not hf.hasContent(rawPlate) then
             return false
         end
-        local plate = hf.removeNonAlphaNumeric(rawPlate)
+        local plate = hf.alphaNum(rawPlate)
         -- TriggerEvent("vehiclekeys:client:SetOwner", plate)
     end
 
@@ -152,7 +160,7 @@ if ESX_CORE then
     --- @param props table
     --- @return any result
     function eCore:setVehicleProperties(vehicle, props)
-        if not hf.isPopulatedTable(props) or not DoesEntityExist(vehicle) then
+        if not hf.hasEntries(props) or not DoesEntityExist(vehicle) then
             return
         end
         ESX.Game.SetVehicleProperties(vehicle, props)
@@ -163,7 +171,7 @@ if ESX_CORE then
     --- @param props table
     --- @return any result
     function eCore:setVehiclePropertiesFromNetId(netId, props)
-        if not hf.isPopulatedTable(props) then
+        if not hf.hasEntries(props) then
             return
         end
         local try = 300

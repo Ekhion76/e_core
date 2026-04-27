@@ -296,7 +296,7 @@ function addAbility(playerId, category, name, value)
 
     metaValue = metaValue + delta
 
-    local newValue = hf.rangeLimit(metaValue, abilityCap)
+    local newValue = hf.clamp(metaValue, abilityCap)
 
     if baseValue ~= newValue then
         row[ck][nk] = newValue
@@ -350,7 +350,7 @@ function removeAbility(playerId, category, name, value)
 
     metaValue = metaValue - delta
 
-    local newValue = hf.rangeLimit(metaValue, abilityCap)
+    local newValue = hf.clamp(metaValue, abilityCap)
 
     if baseValue ~= newValue then
         row[ck][nk] = newValue
@@ -401,7 +401,7 @@ function setAbility(playerId, category, name, value)
     local metaValue = row[ck][nk]
     local baseValue = metaValue
     local abilityCap = resolveAbilityCap(ck, nk)
-    local newValue = hf.rangeLimit(numValue, abilityCap)
+    local newValue = hf.clamp(numValue, abilityCap)
 
     if baseValue ~= newValue then
         row[ck][nk] = newValue
@@ -453,7 +453,7 @@ function prepareMeta(playerId, meta)
     local val = row['labor'].val
     row['labor'].val = (tonumber(val) and val == val) and tonumber(val) or 0
 
-    if hf.isPopulatedTable(Config.metaFields) then
+    if hf.hasEntries(Config.metaFields) then
         for metaCategory, defaultValue in pairs(Config.metaFields) do
             row[metaCategory] = row[metaCategory] or defaultValue
         end

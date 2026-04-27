@@ -41,13 +41,13 @@ end
 --- @param list table Whitelist or blacklist definition.
 --- @return boolean matched True when this group hits the list.
 local function matchGroupOnList(group, list)
-    if hf.inTable(group.name, list) then
+    if hf.contains(group.name, list) then
         return true
     end
 
     local gradeList = list[group.name]
     if gradeList ~= nil then
-        return not hf.isPopulatedTable(gradeList) or hf.inTable(group.grade, gradeList)
+        return not hf.hasEntries(gradeList) or hf.contains(group.grade, gradeList)
     end
 
     return false
@@ -78,8 +78,8 @@ function GroupAccess:check(playerData, data)
         return true
     end
 
-    local hasWhitelist = hf.isPopulatedTable(data.whitelist)
-    local hasBlacklist = hf.isPopulatedTable(data.blacklist)
+    local hasWhitelist = hf.hasEntries(data.whitelist)
+    local hasBlacklist = hf.hasEntries(data.blacklist)
     if not hasWhitelist and not hasBlacklist then
         return true
     end

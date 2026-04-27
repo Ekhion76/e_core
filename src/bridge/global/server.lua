@@ -57,13 +57,13 @@ function eCore:createVehicle(pos, model, vType, props)
     local modelHash
     if type(model) == 'number' and model ~= 0 then
         modelHash = model
-    elseif hf.isPopulatedString(model) then
+    elseif hf.hasContent(model) then
         modelHash = joaat(model)
     else
         return false, eCoreErr.unknown_error
     end
 
-    if CreateVehicleServerSetter and hf.isPopulatedString(vType) then
+    if CreateVehicleServerSetter and hf.hasContent(vType) then
         vehicle = CreateVehicleServerSetter(modelHash, vType, px, py, pz, pw)
     else
         vehicle = CreateVehicle(modelHash, px, py, pz, pw, true, true)
@@ -82,7 +82,7 @@ function eCore:createVehicle(pos, model, vType, props)
         Wait(0)
     until plate ~= '' or try > 200
 
-    if not hf.isPopulatedString(plate) then
+    if not hf.hasContent(plate) then
         DeleteEntity(vehicle)
         return false, eCoreErr.vehicle_no_plate_data
     end

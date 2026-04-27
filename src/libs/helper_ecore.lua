@@ -1,14 +1,19 @@
---- e_core-specific extensions on the same `hf` table as `libs/helper.lua`.
+--- e_core-specific helpers isolated from the base `hf` table.
 --- Includes item registry normalization (`normalizeRegisteredItemDef`), startup/registry waiting,
---- MySQL `pcall` wrapper, net rate limiting, and currency formatting (`Config.currency`).
+--- MySQL `pcall` wrapper, admin access checks, and currency formatting (`Config.currency`).
 --- Load order: `fxmanifest.lua` loads this file immediately after `libs/helper.lua`.
---- External resources still consume the merged table through `eCore.helper` (`bridge/main.lua`).
+--- Runtime objects:
+--- - `hf`: base generic helper table from `libs/helper.lua`
+--- - `hfe`: e_core-specific helper table from this file
+
+local hf = hf
+hfe = hfe or {}
 
 --- Shared weight-key contract for REGISTERED_ITEMS / getItemWeight / canCarryItem
 --- (bridge + override convertItems compatibility).
 --- @return string wKey
 --- @return table weightKeys ordered list (same as normalizeRegisteredItemDef)
-function hf.getRegisteredItemWeightKeyConfig()
+function hfe.getRegisteredItemWeightKeyConfig()
     local wKey = 'weight'
     if type(Config) == 'table' and type(Config.fields) == 'table' and type(Config.fields.weight) == 'string' then
         wKey = Config.fields.weight
@@ -20,17 +25,18 @@ end
 --- @param row table Source item row (mutated in place).
 --- @param diagCtx table|nil Optional diagnostics context (`{ source = string }`).
 --- @return table row
-function hf.normalizeRegisteredItemDef(nameLower, row, diagCtx)
+function hfe.normalizeRegisteredItemDef(nameLower, row, diagCtx)
     if type(row) ~= 'table' or type(nameLower) ~= 'string' or nameLower == '' then
         return row
     end
 
-    local wKey, weightKeys = hf.getRegisteredItemWeightKeyConfig()
+    local wKey, weightKeys = hfe.getRegisteredItemWeightKeyConfig()
     local sourceTag = type(diagCtx) == 'table' and tostring(diagCtx.source or 'itemconvert') or 'itemconvert'
 
     local ok, err = pcall(function()
         row.name = nameLower
 
+        -- Resolve weight from multiple known key aliases to keep stack compatibility.
         local wNum
         local hadWeightField = false
         local hadInvalidWeight = false
@@ -59,6 +65,7 @@ function hf.normalizeRegisteredItemDef(nameLower, row, diagCtx)
         end
         row[wKey] = wNum or 0
 
+        -- Resolve human label from a prioritized alias list.
         local lab
         for _, k in ipairs({ 'label', 'formatName', 'title', 'Label', 'description' }) do
             local v = row[k]
@@ -127,34 +134,26 @@ function hf.normalizeRegisteredItemDef(nameLower, row, diagCtx)
     return row
 end
 
---- Auto-generated annotation. Refine behavior details if needed.
---- @param amount number
---- @return any result
-function hf.moneyFormat(amount)
-    if Config.currency.suffix then
-        return ('%s%s'):format(hf.numberFormat(amount), Config.currency.symbol)
+--- Formats amount using central currency config.
+--- This keeps consumer-facing currency display consistent across resources.
+---@param amount number
+---@return string formatted
+function hfe.moneyFormat(amount)
+    local currency = (type(Config) == 'table' and type(Config.currency) == 'table') and Config.currency or {}
+    local symbol = tostring(currency.symbol or '')
+    if currency.suffix then
+        return ('%s%s'):format(hf.formatNumber(amount), symbol)
     else
-        return ('%s%s'):format(Config.currency.symbol, hf.numberFormat(amount))
+        return ('%s%s'):format(symbol, hf.formatNumber(amount))
     end
-end
-
---- Checks whether player source currently exists (server-side).
----@param src number
----@return boolean
-function hf.isValidPlayerSource(src)
-    if type(src) ~= 'number' or src < 1 then
-        return false
-    end
-    local name = GetPlayerName(src)
-    return name ~= nil and name ~= ''
 end
 
 --- Admin API policy check (`Config.adminApi[section]`) based on `auth.source`.
 --- @param section string For example: `cleanup`, `diagnostics`.
 --- @param payload table|nil Optional payload: `{ auth = { source = number } }`.
---- @return boolean
---- @return string|nil
-function hf.adminApiCanAccess(section, payload)
+--- @return boolean ok
+--- @return string|nil err
+function hfe.adminApiCanAccess(section, payload)
     local adminApi = (type(Config) == 'table' and type(Config.adminApi) == 'table') and Config.adminApi or {}
     local cfg = adminApi[tostring(section or '')] or {}
     local auth = type(payload) == 'table' and payload.auth or nil
@@ -176,7 +175,7 @@ function hf.adminApiCanAccess(section, payload)
 
     local idOk = false
     local list = cfg.allowedIdentifiers
-    if hf.isPopulatedTable(list) then
+    if hf.hasEntries(list) then
         local ids = GetPlayerIdentifiers(src)
         for _, pid in ipairs(ids) do
             local low = tostring(pid):lower()
@@ -203,7 +202,7 @@ end
 --- @param src number
 --- @return boolean ok
 --- @return string|nil err
-function hf.webConsoleAccess(src)
+function hfe.webConsoleAccess(src)
     if not hf.isValidPlayerSource(src) then
         return false, eCoreErr.admin_invalid_web_player
     end
@@ -215,7 +214,7 @@ function hf.webConsoleAccess(src)
     local aceOk = acePerm ~= '' and IsPlayerAceAllowed(src, acePerm)
     local idOk = false
     local list = w.allowedIdentifiers
-    if hf.isPopulatedTable(list) then
+    if hf.hasEntries(list) then
         local ids = GetPlayerIdentifiers(src)
         for _, pid in ipairs(ids) do
             local low = tostring(pid):lower()
@@ -233,7 +232,7 @@ function hf.webConsoleAccess(src)
     if aceOk or idOk then
         return true, nil
     end
-    if acePerm == '' and not hf.isPopulatedTable(list) then
+    if acePerm == '' and not hf.hasEntries(list) then
         return false, eCoreErr.admin_web_unconfigured
     end
     return false, eCoreErr.admin_web_denied
@@ -244,7 +243,7 @@ end
 --- @param action string
 --- @param payload table|nil
 --- @param reason string|nil
-function hf.auditAdminApiDenied(section, action, payload, reason)
+function hfe.auditAdminApiDenied(section, action, payload, reason)
     hf.__adminApiDeniedAudit = hf.__adminApiDeniedAudit or {}
 
     local auth = type(payload) == 'table' and payload.auth or nil
@@ -294,7 +293,7 @@ function hf.auditAdminApiDenied(section, action, payload, reason)
 
     -- Best-effort DB persistence (server only).
     if rawget(_G, 'MySQL') ~= nil then
-        hf.mysqlAwait('admin_denied_audit:insert', function()
+        hfe.mysqlAwait('admin_denied_audit:insert', function()
             MySQL.query.await(
                 [[
                     INSERT INTO `e_core_admin_denied_audit`
@@ -313,34 +312,17 @@ function hf.auditAdminApiDenied(section, action, payload, reason)
     end
 end
 
---- Simple player+key rate limit (server net-event guard).
----@param src number player source
----@param name string unique key, e.g. event name
----@param cooldownMs number
----@return boolean true when call is allowed
-function hf.netRateLimit(src, name, cooldownMs)
-    if not hf.isValidPlayerSource(src) then
-        return false
-    end
-    hf.__netRate = hf.__netRate or {}
-    local k = tostring(src) .. '|' .. tostring(name)
-    local now = GetGameTimer()
-    local last = hf.__netRate[k] or 0
-    if now - last < cooldownMs then
-        return false
-    end
-    hf.__netRate[k] = now
-    return true
-end
-
 --- Fills REGISTERED_ITEMS until eCore:getRegisteredItems() is non-empty or timeout.
 --- Sets CORE_READY to true on success, false on timeout (nil while still waiting).
 ---@param logTag string cLog key (e.g. 'REGISTERED ITEMS')
 ---@return boolean success
-function hf.awaitItemRegistryReady(logTag)
+function hfe.awaitItemRegistryReady(logTag)
+    logTag = tostring(logTag or 'REGISTERED ITEMS')
     if _G._ECORE_INIT_FAILED == true then
         CORE_READY = false
-        cLog(logTag, 'Skipped item registry load: e_core is in IDLE state due to framework detect/init failure.', 1)
+        if type(cLog) == 'function' then
+            cLog(logTag, 'Skipped item registry load: e_core is in IDLE state due to framework detect/init failure.', 1)
+        end
         return false
     end
 
@@ -363,15 +345,21 @@ function hf.awaitItemRegistryReady(logTag)
     local nextLogAt = 15000
     local attempt = 0
 
-    while not hf.isPopulatedTable(REGISTERED_ITEMS) do
+    -- Poll with bounded timeout to tolerate late inventory startup sequencing.
+    while not hf.hasEntries(REGISTERED_ITEMS) do
         attempt = attempt + 1
         local ok, result = pcall(function()
             return eCore:getRegisteredItems()
         end)
         if ok then
-            REGISTERED_ITEMS = result
+            -- `getRegisteredItems` visszadhat `false, eCoreErr.not_ready` (ESX kliens); ne tároljunk nem-tábla értéket, különben a loop és a `hasItem` hívások elromlanak.
+            if type(result) == 'table' and hf.hasEntries(result) then
+                REGISTERED_ITEMS = result
+            else
+                REGISTERED_ITEMS = nil
+            end
         else
-            if attempt == 1 then
+            if attempt == 1 and type(cLog) == 'function' then
                 cLog(logTag, ('getRegisteredItems failed: %s'):format(tostring(result)), 1)
             end
             REGISTERED_ITEMS = nil
@@ -380,16 +368,24 @@ function hf.awaitItemRegistryReady(logTag)
         local elapsed = GetGameTimer() - start
         if elapsed >= timeout then
             CORE_READY = false
-            cLog(logTag,
-                ('TIMEOUT after %d ms (%d polls). Item registry still empty; increase convar e_core:items_ready_timeout_ms (max 600000) if inventory starts late.'):format(
-                    elapsed, attempt), 1)
+            if type(cLog) == 'function' then
+                cLog(logTag,
+                    ('TIMEOUT after %d ms (%d polls). Item registry still empty; increase convar e_core:items_ready_timeout_ms (max 600000) if inventory starts late.'):format(
+                        elapsed, attempt), 1)
+            end
             return false
         end
 
         if elapsed >= nextLogAt then
-            cLog(logTag,
-                ('still waiting for item registry (elapsed %d ms, poll %d, timeout %d ms)'):format(elapsed, attempt, timeout),
-                2)
+            if type(cLog) == 'function' then
+                cLog(logTag,
+                    ('still waiting for item registry (elapsed %d ms, poll %d, timeout %d ms)'):format(
+                        elapsed,
+                        attempt,
+                        timeout
+                    ),
+                    2)
+            end
             local step = elapsed < 30000 and 15000 or 45000
             nextLogAt = elapsed + step
         end
@@ -401,38 +397,56 @@ function hf.awaitItemRegistryReady(logTag)
     return true
 end
 
---- Returns active inventory override label (shared override config.lua flags).
----@return string
-function hf.inventoryIntegrationLabel()
-    local parts = {}
-    if rawget(_G, 'CUSTOM_INVENTORY') == true then
-        parts[#parts + 1] = 'custom_inventory'
+--- Builds a future-proof runtime descriptor for inventory integration.
+--- Uses generic signals (override mode + capabilities), not hardcoded resource names.
+---@return table descriptor
+---@return string descriptor.mode `framework` or `override`
+---@return string descriptor.profile `framework:auto` or `override:auto`
+---@return number descriptor.flagCount Count of enabled `*_INVENTORY` flags in globals.
+---@return table descriptor.capabilities Runtime capability booleans.
+function hfe.getInventoryRuntimeDescriptor()
+    local flagCount = 0
+    for key, value in pairs(_G) do
+        if type(key) == 'string' and type(value) == 'boolean' and value == true and key:match('_INVENTORY$') then
+            flagCount = flagCount + 1
+        end
     end
-    if rawget(_G, 'OX_INVENTORY') == true then
-        parts[#parts + 1] = 'ox_inventory'
-    end
-    if rawget(_G, 'QS_INVENTORY') == true then
-        parts[#parts + 1] = 'qs-inventory'
-    end
-    if rawget(_G, 'AVP_GRID_INVENTORY') == true then
-        parts[#parts + 1] = 'avp_grid_inventory'
-    end
-    if #parts == 0 then
-        return 'framework'
-    end
-    return table.concat(parts, '+')
+
+    local mode = flagCount > 0 and 'override' or 'framework'
+    local profile = mode .. ':auto'
+    local core = type(eCore) == 'table' and eCore or {}
+
+    local capabilities = {
+        getInventory = type(core.getInventory) == 'function',
+        getInventoryWeight = type(core.getInventoryWeight) == 'function',
+        getPlayerMaxWeight = type(core.getPlayerMaxWeight) == 'function',
+        canCarryItem = type(core.canCarryItem) == 'function',
+        canSwapItems = type(core.canSwapItems) == 'function',
+        addItem = type(core.addItem) == 'function',
+        removeItem = type(core.removeItem) == 'function',
+        removeItems = type(core.removeItems) == 'function',
+        getItemCount = type(core.getItemCount) == 'function',
+        hasItem = type(core.hasItem) == 'function',
+    }
+
+    return {
+        mode = mode,
+        profile = profile,
+        flagCount = flagCount,
+        capabilities = capabilities,
+    }
 end
 
---- Prints one-line startup summary: version, framework, inventory layer, item-registry status.
+--- Prints one-line startup summary: version, framework, inventory runtime descriptor, item-registry status.
 ---@param side string `server` or `client`
-function hf.logEcoreStartupSummary(side)
+function hfe.logEcoreStartupSummary(side)
     if _G._ECORE_INIT_FAILED == true then
         return
     end
 
     local ver = GetResourceMetadata(GetCurrentResourceName(), 'version', 0) or '?'
     local fw = tostring(FRAMEWORK or 'none')
-    local inv = hf.inventoryIntegrationLabel()
+    local inv = hfe.getInventoryRuntimeDescriptor()
     local state = 'ACTIVE'
     local items = 'pending'
     if CORE_READY == true then
@@ -440,8 +454,22 @@ function hf.logEcoreStartupSummary(side)
     elseif CORE_READY == false then
         items = 'not_ready'
     end
-    print(('[^2e_core^7] [%s] v%s | state=%s | framework=%s | inventory=%s | items=%s'):format(
-        side, ver, state, fw, inv, items))
+    local caps = inv.capabilities
+    local capList = {}
+    if caps.getInventory then capList[#capList + 1] = 'getInventory' end
+    if caps.getInventoryWeight then capList[#capList + 1] = 'getInventoryWeight' end
+    if caps.getPlayerMaxWeight then capList[#capList + 1] = 'getPlayerMaxWeight' end
+    if caps.canCarryItem then capList[#capList + 1] = 'canCarryItem' end
+    if caps.canSwapItems then capList[#capList + 1] = 'canSwapItems' end
+    if caps.addItem then capList[#capList + 1] = 'addItem' end
+    if caps.removeItem then capList[#capList + 1] = 'removeItem' end
+    if caps.removeItems then capList[#capList + 1] = 'removeItems' end
+    if caps.getItemCount then capList[#capList + 1] = 'getItemCount' end
+    if caps.hasItem then capList[#capList + 1] = 'hasItem' end
+    local capSummary = table.concat(capList, ',')
+
+    print(('[^2e_core^7] [%s] v%s | state=%s | framework=%s | inventory_mode=%s | inventory_profile=%s | inventory_flags=%s | inventory_caps=%s | items=%s'):format(
+        side, ver, state, fw, inv.mode, inv.profile, tostring(inv.flagCount), capSummary ~= '' and capSummary or 'none', items))
 end
 
 --- Wraps oxmysql **.await** calls with `pcall` and `cLog` on failure.
@@ -449,15 +477,26 @@ end
 ---@param tag string log tag (for example: `loadMeta:identifier`)
 ---@param fn fun(): any
 ---@return boolean ok
----@return any result on success; error payload otherwise
-function hf.mysqlAwait(tag, fn)
+---@return any resultOrError
+function hfe.mysqlAwait(tag, fn)
+    tag = tostring(tag or 'mysqlAwait')
+    if type(fn) ~= 'function' then
+        if type(cLog) == 'function' then
+            cLog(('[e_core][MySQL] %s: fn is not a function'):format(tag), 'error', 1)
+        end
+        return false, 'invalid_function'
+    end
     if rawget(_G, 'MySQL') == nil then
-        cLog(('[e_core][MySQL] %s: MySQL global is missing (non-server context?)'):format(tag), 'error', 1)
+        if type(cLog) == 'function' then
+            cLog(('[e_core][MySQL] %s: MySQL global is missing (non-server context?)'):format(tag), 'error', 1)
+        end
         return false, eCoreErr.mysql_missing
     end
     local ok, res = pcall(fn)
     if not ok then
-        cLog(('[e_core][MySQL] %s: %s'):format(tag, tostring(res)), 'error', 1)
+        if type(cLog) == 'function' then
+            cLog(('[e_core][MySQL] %s: %s'):format(tag, tostring(res)), 'error', 1)
+        end
         return false, res
     end
     return true, res
@@ -498,10 +537,11 @@ end
 --- QBCore / ESX live references); nil input returns a new unemployed-shaped table.
 --- @param job table|nil
 --- @return table
-function hf.normalizePlayerJobForEcore(job)
+function hfe.normalizePlayerJobForEcore(job)
     if type(job) ~= 'table' then
         return ecoreDefaultJobRow()
     end
+    -- Support both QB nested grade objects and ESX flat grade fields in-place.
     local gradeRaw = job.grade
     if type(gradeRaw) == 'table' then
         job.grade_name = gradeRaw.name
@@ -530,10 +570,11 @@ end
 --- Mutates `gang` in place when it is a table; nil returns a new neutral gang row.
 --- @param gang table|nil
 --- @return table
-function hf.normalizePlayerGangForEcore(gang)
+function hfe.normalizePlayerGangForEcore(gang)
     if type(gang) ~= 'table' then
         return ecoreDefaultGangRow()
     end
+    -- Same normalization policy as job to keep consumer access uniform.
     local gradeRaw = gang.grade
     if type(gradeRaw) == 'table' then
         gang.grade_name = gradeRaw.name
@@ -563,7 +604,7 @@ end
 --- (QB `charinfo` first, otherwise ESX-style fields / `variables` / `name`).
 --- @param playerData table
 --- @return nil
-function hf.applyEcorePlayerDisplayFields(playerData)
+function hfe.applyEcorePlayerDisplayFields(playerData)
     if type(playerData) ~= 'table' then
         return
     end

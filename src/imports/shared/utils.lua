@@ -1,8 +1,4 @@
 -- luacheck: push ignore 131
---function print_r(data)
---    print(json.encode(data, { indent = true }))
---end
-
 --- Recursively prints table/function values to console for debug sessions.
 --- @param t table|function|any Value to dump.
 --- @return nil
@@ -130,7 +126,6 @@ end
 --- @param level number|nil Log verbosity level.
 --- @return nil
 function cLog(k, v, level)
-    -- console log for debug
     if not Config.debugLevel or Config.debugLevel < 1 then
         return
     end
@@ -140,7 +135,6 @@ function cLog(k, v, level)
     end
 
     local vType = type(v)
-    --- Severity shortcut for one-line structured messages.
     local severityColor = {
         error = '^1',
         warning = '^3',

@@ -53,6 +53,8 @@ Az `exports.e_core:*` **vékony réteg** (`client/exports.lua`, `server/exports.
 | `not_enough_space` | ugyanaz | Slot / súly | `bridge/global/shared.lua` |
 | `invalid_item_data` | ugyanaz | Rossz `itemData` / swap sor vagy nem tábla `swappingItems`; **`removeItems`** listaelem nem tábla / üres név / nem pozitív **`amount`** (NaN elutasítva); **override** ox/qs/avp `removeItems` ugyanígy; **avp** `removeItem` / `addItem` rossz **`item`** / **`count`** | `bridge/global/shared.lua`; `bridge/esx/server.lua`, `bridge/qb/server.lua` (`removeItems`); `standalone/overrides/ox_inventory|qs_inventory|avp_grid_inventory/server.lua` |
 | `item_not_registered` | ugyanaz | Item név nincs a registry-ben | `bridge/global/shared.lua` |
+| `not_ready` | `'not_ready'` | ESX kliens `getRegisteredItems`: szerver callback nem adott nem üres katalógust | `bridge/esx/client.lua` |
+| `invalid_player` | `'invalid_player'` | QB `addMoney`: `GetPlayer` nil | `bridge/qb/server.lua` |
 | `inventory_full` | ugyanaz | QB addItem | `bridge/qb/server.lua` |
 | `no_items_to_remove` | ugyanaz | Üres lista / nincs mit | `bridge/qb/server.lua` |
 | `inventory_is_empty` | ugyanaz | QB | `bridge/qb/server.lua` |

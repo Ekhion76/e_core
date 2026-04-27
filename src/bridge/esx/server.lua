@@ -83,6 +83,11 @@ if ESX_CORE then
     --- @param account any
     --- @return any result
     function eCore:getAccounts(xPlayer, account)
+        -- `getAccounts` számvisszatéréses szerződés: hiányos xPlayer = „nincs ilyen számla” (0), nem runtime error a consumer felé.
+        if type(xPlayer) ~= 'table' or type(xPlayer.accounts) ~= 'table' then
+            return 0
+        end
+
         for i = 1, #(xPlayer.accounts) do
             if xPlayer.accounts[i].name == account then
                 return xPlayer.accounts[i].money
@@ -148,7 +153,7 @@ if ESX_CORE then
             return false, eCoreErr.unknown_error
         end
 
-        if not hf.isPopulatedTable(items) then
+        if not hf.hasEntries(items) then
             return false, eCoreErr.there_are_no_items_to_remove
         end
 
@@ -157,7 +162,7 @@ if ESX_CORE then
                 return false, eCoreErr.invalid_item_data
             end
 
-            if not hf.isPopulatedString(item.name) then
+            if not hf.hasContent(item.name) then
                 return false, eCoreErr.invalid_item_data
             end
 
@@ -186,7 +191,7 @@ if ESX_CORE then
     --- It returns the entire registered item list, unified and filtering out unnecessary information
     ---@return {name: string, label: string, isUnique: boolean, isWeapon: boolean, weight: number, image: string, ammoname: string}
     function eCore:getRegisteredItems()
-        if hf.isPopulatedTable(REGISTERED_ITEMS) then
+        if hf.hasEntries(REGISTERED_ITEMS) then
             return REGISTERED_ITEMS
         end
 

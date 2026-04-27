@@ -161,7 +161,7 @@ end
 -- eco_crafting/server/main.lua (részlet)
 if log then
     if Config.systemMode.labor then
-        log.putField(translate('labor'), hf.numberFormat(exports.e_core:getLabor(xPlayer.source)), true)
+        log.putField(translate('labor'), hf.formatNumber(exports.e_core:getLabor(xPlayer.source)), true)
     end
     -- ...
 end

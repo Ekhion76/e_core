@@ -1,5 +1,19 @@
 # SERVER SIDE EXPORTS
 
+## getCore() curated fields (e_core 0.1.3+)
+
+Same as on the client: `eCore.framework`, `eCore.config`, `eCore.i18n`, `eCore.util` are merged onto the object returned by `exports.e_core:getCore()`.
+
+Additionally, when `src/imports/server/discord_log.lua` is loaded by **e_core**, you can build webhooks via the thin wrapper:
+
+```lua
+local eCore = exports.e_core:getCore()
+local log = eCore.log and eCore.log.discord and eCore.log.discord.create('https://discord.com/api/webhooks/...', 'MyBot')
+if log then
+    log:content('Hello from server'):send()
+end
+```
+
 ## getLabor
 Returns the player's labor points.
 

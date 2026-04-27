@@ -137,6 +137,9 @@ end
 print(
     ('[^3e_core^7] Nem fut %s és %s sem az e_core indulásakor. Ellenőrizd az ensure sorrendet (core előbb).'):format(scan_esx, scan_qb)
 )
+-- Ugyanaz a szemantika, mint `enterIdle`-nál: a consumer `isReady` / `_ECORE_INIT_FAILED` guardok ne azt higgyék, „minden rendben, csak késik a core”.
+-- Korábban `_ECORE_INIT_FAILED` false maradt, így a hívók összekeverhették a „késő induló legacy core” és a „hibás ensure” esetét (lásd docs/BRIDGE_LAYER_QUALITY_REVIEW_HU.md).
+_G._ECORE_INIT_FAILED = true
 FRAMEWORK = nil
 eCore = {}
 Config = {}

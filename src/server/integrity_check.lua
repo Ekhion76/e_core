@@ -1,6 +1,7 @@
 --- Server-side integrity checklist (weight, registry, canCarry, optional add/remove) with client progress/NUI steps.
 --- Net scope: `e_core:integrityCheck:*` — keep separate from registry admin diagnostics exports (`server/diagnostics.lua`).
 local hf = hf
+local hfe = hfe
 
 local lastRun = {}
 local awaitingProgress = {}
@@ -149,7 +150,7 @@ end
 --- @return any result
 local function integrityAllowedIdentifiers(src)
     local list = Config.integrityCheck and Config.integrityCheck.allowedIdentifiers
-    if not hf.isPopulatedTable(list) then
+    if not hf.hasEntries(list) then
         return false
     end
     local ids = GetPlayerIdentifiers(src)
@@ -171,7 +172,7 @@ local function integrityPolicyAccess(src)
     --- Nyilvános kapcsoló: `Config.operator.admin.enabled` → `Config.web.enabled` (`libs/config_check.lua`).
     local w = type(Config) == 'table' and Config.web or {}
     if w.enabled == true then
-        return hf.webConsoleAccess(src)
+        return hfe.webConsoleAccess(src)
     end
 
     local ic = Config.integrityCheck or {}
@@ -180,7 +181,7 @@ local function integrityPolicyAccess(src)
     local idOk = integrityAllowedIdentifiers(src)
 
     if not aceOk and not idOk then
-        if acePerm == '' and not hf.isPopulatedTable(ic.allowedIdentifiers) then
+        if acePerm == '' and not hf.hasEntries(ic.allowedIdentifiers) then
             return false, eCoreErr.integrity_policy_misconfigured
         end
         return false, eCoreErr.integrity_policy_denied
@@ -927,7 +928,7 @@ RegisterNetEvent('e_core:integrityCheck:request', function(opts)
     if not ok then
         local wasInline = integrityOptsBySrc[src] and integrityOptsBySrc[src].inlineAdmin == true
         clearOpts()
-        if hf.isPopulatedString(err) then
+        if hf.hasContent(err) then
             TriggerClientEvent(
                 'e_core:integrityCheck:clientPrint',
                 src,

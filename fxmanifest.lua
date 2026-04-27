@@ -1,11 +1,11 @@
 fx_version 'cerulean'
 game 'gta5'
 description 'ECO CORE'
-version '0.1.2'
+version '0.1.4'
 
 shared_scripts {
     '@ox_lib/init.lua',
-    'src/imports/locale.lua',
+    'src/imports/shared/locale.lua',
 
     'src/bridge/esx/config_defaults.lua',
     'src/bridge/qb/config_defaults.lua',
@@ -15,18 +15,21 @@ shared_scripts {
     'src/standalone/config/levels.lua',
     'overrides/**/config.lua',
 
-    'src/imports/utils.lua',
+    'src/imports/shared/utils.lua',
     'src/libs/helper.lua',
     'src/libs/helper_ecore.lua',
     'src/libs/file_event_logger.lua',
     'src/libs/itemconvert_console_sink.lua',
     'src/libs/itemconvert_diag.lua',
+    'src/libs/itemconvert_pipeline.lua',
     'src/libs/GroupAccess.lua',
     'src/libs/errors.lua',
 
     'src/libs/meta.lua',
     'src/locales/*.lua',
-    'src/libs/config_check.lua'
+    'src/libs/config_check.lua',
+
+    'src/bridge/ecore_lifecycle.lua'
 }
 
 client_scripts {
@@ -78,9 +81,9 @@ server_scripts {
     'src/bridge/esx/events/server.lua',
     'src/bridge/qb/events/server.lua',
 
-    'src/bridge/main.lua',
+    'src/imports/server/discord_log.lua',
 
-    'src/imports/discordlog.lua',
+    'src/bridge/main.lua',
 
     'src/bridge/global/callbacks/server.lua',
 
@@ -105,7 +108,13 @@ server_scripts {
 ui_page 'src/web/dist/index.html'
 
 files {
-    'src/imports/core.lua',
+    'src/imports/shared/core.lua',
+    'src/imports/shared/full_import.lua',
+    'src/imports/shared/locale.lua',
+    'src/imports/shared/utils.lua',
+    'src/imports/shared/helper_base.lua',
+    'src/imports/client/hud_drag.lua',
+    'src/imports/server/discord_log.lua',
     'src/web/dist/**'
 }
 

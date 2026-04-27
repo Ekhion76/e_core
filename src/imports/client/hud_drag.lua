@@ -1,9 +1,5 @@
--- luacheck: push ignore 131
-FRAMEWORK = exports.e_core:getFrameWork()
-eCore = exports.e_core:getCore()
-eCoreConfig = exports.e_core:getConfig()
--- luacheck: pop
-
+--- Optional client import for draggable HUD preview sync.
+--- Needed only for HUD edit/drag flows (`e_core:hud:clientPreview` -> `ECORE_HUD_SYNC`).
 RegisteredElements = RegisteredElements or {}
 
 AddEventHandler('e_core:hud:clientPreview', function(id, pos)

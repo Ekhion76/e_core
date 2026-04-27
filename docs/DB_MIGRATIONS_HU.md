@@ -38,7 +38,7 @@ A cél séma verzió (kód): globális **`ECORE_DB_SCHEMA_TARGET`** a `server/db
 
 ## MySQL hívások (3E)
 
-- Közös segéd: **`hf.mysqlAwait(tag, fn)`** (`libs/helper_ecore.lua`) – `fn` belül csak **oxmysql `.await`** hívások; hiba → `cLog` + `false` visszatérés (nem dob mindenhol).
+- Közös segéd: **`hfe.mysqlAwait(tag, fn)`** (`libs/helper_ecore.lua`) – `fn` belül csak **oxmysql `.await`** hívások; hiba → `cLog` + `false` visszatérés (nem dob mindenhol).
 - `server/db.lua`: `saveMeta` / `saveAllMeta` / `loadMeta` erre épül; régi callback-alapú `scalar` / `update` helyett **await**.
 
 ## Kapcsolódó

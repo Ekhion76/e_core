@@ -56,7 +56,7 @@ function setLabor(playerId, amount)
         return false, eCoreErr.not_valid_amount
     end
 
-    row.labor.val = hf.rangeLimit(amount, Config.laborLimit)
+    row.labor.val = hf.clamp(amount, Config.laborLimit)
     row.labor.time = os.time()
     if type(invalidateLaborQuoteCache) == 'function' then
         invalidateLaborQuoteCache(playerId)
@@ -89,7 +89,7 @@ function removeLabor(playerId, amount)
         return false, eCoreErr.not_enough_labor
     end
 
-    row.labor.val = hf.rangeLimit(row.labor.val - amount, Config.laborLimit)
+    row.labor.val = hf.clamp(row.labor.val - amount, Config.laborLimit)
     row.labor.time = os.time()
     if type(invalidateLaborQuoteCache) == 'function' then
         invalidateLaborQuoteCache(playerId)
@@ -122,7 +122,7 @@ function addLabor(playerId, amount)
         return false, eCoreErr.has_already_reached_the_limit
     end
 
-    row.labor.val = hf.rangeLimit(row.labor.val + amount, Config.laborLimit)
+    row.labor.val = hf.clamp(row.labor.val + amount, Config.laborLimit)
     row.labor.time = os.time()
     if type(invalidateLaborQuoteCache) == 'function' then
         invalidateLaborQuoteCache(playerId)
@@ -170,7 +170,7 @@ local function laborIncreaseApplyChunks(ids, timeStamp, fromIdx, chunkSize, onDo
         if meta and meta.labor then
             meta.labor.time = timeStamp
             if meta.labor.val < limit then
-                meta.labor.val = hf.rangeLimit(meta.labor.val + step, limit)
+                meta.labor.val = hf.clamp(meta.labor.val + step, limit)
                 if type(invalidateLaborQuoteCache) == 'function' then
                     invalidateLaborQuoteCache(playerId)
                 end
@@ -260,7 +260,7 @@ function addOfflineLabor(playerId)
     local offlineLabor = laborIncreaseOffline * multiplier
 
     row.labor.time = timeStamp
-    row.labor.val = hf.rangeLimit(row.labor.val + offlineLabor, Config.laborLimit)
+    row.labor.val = hf.clamp(row.labor.val + offlineLabor, Config.laborLimit)
     if type(invalidateLaborQuoteCache) == 'function' then
         invalidateLaborQuoteCache(playerId)
     end

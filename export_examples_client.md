@@ -1,5 +1,25 @@
 # CLIENT SIDE exports.e_core
 
+## getCore() curated fields (e_core 0.1.3+)
+
+After `exports.e_core:getCore()`, the same `eCore` table includes merged **non-bridge** helpers (in addition to `eCore:*` bridge methods):
+
+| Field | Notes |
+|--------|--------|
+| `eCore.framework` | Same value as `exports.e_core:getFrameWork()` (`'esx'`, `'qb'`, or `nil`). |
+| `eCore.config` | Reference to the live `Config` table (same as `getConfig()`). |
+| `eCore.i18n.translate` / `translateU` | Locale helpers (`src/imports/shared/locale.lua`). |
+| `eCore.util.cLog`, `print_r`, `createBlip`, `animDictLoader`, `modelLoader`, `fxLoader` | Shared utils (`src/imports/shared/utils.lua`). |
+
+`eCore.log.discord` exists **only on server** when the Discord module is loaded. See `docs/EXTENSION_CONTRACT_HU.md` and `docs/PUBLIC_API_HU.md` §1.
+
+```lua
+local eCore = exports.e_core:getCore()
+if eCore.util and eCore.util.cLog then
+    eCore.util.cLog('my_resource', 'hello', 2)
+end
+```
+
 ## getMeta
 Returns the player's entire meta database, or one category by key.
 
@@ -88,7 +108,12 @@ end
 Register one HUD element to the e_core edit proxy and keep a central Svelte 5 rune-state in sync.
 
 ```lua
--- consumer client bootstrap
+-- consumer client bootstrap (manifest)
+-- shared_scripts {
+--   '@e_core/src/imports/shared/core.lua',
+--   '@e_core/src/imports/client/hud_drag.lua' -- optional, only for HUD edit preview sync
+-- }
+
 local RegisteredElements = RegisteredElements or {}
 
 local ok, posOrReason = exports.e_core:registerHudElement('e_petrol_station:price_panel', {
@@ -132,12 +157,14 @@ window.addEventListener('message', (event) => {
 
 ## Helper functions (hf)
 
-There is **no** `exports.e_core:getHelper()` export. Use `getCore()` and read `.helper` (same table as `eCore.helper` inside e_core; built from `libs/helper.lua` + `libs/helper_ecore.lua`).
+Use the dedicated base helper export (`getHelperBase`) instead of relying on `getCore()` composition.
 
-**@return**: table – helper methods on the core object
+**@return**: table – helper methods from `libs/helper.lua`
 
 ```lua
-local eCore = exports.e_core:getCore()
-local hf = eCore.helper
--- e.g. hf.trim(s), hf.isPopulatedTable(t)
+-- manifest include (optional helper import)
+-- shared_script '@e_core/src/imports/shared/helper_base.lua'
+
+-- after import:
+local value = hf.trim('  hello  ')
 ```

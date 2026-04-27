@@ -25,6 +25,15 @@ Fő reason code-ok
 Integritás report
   A `checkIntegrity` futás elején bekerül egy `ItemConvert diagnostics` blokk:
   összegzés (code darabszámok) + napi logfájl név.
+
+Pipeline centralizáció (src-first)
+  - Központi item konverzió: `src/libs/itemconvert_pipeline.lua`
+  - API: `hf.convertItemsWithProfile(items, profileName, options?)`
+  - Profilok: `default`, `esx`, `qb`, `ox`, `qs`, `avp`
+  - Thin override szerződés: override oldalon csak adatforrás + profile hívás marad
+    (`getRegisteredItems`), a loop/pcall/diag/normalize a pipeline része.
+  - Kötelező normalizálás: `hfe.normalizeRegisteredItemDef(name, row, { source = ... })`
+  - Guard: ha custom `convertItems` marad override-ban, startup warning (`cLog`).
 ================================================================================
 e_core – AI és támogatás referencia (magyar)
 ================================================================================
@@ -71,13 +80,19 @@ Kapcsolódó fájlok a repóban
   (forgalom, kanonikus költség, „miért teljes tömb”, eco_crafting / eco_fishing
   minták). Az **AI_SUPPORT_REFERENCE** szekció **1.4** alatt tömör összefoglaló
   + erre a fájlra mutató hivatkozás; részletes narratíva a munkafájlban marad.
-- src/imports/locale.lua               – translate / translateU (shared)
-- src/imports/utils.lua                – print_r, blip, loader, cLog (shared;
+- src/imports/shared/locale.lua        – translate / translateU (shared)
+- src/imports/shared/utils.lua         – print_r, blip, loader, cLog (shared;
                                      severity mód: error / warning / info / debug)
-- src/imports/discordlog.lua           – createDiscordLog (server; webhook builder +
-                                     Discord limit, opts, callback)
-- src/imports/core.lua                 – consumer belépési minta (files; más
-  resource-ból @e_core/… include)
+- src/imports/server/discord_log.lua   – createDiscordLog (server; webhook builder +
+                                     Discord limit, opts, callback; canonical consumer import)
+- src/imports/shared/core.lua          – consumer minimál bootstrap (`eCore` +
+  merge-elt `eCore.framework` / `config` / `i18n` / `util`; opcionális legacy
+  globál alias `FRAMEWORK` / `eCoreConfig`)
+- src/imports/shared/helper_base.lua   – opcionális consumer helper import (`hf`)
+- src/imports/client/hud_drag.lua      – opcionális HUD drag preview proxy import
+  (`e_core:hud:clientPreview` -> `ECORE_HUD_SYNC`)
+- Legacy alias útvonalak kivezetve; canonical import útvonalak:
+  `src/imports/shared/*`, `src/imports/client/*`, `src/imports/server/*`.
 - src/libs/helper.lua                  – hf általános része (consumer util)
 - src/libs/helper_ecore.lua            – ugyanarra a hf-re: e_core item/normalize,
                                      registry várakozás, mysqlAwait, indulási log,
@@ -172,7 +187,7 @@ Logika (rövid)
     exports("getFrameWork", function() return FRAMEWORK end)
 
 Consumer
-  src/imports/core.lua: FRAMEWORK = exports.e_core:getFrameWork()
+  src/imports/shared/core.lua: FRAMEWORK = exports.e_core:getFrameWork()
   (Az e_core resource-nak a consumer előtt kell elindulnia; lásd README ensure
   sorrend.)
 
@@ -249,8 +264,10 @@ Szerep röviden
     → ExecuteCommand("cancelprog")
     isLoggedIn → ESX.PlayerLoaded
     getInventory(playerData) → playerData.inventory
-    getRegisteredItems() → REGISTERED_ITEMS ha van, különben convertItems(
-      ESX.GetPlayerData().inventory)
+    getRegisteredItems() → REGISTERED_ITEMS ha van; különben szerver
+      `e_core:getRegisteredItems` ox_lib callback (`bridge/global/callbacks/
+      server.lua`); ha üres/timeout: false + eCoreErr.not_ready (nem inventory
+      convertItems)
     getPlayer(newJob) → convertPlayer(ESX.GetPlayerData(), …)
     getAccounts, canInteract, jármű: setFuelLevel (LegacyFuel komment), vehicleKeys
     (komment), setVehicleProperties, setVehiclePropertiesFromNetId (hurok +
@@ -297,10 +314,10 @@ Fontos megjegyzések (hibakeresés / portolás)
   Az ESX build (legacy vs. új notify/TextUI/Progressbar) eltérhet – ha üres
   vagy hibás UI, ellenőrizd az es_extended verziót és az ESX hívásokat ezekben
   a függvényekben.
-  Kliens getRegisteredItems alapértelmezésben játékos inventoryból dolgozik;
-  szerveren ESX.Items – ox_inventory vagy override esetén a globális
-  REGISTERED_ITEMS és a standalone override réteg a mérvadó (lásd server
-  loop; súly/slot közös logika: „Global bridge” szekció).
+  ESX kliens getRegisteredItems: szerver katalógus callback + not_ready; szerveren
+  ESX.Items – ox_inventory vagy override esetén a globális REGISTERED_ITEMS és a
+  standalone override réteg a mérvadó (lásd server loop; súly/slot közös logika:
+  „Global bridge” szekció).
   A jármű / kulcs / üzemanyag részek részben kikommentelt példák; éles
   integrációhoz override kellhet.
 
@@ -551,9 +568,9 @@ Betöltési sorrend (fxmanifest)
 main.lua – indulás és REGISTERED_ITEMS
   `ClientMetaStore` (`src/client/client_meta_store.lua`) – kliens meta cache + sync rev; **`eCoreNui`** (`src/client/ecore_nui.lua`) – NUI shell `isReady()` / `markShellReady()`.
   CORE_READY és REGISTERED_ITEMS kezdetben nil; egy CreateThread meghívja
-  `hf.awaitItemRegistryReady('CLIENT REGISTERED_ITEMS')` – ugyanaz a timeout /
+  `hfe.awaitItemRegistryReady('CLIENT REGISTERED_ITEMS')` – ugyanaz a timeout /
   poll ConVar logika, mint a szerveren (`e_core:items_ready_*`), majd
-  `hf.logEcoreStartupSummary('client')`. A `CORE_READY` értékét a helper állítja
+  `hfe.logEcoreStartupSummary('client')`. A `CORE_READY` értékét a helper állítja
   (true siker, false timeout); töltés alatt `eCore:isReady()` lehet nil.
 
 main.lua – meta / labor segédfüggvények (globálisok, exportnak)
@@ -776,26 +793,30 @@ Cél
 
 Mérvadó forrásfájlok (fxmanifest.lua)
   shared_scripts (részleges sorrend):
-    src/imports/locale.lua          – közvetlenül az ox_lib után; Config még
+    src/imports/shared/locale.lua   – közvetlenül az ox_lib után; Config még
                                   nincs minden override-mal felülírva, de a
                                   locale kulcs (Config.locale) a bridge config
                                   után áll; a tényleges szótár: src/locales/*.lua
-    src/imports/utils.lua           – standalone config + overrides config után,
+    src/imports/shared/utils.lua    – standalone config + overrides config után,
                                   **közvetlenül a src/libs/helper.lua előtt**
                                   (a `hf` tábla a helper.lua + helper_ecore.lua
                                   után teljes más fájloknak).
   server_scripts:
-    src/imports/discordlog.lua      – a **src/bridge/main.lua után** töltődik, hogy
-                                  eCore.helper (hf) már létezzen a modul
-                                  betöltésekor.
+    src/imports/server/discord_log.lua
+                                  – kanonikus implementáció; e_core saját
+                                  server_scripts listában töltődik.
   files:
-    src/imports/core.lua            – nem fut automatikusan az e_core-ban; más
+    src/imports/server/discord_log.lua
+                                  – consumer oldali canonical include útvonal
+                                  (server-only wrapper import).
+  files:
+    src/imports/shared/core.lua     – nem fut automatikusan az e_core-ban; más
                                   resource `shared_scripts` / `client_scripts` /
                                   `server_scripts` sorában include-olható.
 
 ---
 
-src/imports/locale.lua (shared)
+src/imports/shared/locale.lua (shared)
   Szerep
     Egységes **fordítás** a `locales` táblán (betöltés: `src/locales/*.lua`) és
     `Config.locale` alapján.
@@ -816,7 +837,7 @@ src/imports/locale.lua (shared)
 
 ---
 
-src/imports/utils.lua (shared)
+src/imports/shared/utils.lua (shared)
   Szerep
     Debug és kliens-oldali **kényelmi** segédek (blip, model/anim/ptfx load,
     feltételes console log).
@@ -851,16 +872,16 @@ src/imports/utils.lua (shared)
 
 ---
 
-src/imports/discordlog.lua (server)
+src/imports/server/discord_log.lua (server)
   Szerep
     **Discord webhook** üzenet-építő: több embed, mezők, `PerformHttpRequest`
     POST JSON-nel. **Consumer** resource-ok a manifestben include-olhatják
-    (pl. `@e_core/src/imports/discordlog.lua` **server_scripts**-ben, az **e_core**
+    (pl. `@e_core/src/imports/server/discord_log.lua` **server_scripts**-ben, az **e_core**
     utáni ensure mellett). Belső e_core hívó a repóban opcionális; főleg külső
     eco szerverlog / admin értesítés.
   Függőség
-    `local hf = eCore.helper` – trim; az e_core manifestben a fájl a
-    **src/bridge/main.lua** után van, így `eCore` / `hf` a chunk betöltésekor érvényes.
+    A modul a base helpert egyszer inicializálja:
+    `local hf = hf or exports.e_core:getHelperBase()`.
 
   Név: createDiscordLog(webhook, botName?, opts?)
     Oldal: server
@@ -931,7 +952,7 @@ src/imports/discordlog.lua (server)
       callback; **send** callback `ok == false`.
 
     Forrás
-      src/imports/discordlog.lua
+      src/imports/server/discord_log.lua
 
 ---
 
@@ -970,22 +991,45 @@ imports – consumer / eco resource ötletek (következő lépések, nem kötele
 
 ---
 
-src/imports/core.lua (files – consumer include)
+src/imports/shared/core.lua (files – consumer include)
   Szerep
-    **Minimális belépés** más resource-ból: globális `FRAMEWORK`, `eCore`,
-    `eCoreConfig` az exports.e_core három hívásával.
-  Tartalom (3 sor)
-    `FRAMEWORK = exports.e_core:getFrameWork()`
+    **Minimális belépés** más resource-ból: egy `getCore()` hívás; a kurált
+    mezők (`framework`, `config`, `i18n`, `util`, szerveren opcionálisan
+    `log.discord`) az e_core indulásakor merge-elve vannak az `eCore` táblára
+    (`ecore_lifecycle.lua` + `bridge/main.lua`).
+  Tartalom (ajánlott)
     `eCore = exports.e_core:getCore()`
-    `eCoreConfig = exports.e_core:getConfig()`
+    Legacy alias (fokozatos migráció): `FRAMEWORK = eCore.framework`,
+    `eCoreConfig = eCore.config` – új kódban használd közvetlenül az
+    `eCore.*` mezőket.
+  Egy soros import
+    `shared_script '@e_core/src/imports/shared/full_import.lua'` – betölti a
+    `core.lua` + `locale.lua` + `utils.lua` sorrendet a **`e_core`** resource
+    nevével (`LoadResourceFile('e_core', …)`).
   Oldal
     shared / client / server: attól függ, melyik manifest listába include-olod
-    a fájlt (tipikusan `shared_script '@e_core/src/imports/core.lua'`).
+    a fájlt (tipikusan `shared_script '@e_core/src/imports/shared/core.lua'`).
   Megjegyzés
     **Ensure sorrend:** az `e_core` resource-nak el kell indulnia és exportot
     kell szolgálnia, mielőtt a consumer chunk lefut (lásd README ensure).
     Modern stílusban gyakran `local eCore = exports.e_core:getCore()` lokális,
     nem globális (lásd modernizációs terv).
+  Dev
+    `setr e_core_dev "true"` mellett opcionális `exports.e_core:getInternal()` –
+    csak debug; részlet: `docs/EXTENSION_CONTRACT_HU.md`.
+
+src/imports/shared/helper_base.lua (files – opcionális consumer include)
+  Szerep
+    Base helper bootstrap: `hf = exports.e_core:getHelperBase()`.
+  Mikor használd
+    Ha a consumer script ténylegesen használ `hf.*` utility hívásokat.
+
+src/imports/client/hud_drag.lua (files – opcionális consumer include)
+  Szerep
+    HUD preview proxy: `e_core:hud:clientPreview` esemény továbbítása
+    `ECORE_HUD_SYNC` NUI üzenetté a `RegisteredElements[id]` guarddal.
+  Mikor használd
+    Csak drag/edit módos HUD-ot használó consumer resource esetén.
 
 Összefüggés más részekkel
   `translate` / `translateU` – eco resource-ok ugyanazzal a mintával használhatják
@@ -1008,7 +1052,7 @@ Cél
   a gyakorlatban (`PlayerMetaStore.get(playerId)`).
 
 Mérvadó forrásfájlok (fxmanifest.lua, shared_scripts sorrend)
-  src/imports/utils.lua után:
+  src/imports/shared/utils.lua után:
     src/libs/helper.lua       – globális `hf = { … }` + általános metódusok
     src/libs/helper_ecore.lua – ugyanarra a `hf`-re: e_core-specifikus metódusok
     src/libs/meta.lua         – globális `getLevel`, `getDiscounts`, stb.
@@ -1255,7 +1299,7 @@ Mérvadó forrásfájlok (fxmanifest.lua → server_scripts sorrend, releváns r
 src/server/main.lua
   Globálisok
     `PlayerMetaStore` – külön fájlban inicializálva (`player_meta_store.lua`); a meta sorokat a `meta.lua` / `db.lua` / `labor.lua` API-n keresztül éri el.
-    `CORE_READY`, `REGISTERED_ITEMS` – induláskor nil; egy szál `hf.awaitItemRegistryReady`
+    `CORE_READY`, `REGISTERED_ITEMS` – induláskor nil; egy szál `hfe.awaitItemRegistryReady`
     tölti a táblát `eCore:getRegisteredItems()` hívásokkal. Siker: `CORE_READY = true`.
     Timeout: `CORE_READY = false`, részletes `cLog` (nem végtelen ciklus).
   ConVarok (ugyanaz a kliensen)
@@ -1267,8 +1311,8 @@ src/server/main.lua
   Kockázat (csökkentve)
     Üres registry esetén korábban végtelen várakozás; most timeout + napló.
   Indulási összegzés (egy sor)
-    A registry szál végén: `hf.logEcoreStartupSummary('server')` – konzolra: verzió
-    (`fxmanifest` `version`), `FRAMEWORK`, aktív inventory címke (`hf.inventoryIntegrationLabel`),
+    A registry szál végén: `hfe.logEcoreStartupSummary('server')` – konzolra: verzió
+    (`fxmanifest` `version`), `FRAMEWORK`, inventory descriptor (`mode/profile/capabilities`),
     `items=ready|timeout|pending`. Kliens: `src/client/main.lua` ugyanígy `'client'`.
 
 ---
@@ -1541,9 +1585,9 @@ getConfig()
   Visszaad: Config tábla (standalone/config + override configok összeolvadása).
 
 Megjegyzés (helper)
-  Nincs `exports.e_core:getHelper()` export. A **`hf`** tábla (`src/libs/helper.lua`
-  + `src/libs/helper_ecore.lua`) `exports.e_core:getCore().helper` alatt (ugyanaz,
-  mint `eCore.helper` a resourceon belül); részletek: szekció **1.2**,
+  Nincs `exports.e_core:getHelper()` export. A base helper elérése:
+  `exports.e_core:getHelperBase()` (vagy consumer include:
+  `@e_core/src/imports/shared/helper_base.lua`), részletek: szekció **1.2**,
   `src/bridge/main.lua`.
 
 --- Client (src/client/exports.lua) ---

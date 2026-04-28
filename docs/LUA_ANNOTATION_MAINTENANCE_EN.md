@@ -39,8 +39,8 @@ When touching annotations for a big change, prefer checking these areas first â€
 
 ### A â€” Public contract
 
-- `src/server/exports.lua`
-- `src/client/exports.lua`
+- `src/runtime/exports/server.lua`
+- `src/runtime/exports/client.lua`
 - `src/bridge/main.lua`
 - `src/imports/server/discord_log.lua`
 - `src/imports/shared/utils.lua`
@@ -51,18 +51,18 @@ When touching annotations for a big change, prefer checking these areas first â€
 - `src/bridge/global/server.lua`
 - `src/bridge/esx/server.lua`
 - `src/bridge/qb/server.lua`
-- `src/server/meta.lua`
-- `src/server/labor.lua`
-- `src/server/db.lua`
-- `src/server/professions.lua`
+- `src/runtime/meta/server.lua`
+- `src/runtime/labor/server.lua`
+- `src/runtime/db/server.lua`
+- `src/runtime/professions/server.lua`
 
 ### C â€” Overrides + NUI / admin bridges
 
 - `overrides/**/*.lua`
-- `src/client/nui_admin_bridge.lua`
-- `src/client/nui_diagnostics_bridge.lua`
-- `src/server/nui_admin_bridge.lua`
-- `src/server/nui_diagnostics_bridge.lua`
+- `src/runtime/admin/client_nui_bridge.lua`
+- `src/runtime/diagnostics/client_nui_bridge.lua`
+- `src/runtime/admin/server_nui_bridge.lua`
+- `src/runtime/diagnostics/server_nui_bridge.lua`
 
 ---
 

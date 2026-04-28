@@ -16,11 +16,11 @@
 
 - **`src/bridge/`** – ESX / QB / global adapters; framework selection via config (see **Bridge** below).
 - **`overrides/`** – per-stack customisation (inventory, notify, progressbar, …): keep local changes here across upgrades, not by forking `src/`.
-- **`src/standalone/config/`** – global settings and level profiles.
+- **`src/config/`** – global settings and level profiles (`main.lua`, `levels.lua`).
 - **Other resources:** typically bootstrap via `exports['e_core']:getCore()` and documented exports; optional `full_import` (see **Loading and memory**).
 - **Proficiency + labor + learned recipes** and **meta** storage; **oxmysql** schema migrations.
 - **Central HUD positioning:** consumers can register HUD elements; e_core moves and persists positions (`registerHudElement` and related API).
-- **Whitelist / blacklist AccessGate** by job / gang and grade ([src/libs/GroupAccess.lua](src/libs/GroupAccess.lua)).
+- **Whitelist / blacklist AccessGate** by job / gang and grade ([src/libs/group_access.lua](src/libs/group_access.lua)).
 - **Errors:** structured `eCoreErr`, file-backed event logging ([docs/ECORE_ERR_HIBA_NYOMON_HU.md](docs/ECORE_ERR_HIBA_NYOMON_HU.md)).
 - **i18n:** locale files + `translate` / `translateU` on the public `eCore` facade.
 - **Client–server:** **ox_lib** callback patterns; NUI / UX: modal, notification, progress, form; grid snapping, presets, export/import.
@@ -46,7 +46,7 @@
 The **`src/bridge/`** layer establishes shared state and adapters: which legacy core is active (`FRAMEWORK`, `ESX_CORE` / `QB_CORE`), where **`Config`** lives, and how ESX/QB **shared**, **client/server**, and **events** modules wire up.
 
 - **`framework_config.lua`** + **`framework_resource_registry.lua`:** startup mode. ConVars: **`setr e_core:framework "auto"`** | **`"esx"`** | **`"qb"`**; optional **`e_core:framework_resource`** for a custom legacy core resource name (only when not `auto`). If both cores run with `auto`, e_core enters a **controlled IDLE** state (`_ECORE_INIT_FAILED`) without calling `error()` on the whole server—consumers should wait on `exports.e_core:isReady()` / readiness signals.
-- **`overrides/**/(shared|client|server).lua`** loads **after** bridge modules but **before** core `src/client/*` / `src/server/*` runtime in [`fxmanifest.lua`](fxmanifest.lua), so stack-specific code can extend or override behaviour without copying `src/bridge/` into your fork.
+- **`overrides/**/(shared|client|server).lua`** loads **after** bridge modules but **before** core `src/runtime/**` modules in [`fxmanifest.lua`](fxmanifest.lua), so stack-specific code can extend or override behaviour without copying `src/bridge/` into your fork.
 
 **Consumer entrypoint:** [`src/bridge/main.lua`](src/bridge/main.lua) registers QB/ESX net events, assembles the **`eCore`** facade (`eCoreLifecycle_buildPublicAPI`: e.g. `framework`, `config`, `i18n`, `util`; on server optionally `log.discord`), and exports **`getCore()`**, **`getFrameWork()`**, **`getHelperBase()`**, **`getHelperEcore()`**, among others.
 
@@ -56,7 +56,7 @@ The **`src/bridge/`** layer establishes shared state and adapters: which legacy 
 flowchart LR
   subgraph shared [SharedScripts]
     FW[framework_config]
-    CFG[standalone config and overrides config]
+    CFG[src/config and overrides config]
     LIBS[libs errors meta helpers]
     LIFE[ecore_lifecycle]
   end
@@ -104,7 +104,7 @@ ensure eco_crafting
 
 **IMPORTANT:** keep customisations in **`overrides/`** so updates do not overwrite your work. Override bridge behaviour **only** there (per-stack `shared.lua` / `client.lua` / `server.lua` + `config.lua`).
 
-**Config:** global – `src/standalone/config/`; stack/inventory – `overrides/<stack>/config.lua` (e.g. `overrides/ox_inventory/config.lua`).
+**Config:** global – `src/config/`; stack/inventory – `overrides/<stack>/config.lua` (e.g. `overrides/ox_inventory/config.lua`).
 
 Stock ESX/QB or **ox_inventory** often needs no extra edits; other inventories: pick the right override tier in [docs/SUPPORTED_STACK_MATRIX_HU.md](docs/SUPPORTED_STACK_MATRIX_HU.md).
 
@@ -122,7 +122,7 @@ e_core/
     libs/                 # shared Lua: helpers, errors, GroupAccess, meta, logging, itemconvert, …
     imports/              # other resources: @e_core/... includes + LoadResourceFile targets
     locales/              # translations
-    standalone/config/    # global config + levels
+    config/               # global config + levels (main.lua, levels.lua)
     web/                    # Svelte + TS NUI sources (npm run build → dist)
     web/dist/               # build output (ui_page points here)
   overrides/              # per-stack Lua + config (inventory, notify, …)

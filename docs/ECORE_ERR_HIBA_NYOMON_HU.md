@@ -36,8 +36,8 @@ Ezt a sorrendet végigfuttatva a legtöbb „véletlen” hiba kiszűrhető **fu
 | 3 | **Kész állapot** | `exports.e_core:isReady()` – item registry (0.1.7+: mindig **boolean**, `true` csak ha kész); meta/labor előtt is érdemes. |
 | 4 | **Oldal** | Client export vs server export – pl. `setMeta` **csak szerveren** van. |
 | 5 | **Játékos** | Van-e `source` / betöltött meta (`e_core:playerLoaded` után)? `not_found_metadata` gyakran „még nincs sor” vagy rossz `playerId`. |
-| 6 | **Config** | `standalone/config/main.lua` – `systemMode`, `labor`, `abilityLimit`, `metaFields`. |
-| 7 | **Override ág** | Melyik inventory fut (`standalone/overrides/...`) – más bridge, más hibakód-minta. |
+| 6 | **Config** | `src/config/main.lua` – `systemMode`, `labor`, `abilityLimit`, `metaFields`. |
+| 7 | **Override ág** | Melyik inventory fut (`overrides/...`) – más bridge, más hibakód-minta. |
 | 8 | **Repro** | Pontos export + argumentumok + `reason` string másolása → táblázat §3 alapján forrás. |
 
 ---
@@ -51,19 +51,19 @@ Az `exports.e_core:*` **vékony réteg** (`client/exports.lua`, `server/exports.
 | `ok` | `'ok'` | Többes item eltávolítás siker vége (QB / override) | `bridge/qb/server.lua`, override `removeItems` |
 | `too_heavy` | ugyanaz | Csere / súly szabály | `bridge/global/shared.lua` (`canSwapItems` / `canCarryItem`); **avp** szerver override: stack csak boolean → „nem fér” ág |
 | `not_enough_space` | ugyanaz | Slot / súly | `bridge/global/shared.lua` |
-| `invalid_item_data` | ugyanaz | Rossz `itemData` / swap sor vagy nem tábla `swappingItems`; **`removeItems`** listaelem nem tábla / üres név / nem pozitív **`amount`** (NaN elutasítva); **override** ox/qs/avp `removeItems` ugyanígy; **avp** `removeItem` / `addItem` rossz **`item`** / **`count`** | `bridge/global/shared.lua`; `bridge/esx/server.lua`, `bridge/qb/server.lua` (`removeItems`); `standalone/overrides/ox_inventory|qs_inventory|avp_grid_inventory/server.lua` |
+| `invalid_item_data` | ugyanaz | Rossz `itemData` / swap sor vagy nem tábla `swappingItems`; **`removeItems`** listaelem nem tábla / üres név / nem pozitív **`amount`** (NaN elutasítva); **override** ox/qs/avp `removeItems` ugyanígy; **avp** `removeItem` / `addItem` rossz **`item`** / **`count`** | `bridge/global/shared.lua`; `bridge/esx/server.lua`, `bridge/qb/server.lua` (`removeItems`); `overrides/ox_inventory|qs_inventory|avp_grid_inventory/server.lua` |
 | `item_not_registered` | ugyanaz | Item név nincs a registry-ben | `bridge/global/shared.lua` |
 | `not_ready` | `'not_ready'` | ESX kliens `getRegisteredItems`: szerver callback nem adott nem üres katalógust | `bridge/esx/client.lua` |
-| `invalid_player` | `'invalid_player'` | ESX / QB: offline játékos (`addMoney`, `removeMoney`, `addItem`, `removeItem`, `removeItems`); **ox / qs / avp** szerver override: érvénytelen forrás | `bridge/esx/server.lua`, `bridge/qb/server.lua`; `standalone/overrides/ox_inventory|qs_inventory|avp_grid_inventory/server.lua` |
+| `invalid_player` | `'invalid_player'` | ESX / QB: offline játékos (`addMoney`, `removeMoney`, `addItem`, `removeItem`, `removeItems`); **ox / qs / avp** szerver override: érvénytelen forrás | `bridge/esx/server.lua`, `bridge/qb/server.lua`; `overrides/ox_inventory|qs_inventory|avp_grid_inventory/server.lua` |
 | `inventory_full` | ugyanaz | QB addItem | `bridge/qb/server.lua` |
 | `no_items_to_remove` | ugyanaz | Üres lista / nincs mit | `bridge/qb/server.lua` |
 | `inventory_is_empty` | ugyanaz | QB | `bridge/qb/server.lua` |
 | `not_enough_items` | ugyanaz | QB kevesebb mennyiség | `bridge/qb/server.lua` |
 | `there_are_no_items_to_remove` | **`'there are no items to remove'`** (szóköz!) | ESX / ox / qs / avp üres remove | `bridge/esx/server.lua`, override `server.lua` |
 | `invalid_item_name` | ugyanaz | Globális `hasItem`: `itemName` nem string | `bridge/global/shared.lua` |
-| `inventory_export_exception` | ugyanaz | ESX `removeItems` `pcall` körül `removeInventoryItem` kivétel; ox/qs/avp override: inventory export `pcall` hiba | `bridge/esx/server.lua`; `standalone/overrides/ox_inventory|qs_inventory|avp_grid_inventory/server.lua` |
-| `inventory_operation_failed` | ugyanaz | ox / qs override: `RemoveItem` sikeres `pcall` mellett falsy válasz | `standalone/overrides/ox_inventory|qs_inventory/server.lua` |
-| `unknown_error` | ugyanaz | Fallback; **override** `asEcoreInventoryReason` nem `eCoreErr` string; avp egyedi üzenet; `createVehicle` egyéb ág; stb. | `standalone/overrides/...`; `bridge/global/server.lua` |
+| `inventory_export_exception` | ugyanaz | ESX `removeItems` `pcall` körül `removeInventoryItem` kivétel; ox/qs/avp override: inventory export `pcall` hiba | `bridge/esx/server.lua`; `overrides/ox_inventory|qs_inventory|avp_grid_inventory/server.lua` |
+| `inventory_operation_failed` | ugyanaz | ox / qs override: `RemoveItem` sikeres `pcall` mellett falsy válasz | `overrides/ox_inventory|qs_inventory/server.lua` |
+| `unknown_error` | ugyanaz | Fallback; **override** `asEcoreInventoryReason` nem `eCoreErr` string; avp egyedi üzenet; `createVehicle` egyéb ág; stb. | `overrides/...`; `bridge/global/server.lua` |
 | `vehicle_no_plate_data` | hosszú angol szöveg | Jármű létrehozás, rendszám adat | `bridge/global/server.lua` (`createVehicle`) |
 | `invalid_vehicle_entity` | ugyanaz | ESX / QB kliens: `setFuelLevel` / `setVehicleProperties` — nincs érvényes jármű entitás | `bridge/esx/client.lua`, `bridge/qb/client.lua` |
 | `invalid_vehicle_plate` | ugyanaz | ESX / QB kliens: `vehicleKeys` — üres / nem tartalmas rendszám | `bridge/esx/client.lua`, `bridge/qb/client.lua` |
@@ -82,9 +82,9 @@ Az `exports.e_core:*` **vékony réteg** (`client/exports.lua`, `server/exports.
 | `meta_default_must_be_table` | ugyanaz | `registerMeta` 3. param nem tábla és nem `nil` | `server/meta.lua` |
 | `meta_value_must_be_table` | ugyanaz | `setMeta` érték nem tábla | `server/meta.lua` |
 | `meta_category_not_table` | ugyanaz | Meglévő kategória slot sérült (nem tábla) | `server/meta.lua` (`registerMeta` merge) |
-| `diagnostics_run_not_found` | ugyanaz | `diagnosticsAdminGetRun` / `diagnosticsAdminCancelRun`: nincs ilyen `runId` a memóriabeli diagnosztikai futás tárolóban | `src/server/diagnostics.lua` |
-| `profession_key_validation_failed` | ugyanaz | Admin diagnostics `profession-key-validation` teszt eredményében (`run.results[]`), ha invalid / hiányzó profession kulcsok voltak; **nem** a `getProfessionRegistry` / `getProfessionLevelProfile` exportok hibakódja | `src/server/diagnostics.lua` (`runProfessionKeyValidationAudit`) |
-| `cleanup_scan_failed` | `'scan_failed'` | Profession meta cleanup: DB sorok beolvasása sikertelen | `src/server/professions.lua` (`cleanup_job_step`) |
+| `diagnostics_run_not_found` | ugyanaz | `diagnosticsAdminGetRun` / `diagnosticsAdminCancelRun`: nincs ilyen `runId` a memóriabeli diagnosztikai futás tárolóban | `src/runtime/diagnostics/server.lua` |
+| `profession_key_validation_failed` | ugyanaz | Admin diagnostics `profession-key-validation` teszt eredményében (`run.results[]`), ha invalid / hiányzó profession kulcsok voltak; **nem** a `getProfessionRegistry` / `getProfessionLevelProfile` exportok hibakódja | `src/runtime/diagnostics/server.lua` (`runProfessionKeyValidationAudit`) |
+| `cleanup_scan_failed` | `'scan_failed'` | Profession meta cleanup: DB sorok beolvasása sikertelen | `src/runtime/professions/server.lua` (`cleanup_job_step`) |
 | `mysql_missing` | `'mysql_missing'` | MySQL / oxmysql nem áll készen a `mysqlAwait` híváskor | `src/libs/helper_ecore.lua` |
 | `admin_missing_auth_source` | angol szöveg (lásd `errors.lua`) | Admin API policy: hiányzik a kötelező `auth.source` | `src/libs/helper_ecore.lua` (`hf.adminApiCanAccess`) |
 | `admin_invalid_auth_source` | angol szöveg | Admin API policy: érvénytelen / offline `auth.source` | `src/libs/helper_ecore.lua` |
@@ -93,13 +93,13 @@ Az `exports.e_core:*` **vékony réteg** (`client/exports.lua`, `server/exports.
 | `admin_console_disabled` | angol szöveg | Web admin NUI ki van kapcsolva a configban | `src/libs/helper_ecore.lua` |
 | `admin_web_unconfigured` | angol szöveg | `Config.web` jog policy nincs kitöltve (nincs engedélyezési út) | `src/libs/helper_ecore.lua` |
 | `admin_web_denied` | angol szöveg | Web admin: policy elutasította a játékost | `src/libs/helper_ecore.lua` |
-| `admin_audit_dual_policy_denied` | magyar szöveg | Denied audit lista: sem cleanup, sem diagnostics admin policy nem engedélyezett | `src/server/admin_denied_audit.lua` |
-| `integrity_invalid_player` | magyar szöveg | Integritás futtatás: érvénytelen `source` | `src/server/integrity_check.lua` |
-| `integrity_check_disabled` | magyar szöveg | `Config.integrityCheck.enabled` kikapcsolva | `src/server/integrity_check.lua` |
-| `integrity_cooldown_active` | magyar szöveg | Integritás parancs cooldown alatt | `src/server/integrity_check.lua` |
-| `integrity_progress_busy` | magyar szöveg | Már fut progress teszt ugyanahhoz a forráshoz | `src/server/integrity_check.lua` |
-| `integrity_policy_misconfigured` | magyar szöveg | Integritás policy nincs konfigurálva (üres engedélyezési út) | `src/server/integrity_check.lua` |
-| `integrity_policy_denied` | magyar szöveg | Integritás policy elutasította a játékost | `src/server/integrity_check.lua` |
+| `admin_audit_dual_policy_denied` | magyar szöveg | Denied audit lista: sem cleanup, sem diagnostics admin policy nem engedélyezett | `src/runtime/admin/server_denied_audit.lua` |
+| `integrity_invalid_player` | magyar szöveg | Integritás futtatás: érvénytelen `source` | `src/runtime/integrity/server.lua` |
+| `integrity_check_disabled` | magyar szöveg | `Config.integrityCheck.enabled` kikapcsolva | `src/runtime/integrity/server.lua` |
+| `integrity_cooldown_active` | magyar szöveg | Integritás parancs cooldown alatt | `src/runtime/integrity/server.lua` |
+| `integrity_progress_busy` | magyar szöveg | Már fut progress teszt ugyanahhoz a forráshoz | `src/runtime/integrity/server.lua` |
+| `integrity_policy_misconfigured` | magyar szöveg | Integritás policy nincs konfigurálva (üres engedélyezési út) | `src/runtime/integrity/server.lua` |
+| `integrity_policy_denied` | magyar szöveg | Integritás policy elutasította a játékost | `src/runtime/integrity/server.lua` |
 
 **Új kód** esetén: először `libs/errors.lua`, majd e tábla és a `rg eCoreErr\.kulcs` keresés a repóban.
 

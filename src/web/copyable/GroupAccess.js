@@ -1,6 +1,6 @@
 /*
  * Reusable NUI access helper class.
- * Lua parity target: e_core/src/libs/GroupAccess.lua
+ * Lua parity target: e_core/src/libs/group_access.lua
  *
  * Consumer usage:
  *   GroupAccess.check(playerData, recipeOrZoneData)

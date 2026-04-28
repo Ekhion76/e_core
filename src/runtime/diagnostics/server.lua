@@ -1,5 +1,5 @@
 --- Server-side registry diagnostics admin (`diagnosticsAdmin*`, queued runs).
---- Integrity checklist lives in `src/server/integrity_check.lua` (`e_core:integrityCheck:*`).
+--- Integrity checklist lives in `src/runtime/integrity/server.lua` (`e_core:integrityCheck:*`).
 local hf = hf
 local hfe = hfe
 

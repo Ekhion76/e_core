@@ -16,11 +16,11 @@ Az **e_core** egy **FiveM resource**, önálló **core platform**: nem csak „b
 
 - **`src/bridge/`** – ESX / QB / globális illesztés; keretrendszer-választás konfiggal (lásd lent: Bridge).
 - **`overrides/`** – stack szerinti testreszabás (inventory, notify, progressbar stb.): frissítéskor ide kerül a helyi módosítás, nem a core fájlok másolgatása.
-- **`src/standalone/config/`** – globális beállítások és level profilok.
+- **`src/config/`** – globális beállítások és level profilok (`main.lua`, `levels.lua`).
 - **Más resource belépés:** tipikusan import / bootstrap: `exports['e_core']:getCore()` és a dokumentált exportok; opcionálisan `full_import` (lásd: Betöltés és memória).
 - **Proficiency + labor + tudás** (megtanult receptek) és **meta** tárolás; **oxmysql** séma migrációk.
 - **Központi HUD pozicionálás:** a consumer szkriptek regisztrálhatják a HUD elemeiket, az e_core mozgatja és tárolja a pozícióikat (`registerHudElement` / kapcsolódó API).
-- **Whitelist / blacklist AccessGate** job / gang és grade alapon ([src/libs/GroupAccess.lua](src/libs/GroupAccess.lua)).
+- **Whitelist / blacklist AccessGate** job / gang és grade alapon ([src/libs/group_access.lua](src/libs/group_access.lua)).
 - **Hibák:** strukturált `eCoreErr`, fájlba író eseménynaplózás ([docs/ECORE_ERR_HIBA_NYOMON_HU.md](docs/ECORE_ERR_HIBA_NYOMON_HU.md)).
 - **Fordítás:** locale fájlok + translate / translateU a publikus `eCore` felületen.
 - **Kliens–szerver:** **ox_lib** callback minták; NUI / UX: modal, notification, progress, form; grid snapping, preset mentés, export / import.
@@ -46,7 +46,7 @@ Az **e_core** egy **FiveM resource**, önálló **core platform**: nem csak „b
 A **`src/bridge/`** réteg állítja elő a közös állapotot és illesztést: melyik legacy core fut (`FRAMEWORK`, `ESX_CORE` / `QB_CORE`), hol a **`Config`**, és hogyan kapcsolódnak az ESX/QB **shared**, **client/server** és **events** modulok.
 
 - **`framework_config.lua`** + **`framework_resource_registry.lua`:** indulási mód. ConVarok: **`setr e_core:framework "auto"`** | **`"esx"`** | **`"qb"`**; opcionálisan **`e_core:framework_resource`** egyedi legacy core resource névhez (csak ha nem `auto`). Ha két core fut egyszerre és `auto` van, az e_core **kontrollált IDLE** állapotba kerül (`_ECORE_INIT_FAILED`), nem `error()`-ral állítja le a szervert – a consumereknek érdemes `exports.e_core:isReady()` / kész jelre várni.
-- Az **`overrides/**/(shared|client|server).lua`** a [`fxmanifest.lua`](fxmanifest.lua) szerint a bridge modulok **után**, de a saját **`src/client/*` / `src/server/*`** runtime **előtt** töltődik – így a stack-specifikus kód kiegészítheti vagy felülírhatja a viselkedést anélkül, hogy a `src/bridge/` fájlokat forkolnád.
+- Az **`overrides/**/(shared|client|server).lua`** a [`fxmanifest.lua`](fxmanifest.lua) szerint a bridge modulok **után**, de a saját **`src/runtime/**`** modulok **előtt** töltődik – így a stack-specifikus kód kiegészítheti vagy felülírhatja a viselkedést anélkül, hogy a `src/bridge/` fájlokat forkolnád.
 
 **Végpont a consumereknek:** a [`src/bridge/main.lua`](src/bridge/main.lua) regisztrálja a QB/ESX net eseményeket, összerakja az **`eCore`** felületet (`eCoreLifecycle_buildPublicAPI`: pl. `framework`, `config`, `i18n`, `util`; szerveren opcionálisan `log.discord`), és exportálja többek között: **`getCore()`**, **`getFrameWork()`**, **`getHelperBase()`**, **`getHelperEcore()`**.
 
@@ -56,7 +56,7 @@ A **`src/bridge/`** réteg állítja elő a közös állapotot és illesztést: 
 flowchart LR
   subgraph shared [SharedScripts]
     FW[framework_config]
-    CFG[standalone config es overrides config]
+    CFG[src/config es overrides config]
     LIBS[libs errors meta helpers]
     LIFE[ecore_lifecycle]
   end
@@ -104,7 +104,7 @@ ensure eco_crafting
 
 **FONTOS:** frissítésbiztonság miatt a testreszabást az **`overrides/`** mappában végezd. A bridge viselkedését is **csak** itt írd felül (stack szerinti `shared.lua` / `client.lua` / `server.lua` + `config.lua`).
 
-**Konfig:** globális – `src/standalone/config/`; stack / inventory – `overrides/<stack>/config.lua` (példa: `overrides/ox_inventory/config.lua`).
+**Konfig:** globális – `src/config/`; stack / inventory – `overrides/<stack>/config.lua` (példa: `overrides/ox_inventory/config.lua`).
 
 Alap szerveren vagy **ox_inventory** mellett gyakran nincs szükség extra módosításra; más inventoryhoz válaszd a megfelelő override tier-t: [docs/SUPPORTED_STACK_MATRIX_HU.md](docs/SUPPORTED_STACK_MATRIX_HU.md).
 
@@ -122,7 +122,7 @@ e_core/
     libs/                 # közös Lua: helper, hibák, GroupAccess, meta, napló, itemconvert, …
     imports/              # más resource: @e_core/... include + LoadResourceFile célok
     locales/              # fordítások
-    standalone/config/    # globális config + levels
+    config/               # globális config + levels (main.lua, levels.lua)
     web/                    # Svelte + TS NUI FORRÁS (npm run build → dist)
     web/dist/               # build kimenet (ui_page erre mutat)
   overrides/              # stack szerinti Lua + config (inventory, notify, …)

@@ -11,8 +11,8 @@ Cel
 
 Gyoker konyvtarak szerepe
 -------------------------
-src/                Belső platform kod (bridge, client, server, libs, imports, locales,
-                    standalone config + usableitem).
+src/                Belső platform kod (bridge, runtime, libs, imports, locales,
+                    config defaults + standalone példa).
 overrides/          Testreszabasi pontok (inventory/progress/core override-ok).
 html/               NUI output (web build + css/img).
 web/                Svelte/TS NUI forraskod.
@@ -36,11 +36,14 @@ Reszletek
 src/bridge/
   Keretrendszer-illesztes: esx/, qb/, global/, framework_config.lua, main.lua.
 
-src/client/
-  Kliens oldali runtime: main, exports, web/NUI bridge, integrity bridge.
-
-src/server/
-  Szerver oldali domain: meta, labor, db, exports, diagnostics, admin bridge.
+src/runtime/
+  Szerver/kliens runtime domain modulok (nem bridge):
+  bootstrap/        server/main.lua, client/main.lua — indulás, CORE_READY.
+  exports/          server.lua, client.lua — exports.e_core kötések.
+  meta/             player_meta_store, server (meta CRUD), client (ClientMetaStore).
+  hud/              server/layout.lua, client/registry.lua.
+  labor/, db/, professions/, diagnostics/, admin/, integrity/, web_bridge/, quote/
+  Mindegyik séma: adott almappa alatt server/client (pl. professions/server.lua).
 
 src/libs/
   Közös helper modulok (`hf`, `errors`, `meta`, `config_check`).
@@ -51,11 +54,11 @@ src/imports/
 src/locales/
   Forditasok.
 
-src/standalone/config/
-  Globalis Config + levels.
+src/config/
+  Globalis Config + levels (`main.lua`, `levels.lua`) — kanonikus default; felülírás: `overrides/**/config.lua`.
 
-src/standalone/usableitem.lua
-  Pelda usable item logika.
+src/standalone/
+  `usableitem.lua` – pelda usable item logika.
 
 overrides/
   Felulirasok (ox_inventory, qs_inventory, avp_grid_inventory, progress/UI adapterek).

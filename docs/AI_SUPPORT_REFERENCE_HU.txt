@@ -41,7 +41,7 @@ Verzió (resource): fxmanifest.lua → version mező. Publikus export táblázat
   docs/PUBLIC_API_HU.md (változáskor szinkron).
 Utolsó szerkesztés: changelog / commit; exportlista változáskor frissítsd ezt a fájlt is.
 
-Exports névlista mérvadó forrása: `src/client/exports.lua`, `src/server/exports.lua`,
+Exports névlista mérvadó forrása: `src/runtime/exports/client.lua`, `src/runtime/exports/server.lua`,
   `src/bridge/main.lua` `exports(` sorok; táblázat: `docs/PUBLIC_API_HU.md`. Események:
   `docs/NET_EVENTS_AUDIT_HU.md`.
 
@@ -70,7 +70,7 @@ Kapcsolódó fájlok a repóban
 - .cursor/rules/e_core-context.mdc
 - export_examples_client.md, export_examples_server.md (gyökér) – **exports.e_core**
   példahívások (angol); kiegészítik a szekció **2** összefoglalóját. Mérvadó
-  névlista: `src/client/exports.lua`, `src/server/exports.lua`, `src/bridge/main.lua`
+  névlista: `src/runtime/exports/client.lua`, `src/runtime/exports/server.lua`, `src/bridge/main.lua`
   `exports(` sorok.
 - docs/SZERVER_OPERATOR_CHECKLIST_HU.md – ensure, ConVarok, indulási kockázatok (Fázis 0)
 - docs/NET_EVENTS_AUDIT_HU.md – szerver net / callback audit (G) + bridge regisztrált események + kliens `e_core:*` (`methodCaller`, `sync`, labor HUD aliasok)
@@ -97,7 +97,7 @@ Kapcsolódó fájlok a repóban
 - src/libs/helper_ecore.lua            – ugyanarra a hf-re: e_core item/normalize,
                                      registry várakozás, mysqlAwait, indulási log,
                                      net rate limit, moneyFormat; eCore.helper = hf
-- src/libs/GroupAccess.lua             – `GroupAccess` (Lua) és facade elérés:
+- src/libs/group_access.lua             – `GroupAccess` (Lua) és facade elérés:
                                      `eCore.GroupAccess:check`
                                      (job/gang whitelist–blacklist szerződés)
 - src/libs/errors.lua                  – eCoreErr ok stringek; eCore.Err (src/bridge/main.lua)
@@ -109,7 +109,7 @@ Kapcsolódó fájlok a repóban
                                      rate-limit)
 - src/libs/meta.lua                    – szint / kedvezmény, checkMetaExists, levelChange
 - src/libs/config_check.lua            – Config alapértékek normalizálása induláskor
-- src/standalone/config/main.lua, src/standalone/config/levels.lua – globális Config + szintek
+- src/config/main.lua, src/config/levels.lua – globális Config + szintek
 - overrides/<név>/     – inventory / progress / egyéb eCore felülírások
 - src/standalone/usableitem.lua        – szerver: példa usable item (labor_enhancer)
 - src/bridge/framework_config.lua + src/bridge/esx/config_defaults.lua +
@@ -121,14 +121,14 @@ Kapcsolódó fájlok a repóban
   részletek: „QB bridge” szekció lent
 - src/bridge/global/ (shared, client, server, events/, callbacks/) – keretrendszer-
   független eCore részek; részletek: „Global bridge” szekció lent
-- src/client/ (main.lua, exports.lua) – kliens indulás, REGISTERED_ITEMS, NUI, meta/
+- src/runtime/ (bootstrap + exports) – kliens indulás, REGISTERED_ITEMS, NUI, meta/
   labor exportok; részletek: „Client resource” szekció lent
 - src/web/dist/index.html, src/web/src/app.css, src/web/src/**/*, src/web/public/img/*.png – NUI felület;
   részletek: **1.5 NUI (html/)**
-- src/server/main.lua, src/server/meta.lua, src/server/labor.lua, src/server/db.lua,
-  src/server/exports.lua, src/server/professions.lua, src/server/diagnostics.lua – szerver PlayerMetaStore,
+- src/runtime/bootstrap/server/main.lua, src/runtime/meta/server.lua, src/runtime/labor/server.lua, src/runtime/db/server.lua,
+  src/runtime/exports/server.lua, src/runtime/professions/server.lua, src/runtime/diagnostics/server.lua – szerver PlayerMetaStore,
   meta sync/mentés, labor, MySQL, profession registry, diagnostics; részletek:
-  „Server resource (src/server/)” szekció **1.4**
+  „Server resource (src/runtime/)” szekció **1.4**
 
 ================================================================================
 Keretrendszer-felismerés (FRAMEWORK, ESX_CORE, QB_CORE)
@@ -139,7 +139,7 @@ Access rules páros (Lua + JS)
 ================================================================================
 
 Azonos névvel használandó páros:
-- **Lua:** `GroupAccess:check(playerData, data)` (`src/libs/GroupAccess.lua`)
+- **Lua:** `GroupAccess:check(playerData, data)` (`src/libs/group_access.lua`)
 - **JS:** `class GroupAccess` + `GroupAccess.check(playerData, data)`
   (`src/web/copyable/GroupAccess.js`)
 
@@ -491,7 +491,7 @@ shared.lua (eCore metódusok, Config.fields és REGISTERED_ITEMS)
     minden slot `Config.fields.name` / `count` szerint összeadva; recepthez /
     „van elég X” kérdéshez **ez** a megfelelő primitív.
   getRegisteredItem(name), isReady() → `CORE_READY` globális; értékét a
-    `hf.awaitItemRegistryReady` állítja a src/client/server `main.lua` induló szálában
+    `hf.awaitItemRegistryReady` állítja a kliens és szerver `bootstrap/.../main.lua` induló szálában
     (siker / timeout után).
 
   **QB + ox_inventory:** a fenti súly/slot számítás a **bridge által adott**
@@ -510,7 +510,7 @@ shared.lua (eCore metódusok, Config.fields és REGISTERED_ITEMS)
   **Függőség:** canSwapItems / canCarryItem / getItemWeight feltételezi, hogy
   a REGISTERED_ITEMS tábla **kulcsonként** elő van készítve (kisbetűs név,
   isUnique mező). Üres vagy hiányzó item → runtime hiba lehet. Előállítás:
-  src/client/main.lua és src/server/main.lua ciklus eCore:getRegisteredItems()-ig
+  src/runtime/bootstrap/client/main.lua és src/runtime/bootstrap/server/main.lua ciklus eCore:getRegisteredItems()-ig
   (framework-specifikus implementáció az ESX/QB bridge-ben + override).
 
 client.lua (ox_target)
@@ -564,21 +564,21 @@ Fontos megjegyzések
   függőség az ox_target felé.
 
 ================================================================================
-Client resource (src/client/)
+Client resource (src/runtime/)
 ================================================================================
 
 Mappa és fájlok
-  src/client/main.lua      – ClientMetaStore / eCoreNui, meta olvasók, REGISTERED_ITEMS töltés,
+  src/runtime/bootstrap/client/main.lua      – ClientMetaStore / eCoreNui, meta olvasók, REGISTERED_ITEMS töltés,
                          NUI életciklus, framework e_core események
-  src/client/exports.lua   – exports.e_core kötések a main.lua-ban definiált és a
+  src/runtime/exports/client.lua   – exports.e_core kötések a main.lua-ban definiált és a
                          shared src/libs/meta.lua globálisaira
 
 Betöltési sorrend (fxmanifest)
-  src/client/ecore_nui.lua → src/client/client_meta_store.lua → src/client/main.lua → src/client/exports.lua (a main előbb fut, hogy a getAbility,
+  src/runtime/web_bridge/ecore_nui.lua → src/runtime/meta/client.lua → src/runtime/bootstrap/client/main.lua → src/runtime/exports/client.lua (a main előbb fut, hogy a getAbility,
   getMeta, getLabor globális függvények létezzenek az exports.lua számára).
 
 main.lua – indulás és REGISTERED_ITEMS
-  `ClientMetaStore` (`src/client/client_meta_store.lua`) – kliens meta cache + sync rev; **`eCoreNui`** (`src/client/ecore_nui.lua`) – NUI shell `isReady()` / `markShellReady()`.
+  `ClientMetaStore` (`src/runtime/meta/client.lua`) – kliens meta cache + sync rev; **`eCoreNui`** (`src/runtime/web_bridge/ecore_nui.lua`) – NUI shell `isReady()` / `markShellReady()`.
   `CORE_READY` indulás **`false`**, `REGISTERED_ITEMS` indulás **`nil`**; egy CreateThread meghívja
   `hfe.awaitItemRegistryReady('CLIENT REGISTERED_ITEMS')` – ugyanaz a timeout /
   poll ConVar logika, mint a szerveren (`e_core:items_ready_*`), majd
@@ -772,7 +772,7 @@ src/bridge/
   global/            Közös shared + inventory helper logika, zónák, kliens/szerver.
   main.lua           getFrameWork, getCore exportok; eseményregisztráció ESX/QB-hez.
 
-src/standalone/      config + usableitem.lua (belső platform rész).
+src/config/          default Config + levels; src/standalone/usableitem.lua – példa (belső platform rész).
 overrides/           inventory/progress/core felülírások – részletek:
                      „Standalone modulok / overrides” szekció lent.
 
@@ -780,10 +780,10 @@ src/imports/             locale, utils, discordlog, core.lua – részletek:
                      „Imports modulok (src/imports/)” szekció lent.
 src/libs/                helper (hf), meta, config_check – részletek:
                      „Libs modulok (src/libs/)” szekció lent.
-src/client/              main.lua, exports.lua – „Client resource” szekció lent.
+src/runtime/             bootstrap + exports – „Client resource” szekció lent.
 html/                ui.html, main.css, js (model, view, app), img – **1.5 NUI**.
-src/server/              main, meta, labor, db, exports – részletek:
-                     „Server resource (src/server/)” szekció **1.4**.
+src/runtime/             main (bootstrap), meta, labor, db, exports – részletek:
+                     „Server resource (src/runtime/)” szekció **1.4**.
 src/locales/             hu, en, de…
 
 Indulás (server.cfg): ensure e_core a consumer resource-ok **előtt**.
@@ -809,7 +809,7 @@ Mérvadó forrásfájlok (fxmanifest.lua)
                                   nincs minden override-mal felülírva, de a
                                   locale kulcs (Config.locale) a bridge config
                                   után áll; a tényleges szótár: src/locales/*.lua
-    src/imports/shared/utils.lua    – standalone config + overrides config után,
+    src/imports/shared/utils.lua    – src/config + overrides config után,
                                   **közvetlenül a src/libs/helper.lua előtt**
                                   (a `hf` tábla a helper.lua + helper_ecore.lua
                                   után teljes más fájloknak).
@@ -873,14 +873,14 @@ src/imports/shared/utils.lua (shared)
       `debug` **és** a harmadik argumentum (`level`) **szám**, akkor egy **színezett
       egy soros** üzenet jön ki: `[ERROR]`, `[WARNING]` stb. + `k` szöveg
       (FiveM `^1` / `^3` / `^2` / `^5` színkódok).
-      **Cél:** `src/server/db.lua`, `hf.mysqlAwait` és hasonló hívások egységes,
+      **Cél:** `src/runtime/db/server.lua`, `hf.mysqlAwait` és hasonló hívások egységes,
       jól látható konzol kimenete.
       **Figyelem:** ha a második paramétert **adatként** szeretnéd logolni és
       véletlenül ezek egyike lenne (`'info'` stb.), válassz más szót (pl.
       `'info_text'`), különben severity-ként értelmeződik.
   Megjegyzés
     `cLog` a src/bridge/main.lua-ban is használatos (eseményregisztráció log); a
-    `Config.debugLevel` standalone configban állítható.
+    `Config.debugLevel` a `src/config/main.lua`-ban állítható.
 
 ---
 
@@ -1111,8 +1111,8 @@ src/libs/helper_ecore.lua
     e_core környezethez kötött segédek ugyanarra a **`hf`**-re.
   Megjegyzés
     `hf.moneyFormat` a **`Config.currency`** mezőket olvassa (`suffix`, `symbol`);
-    üres `currency` tábla esetén híváskor hiba lehet – töltsd a standalone
-    configban vagy hagyatkozz a `config_check` után érvényes alapokra.
+    üres `currency` tábla esetén híváskor hiba lehet – töltsd a `src/config/main.lua`
+    fájlban vagy hagyatkozz a `config_check` után érvényes alapokra.
   Item registry (convertItems lánc)
     `getRegisteredItemWeightKeyConfig`, `normalizeRegisteredItemDef`
   Indulás / diagnosztika
@@ -1121,7 +1121,7 @@ src/libs/helper_ecore.lua
     `isValidPlayerSource`, `netRateLimit`
   Szerver – MySQL (3E)
     `mysqlAwait(tag, fn)` – `fn` belül oxmysql **`.await`**; `pcall` + `cLog`
-    hiba esetén; `src/server/db.lua`, `src/server/db_migrations.lua`.
+    hiba esetén; `src/runtime/db/server.lua`, `src/runtime/db/migrations.lua`.
 
 ---
 
@@ -1135,7 +1135,7 @@ src/libs/meta.lua (shared)
     másolásához **`hf.shallowCopy`** (`src/libs/helper.lua`).
 
   Név: checkMetaExists
-    Oldal: shared fájl; **hívás:** szerver (src/server/meta.lua), mert a sor
+    Oldal: shared fájl; **hívás:** szerver (src/runtime/meta/server.lua), mert a sor
       `PlayerMetaStore.get(playerId)` a szerveren töltődik (`player_meta_store.lua` a `main.lua` előtt).
     Paraméterek: playerId (number), category (string), name (string).
     Vissza: boolean – false, ha hiányzik a játékos meta sáv vagy a proficiency
@@ -1180,7 +1180,7 @@ src/libs/config_check.lua (shared)
     laborIncreaseOffline, keyBind, discordBotName, discordWebHook – üres
     táblák helyett `{}`, ahol `hf.isPopulatedTable` dönt.
   Megjegyzés
-    A bridge és standalone config **után** fut; így a convar / override értékek
+    A bridge és `src/config` **után** fut; így a convar / override értékek
     tipikusan megmaradnak, a „lyukak” töltődnek be.
 
 Összefüggés más részekkel
@@ -1189,7 +1189,7 @@ src/libs/config_check.lua (shared)
   `eCore.helper` → teljes `hf` API ehhez a szekcióhoz igazítsd a doksit.
 
 ================================================================================
-1.3 Standalone modulok (standalone/)
+1.3 Beépített config + standalone példa
 ================================================================================
 
 Cél
@@ -1201,9 +1201,9 @@ Cél
 Mérvadó forrásfájlok (fxmanifest.lua)
   shared_scripts (részleges sorrend)
     src/bridge/framework_config.lua (+ defaults) után:
-      src/standalone/config/main.lua      – általános eco Config (locale, labor,
+      src/config/main.lua      – általános eco Config (locale, labor,
                                         metaFields, currency, keyBind, discord…)
-      src/standalone/config/levels.lua    – Config.levels proficiency szintek
+      src/config/levels.lua    – Config.levels proficiency szintek
       overrides/**/config.lua – resource flag + Config felülírás
                                         (pl. ox_inventory convar, imagePath)
   client_scripts
@@ -1214,12 +1214,12 @@ Mérvadó forrásfájlok (fxmanifest.lua)
     … bridge esx/qb server után:
       overrides/**/shared.lua
       overrides/**/server.lua
-    src/server/exports.lua **után:**
+    src/runtime/exports/server.lua **után:**
       src/standalone/usableitem.lua       – createUsableItem regisztráció
 
 ---
 
-src/standalone/config/main.lua (shared)
+src/config/main.lua (shared)
   Szerep
     Eco **globális beállítások**: nyelv, debug, inventory súly/slot alap (bridge
     és override tovább finomíthatja), `systemMode` (profession / labor), NUI
@@ -1230,7 +1230,7 @@ src/standalone/config/main.lua (shared)
     ez a fájl **eco** réteg. A `src/libs/config_check.lua` a teljes `Config` egyesítése
     után tölti ki a hiányzó mezőket.
 
-src/standalone/config/levels.lua (shared)
+src/config/levels.lua (shared)
   Szerep
     **`Config.levels`** – proficiency küszöbök (`limit`) és szintenkénti
     kedvezmény mezők (labor, time, price, chance, speed). A `src/libs/meta.lua`
@@ -1277,16 +1277,16 @@ src/standalone/usableitem.lua (server)
     (translate).
   Megjegyzés
     Csak akkor működik, ha a tárgy létezik az inventory rendszerben és a
-    `createUsableItem` a keretrendszerhez kötve van; a fájl a **src/server/exports.lua
+    `createUsableItem` a keretrendszerhez kötve van; a fájl a **src/runtime/exports/server.lua
     után** töltődik, hogy az exportok elérhetők legyenek.
 
 Összefüggés más részekkel
-  `exports.e_core:getConfig()` → összeolvadt `Config` (bridge + standalone +
+  `exports.e_core:getConfig()` → összeolvadt `Config` (bridge + `src/config` +
   override config + `config_check`). Inventory GYIK és 0.1 sablon → új mappa
   ide, nem a `src/bridge/` szerkesztése.
 
 ================================================================================
-1.4 Server resource (src/server/)
+1.4 Server resource (src/runtime/)
 ================================================================================
 
 Cél
@@ -1297,20 +1297,20 @@ Cél
 
 Mérvadó forrásfájlok (fxmanifest.lua → server_scripts sorrend, releváns rész)
   … `src/bridge/global/callbacks/server.lua` után:
-    src/server/player_meta_store.lua – runtime meta tároló + `e_core:sync` envelope
-    src/server/main.lua      – REGISTERED_ITEMS töltő ciklus, CORE_READY
-    src/server/meta.lua      – meta CRUD, sync, játékos események, időzített mentés
-    src/server/labor.lua     – labor CRUD, automatikus / offline labor
-    src/server/db_migrations.lua – `e_core_migrations` tábla + `e_core_run_db_migrations`
-    src/server/professions.lua – profession registry bootstrap + read model export logika
-    src/server/db.lua        – MySQL.ready → migrációk, majd saveMeta / loadMeta / saveAllMeta
-    src/server/exports.lua   – `exports.e_core:*` regisztráció
-    src/server/diagnostics.lua – `ecore_diag` ellenőrzés (inventory + profession registry)
+    src/runtime/meta/player_meta_store.lua – runtime meta tároló + `e_core:sync` envelope
+    src/runtime/bootstrap/server/main.lua      – REGISTERED_ITEMS töltő ciklus, CORE_READY
+    src/runtime/meta/server.lua      – meta CRUD, sync, játékos események, időzített mentés
+    src/runtime/labor/server.lua     – labor CRUD, automatikus / offline labor
+    src/runtime/db/migrations.lua – `e_core_migrations` tábla + `e_core_run_db_migrations`
+    src/runtime/professions/server.lua – profession registry bootstrap + read model export logika
+    src/runtime/db/server.lua        – MySQL.ready → migrációk, majd saveMeta / loadMeta / saveAllMeta
+    src/runtime/exports/server.lua   – `exports.e_core:*` regisztráció
+    src/runtime/diagnostics/server.lua – `ecore_diag` ellenőrzés (inventory + profession registry)
     src/standalone/usableitem.lua – (lásd 1.3)
 
 ---
 
-src/server/main.lua
+src/runtime/bootstrap/server/main.lua
   Globálisok
     `PlayerMetaStore` – külön fájlban inicializálva (`player_meta_store.lua`); a meta sorokat a `meta.lua` / `db.lua` / `labor.lua` API-n keresztül éri el.
     `CORE_READY` indulás **`false`**, `REGISTERED_ITEMS` indulás **`nil`**; egy szál `hfe.awaitItemRegistryReady`
@@ -1327,11 +1327,11 @@ src/server/main.lua
   Indulási összegzés (egy sor)
     A registry szál végén: `hfe.logEcoreStartupSummary('server')` – konzolra: verzió
     (`fxmanifest` `version`), `FRAMEWORK`, inventory descriptor (`mode/profile/capabilities`),
-    `items=ready|timeout|pending`. Kliens: `src/client/main.lua` ugyanígy `'client'`.
+    `items=ready|timeout|pending`. Kliens: `src/runtime/bootstrap/client/main.lua` ugyanígy `'client'`.
 
 ---
 
-src/server/meta.lua
+src/runtime/meta/server.lua
   Szerep
     Meta és proficiency **forrásigazság** a szerveren: `PlayerMetaStore.get(playerId)`,
     kliens sync (`e_core:sync`), szintváltás (`messageIfLevelChange` →
@@ -1348,7 +1348,7 @@ src/server/meta.lua
     `saveAllMeta()`.
     **10 percenként** `saveAllMeta()` – `SetTimeout` rekurzív ütemezés.
   Főbb függvények (globálisok; definíció itt, `exports()` regisztráció csak
-    `src/server/exports.lua`-ban)
+    `src/runtime/exports/server.lua`-ban)
     `setMeta` / `getMeta` / `registerMeta` – hibák: pl. `not_found_metadata`,
       `no_valid_meta_name`.
     `getAbility` / `addAbility` / `removeAbility` / `setAbility` – `checkMetaExists`,
@@ -1361,13 +1361,13 @@ src/server/meta.lua
 
 ---
 
-src/server/labor.lua
+src/runtime/labor/server.lua
   Szerep
     Labor olvasás/írás `PlayerMetaStore.get(playerId).labor` alatt; **automatikus online**
     növelés (`laborIncrease` – `SetTimeout`, ha `systemMode.labor` és pozitív
     `laborIncreaseTime` / `laborIncrease`); **offline** számítás `addOfflineLabor`
     (loadMeta hívja).
-  Exportált függvények (definíció itt, export `src/server/exports.lua`)
+  Exportált függvények (definíció itt, export `src/runtime/exports/server.lua`)
     `getLabor`, `setLabor`, `addLabor`, `removeLabor` – hibák: pl.
     `the_system_is_turned_off`, `not_found_metadata`, `not_valid_amount`,
     `has_already_reached_the_limit` (labor limit / üres érték esetek).
@@ -1395,7 +1395,7 @@ Labor, meta sync, „laboros” consumer művelet – átfogó összefoglaló (s
       fejezete).
     4) **Kliens:** `e_core:sync` → `ClientMetaStore.applyServerSync`; ha `eCoreNui.isReady()`: egy
       `SendNUIMessage` UPDATE (page vagy hud), teljes `metadata`.
-    5) **Auto labor:** `src/server/labor.lua` `laborIncrease()` tick után
+    5) **Auto labor:** `src/runtime/labor/server.lua` `laborIncrease()` tick után
       **`syncRequest(playerId)`** (ugyanaz a kötegelt útvonal, mint a meta
       írásnál); részletek: `docs/LABOR_KEZELES_MUNKAFIL_HU.md` fókuszlista.
     6) **Külső resource** (eco_crafting, eco_fishing stb.) saját eseményei,
@@ -1409,7 +1409,7 @@ Labor, meta sync, „laboros” consumer művelet – átfogó összefoglaló (s
 
 ---
 
-src/server/db_migrations.lua
+src/runtime/db/migrations.lua
   Szerep
     **Fázis 3:** `e_core_migrations` tábla létrehozása; **`ECORE_DB_MIGRATIONS`** tömb
     sorrendben; `#1` = `e_core` LONGTEXT oszlop (`ALTER … IF NOT EXISTS`). Részlet:
@@ -1417,7 +1417,7 @@ src/server/db_migrations.lua
     `e_core_get_applied_migration_id`. **3E:** minden `MySQL.query.await` **`hf.mysqlAwait`**
     körül; `getDbSchemaVersion` ha `alkalmazott_max < ECORE_DB_SCHEMA_TARGET` → figyelmeztető log.
 
-src/server/db.lua
+src/runtime/db/server.lua
   Szerep
     **oxmysql**: `users.e_core` (ESX) vagy `players.e_core` (QB) LONGTEXT JSON;
     oszlop létrehozása a **migráció** `#1`-ben történik (nem közvetlenül itt).
@@ -1433,7 +1433,7 @@ src/server/db.lua
 
 ---
 
-src/server/professions.lua
+src/runtime/professions/server.lua
   Szerep
     Profession registry életciklus:
     - startup bootstrap (default profile/profession seed),
@@ -1446,7 +1446,7 @@ src/server/professions.lua
     Részlet: `docs/PROFESSION_REGISTRY_ES_META_CLEANUP_TERV_HU.md` (Határ blokk).
   Bootstrap
     `e_core_bootstrap_profession_registry()`:
-      migráció után lefut (`src/server/db.lua`), ellenőrzi a registry táblák darabszámát,
+      migráció után lefut (`src/runtime/db/server.lua`), ellenőrzi a registry táblák darabszámát,
       majd szükség esetén default profile + minimális profession seed.
   Read model
     DB join: `e_core_professions` + `e_core_level_profiles`, rövid TTL cache.
@@ -1454,7 +1454,7 @@ src/server/professions.lua
 
 ---
 
-src/server/diagnostics.lua
+src/runtime/diagnostics/server.lua
   Új registry check
     `runProfessionRegistryChecks(lines)` – `ecore_diag` futás közben:
     - registry lekérés,
@@ -1474,10 +1474,10 @@ src/server/diagnostics.lua
 
 ---
 
-src/server/exports.lua
+src/runtime/exports/server.lua
   Szerep
     Csak **exports.e_core** név alatti regisztráció; a tényleges függvények
-    `src/server/meta.lua` és `src/server/labor.lua` (+ `src/libs/meta.lua` getLevel /
+    `src/runtime/meta/server.lua` és `src/runtime/labor/server.lua` (+ `src/libs/meta.lua` getLevel /
     getDiscounts).
 
 Összefüggés más részekkel
@@ -1492,7 +1492,7 @@ src/server/exports.lua
 
 Cél
   FiveM **NUI** felület: **statisztika / skill oldal** (`#container`) és **labor
-  HUD** (`#meta_hud`). A kliens `src/client/main.lua` **SendNUIMessage** /
+  HUD** (`#meta_hud`). A kliens `src/runtime/bootstrap/client/main.lua` **SendNUIMessage** /
   **SetNuiFocus** / **RegisterNUICallback** réteggel köti össze a Lua és a
   böngésző oldalt.
 
@@ -1507,13 +1507,13 @@ Mérvadó forrásfájlok
   src/web/src/app.css, src/web/src/lib/rankData.ts, view.js, app.js
   src/web/public/img/*.png
     Opcionális proficiency ikonok, ha `Config.displayComponent.icon` igaz –
-    fájlnév pl. `weaponry.png` (standalone config komment szerint).
+    fájlnév pl. `weaponry.png` (`src/config/main.lua` komment szerint).
 
 ---
 
 Üzenetek: `window` → `message` (Lua: `SendNUIMessage`)
 
-Forrás: `src/web/src/NuiApp.svelte` `switch (item.action)` és `src/client/main.lua`.
+Forrás: `src/web/src/NuiApp.svelte` `switch (item.action)` és `src/runtime/bootstrap/client/main.lua`.
 
   action **INIT**
     Első konfiguráció a NUI betöltése után (Lua `nuiInit` a `nuiReady` callback
@@ -1566,7 +1566,7 @@ Külső függőségek
 
 Összefüggés más részekkel
   Lua oldali életciklus és események: „Client resource” szekció, `main.lua` NUI
-  rész. Szintváltás adat: **src/server/meta.lua** + **src/libs/meta.lua**
+  rész. Szintváltás adat: **src/runtime/meta/server.lua** + **src/libs/meta.lua**
   `messageIfLevelChange`.
 
 ================================================================================
@@ -1598,7 +1598,7 @@ getCore()
 getConfig()
   Oldal: client + server.
   Paraméter: nincs.
-  Visszaad: Config tábla (standalone/config + override configok összeolvadása).
+  Visszaad: Config tábla (src/config + override configok összeolvadása).
 
 Megjegyzés (helper)
   Nincs `exports.e_core:getHelper()` export. A base helper elérése:
@@ -1606,7 +1606,7 @@ Megjegyzés (helper)
   `@e_core/src/imports/shared/helper_base.lua`), részletek: szekció **1.2**,
   `src/bridge/main.lua`.
 
---- Client (src/client/exports.lua) ---
+--- Client (src/runtime/exports/client.lua) ---
 
 getAbility(category, name?)
   category: string, pl. crafting, reputation…
@@ -1625,14 +1625,14 @@ getLabor()
           ha még nincs labor blokk a kliens cache-ben (sync előtt / üres meta):
           false, eCoreErr.not_found_metadata
           egyébként: a kliens cache `labor.val` (szám).
-  Forrás: `src/client/main.lua` `getLabor`.
+  Forrás: `src/runtime/bootstrap/client/main.lua` `getLabor`.
 
 isReady()
   Paraméter: nincs.
   Vissza: `true` **csak** ha az item registry szál sikeresen befejeződött;
           egyébként `false` (töltés vagy timeout után is).
   Megjegyzés (0.1.7+): `eCore:isReady()` mindig **boolean** (`CORE_READY == true` a facade-ban);
-          export: `return eCore:isReady()` (`src/client/exports.lua` / `src/server/exports.lua`).
+          export: `return eCore:isReady()` (`src/runtime/exports/client.lua` / `src/runtime/exports/server.lua`).
 
 getLevel(value)
   value: elért pontszám (szám).
@@ -1642,7 +1642,7 @@ getDiscounts(value)
   value: pontszám.
   Vissza: kedvezmény tábla a szinthez, vagy false, 'not_levels_data'.
 
---- Server (src/server/exports.lua) – mindhez kell playerId = source vagy explicit ---
+--- Server (src/runtime/exports/server.lua) – mindhez kell playerId = source vagy explicit ---
 
 getAbility(playerId, category, name)
   **name kötelező** a szerveren (egyetlen proficiency mező); nincs „teljes kategória”
@@ -1704,7 +1704,7 @@ getProfessionLevelProfile(category, name)
 3. eCore facade – áttekintés + hol a részlet
 ================================================================================
 A `getCore()` által visszaadott tábla **függ** az aktív keretrendszertől (ESX/QB)
-és az oldaltól (src/client/server).
+és az oldaltól (kliens vs szerver oldal).
 
 **Mérvadó névsor (táblázat):** `docs/PUBLIC_API_HU.md` → §6–§10 (`eCore:` metódusok
 bridge fájlonként).
@@ -1742,11 +1742,11 @@ eCore.helper
 4. Inventory integráció (AI rövid útmutató)
 ================================================================================
 - A `overrides/` szerkezet és glob sorrend: szekció **1.3 Standalone
-  modulok (standalone/)**.
+  modulok (`src/config`, `src/standalone/`)**.
 - A tényleges item lista / súly / slot logika: **override** + src/bridge/global
   shared.lua együtt alakítja ki.
 - Új inventory típus: overrides/<új_mappa>/config.lua + shared/
-  src/client/server minták másolása egy létező override-ból (pl. ox_inventory).
+  override mappa `client` / `server` mintáinak másolása egy létező override-ból (pl. ox_inventory).
 - Config.fields és hasonló kulcsok: az adott override config.lua-ban.
 - Ha REGISTERED_ITEMS nem töltődik: szerveren és kliensen **timeout** után
   `CORE_READY = false` + log (nem végtelen várakozás); lásd szekció **1.4**
@@ -1767,7 +1767,7 @@ K: Az indulási logban `items=timeout` – mit csináljak?
 A: A szerver/kliens item registry **nem** töltődött be a ConVar időkorlátig
   (`e_core:items_ready_timeout_ms`). Ellenőrizd: core indulás **e_core előtt**,
   inventory override `getRegisteredItems` láncolat, `ox_lib` fut-e. Részlet:
-  szekció **1.4** `src/server/main.lua`, **SZERVER_OPERATOR_CHECKLIST_HU.md**.
+  szekció **1.4** `src/runtime/bootstrap/server/main.lua`, **SZERVER_OPERATOR_CHECKLIST_HU.md**.
 
 K: `exports.e_core:isReady()` mikor `true`?
 A: Csak ha a registry szál sikeresen befejeződött (`CORE_READY == true`). Timeout

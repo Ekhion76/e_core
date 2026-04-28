@@ -1,5 +1,5 @@
 --- Pure profession level curve math, JSON decode, and admin payload resolution (no DB).
---- Consumed by `src/server/professions.lua` for level profile CRUD and registry read model.
+--- Consumed by `src/runtime/professions/server.lua` for level profile CRUD and registry read model.
 eCoreProfessionLevels = eCoreProfessionLevels or {}
 
 local LEVEL_MODIFIERS = { 'labor', 'time', 'price', 'chance', 'speed' }

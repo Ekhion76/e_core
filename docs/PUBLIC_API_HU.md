@@ -10,7 +10,7 @@ Ez a fájl a **külső hívható** `exports.e_core:*` felületet és az **`eCore
 
 **ConVarok (keret / legacy core resource):** `e_core:framework` = `auto` \| `esx` \| `qb` (alap: `auto`). **`e_core:framework_resource`** – nem üres és **kényszerített** `esx` \| `qb` mellett felülírja az alap resource nevet (`es_extended` vagy `qb-core`); `auto` mellett nem érvényes (figyelmeztető log). Belső registry: `ecore_framework_resource_*` (`framework_resource_registry.lua`). Részlet: `docs/FRAMEWORK_CONFIG_REFACTOR_TERVEZES_HU.md`, `docs/AI_SUPPORT_REFERENCE_HU.txt`.
 
-**Override:** ugyanazon `eCore:` név felülírható `standalone/overrides/<mappa>/` alatt; a betöltési sorrend a mappanevek lexikografikus `**/shared.lua` / `client.lua` / `server.lua` globja szerint dől el.
+**Override:** ugyanazon `eCore:` név felülírható `overrides/<mappa>/` alatt; a betöltési sorrend a mappanevek lexikografikus `**/shared.lua` / `client.lua` / `server.lua` globja szerint dől el.
 
 **`Config` (sekély merge):** a **`Config`** tábla **több** `shared_scripts` chunkból épül (`fxmanifest` sorrend + `overrides/**/config.lua`). **Nincs** beépített **mély** merge: ha egy későbbi fájl `Config.operator = { … }`-ot ad, az **lecseréli** az egész korábbi `operator` táblát — a nem visszaírt almezők **nem** maradnak rejtett örökléssel. Üzemeltetői részletek és checklist: **`docs/SZERVER_OPERATOR_CHECKLIST_HU.md` §1.1**.
 
@@ -43,7 +43,7 @@ A tábla névsora = a fájlban lévő `exports(...)` sorok sorrendje; közvetlen
 | `getAbility` | Szakértelem (meta érték) lekérése egy kategóriában; név nélkül az egész kategória. | `category`, `name?` | Saját játékos cache. `category` / megadott `name`: **string**, **trim**; üres trim után vagy nem string → `false`, `no_valid_meta_name`. Nincs kategória a cache-ben → `category_does_not_exist`. Név megadva, nincs ilyen mező → `meta_does_not_exist`. Sikertelen: `false`, `reason`. |
 | `getMeta` | A saját játékos teljes meta adatbázisa (vagy egy kategória, ha megadod a `meta` kulcsot). | `meta?` | Ha `meta` meg van adva: csak **nem üres string** (trim után); különben `false`, `no_valid_meta_name`. Hiányzó kategória kulcsnál a visszatérés **`nil`** lehet (nincs ilyen kulcs a cache-ben). |
 | `getLabor` | Munkapont (labor) lekérése a saját karakterhez. | – | Siker: **`true`, szám** (a **0** egyenleg is így jön vissza). Hiba: `false`, `reason`. |
-| `getLevel` | Szint számítása adott pontszámból (`standalone/config/levels.lua` tartományok). | `value` | |
+| `getLevel` | Szint számítása adott pontszámból (`src/config/levels.lua` tartományok). | `value` | |
 | `getDiscounts` | Kedvezmények százalékban, a pontszám / szint alapján. | `value` | |
 | `getConfig` | Teljes e_core `Config` tábla olvasása. | – | |
 | `isReady` | Item registry betöltve-e és a core késznek tekinti-e magát; itemhez kötött logika előtt érdemes ellenőrizni. | – | `true` csak ha kész; **`false`** induláskor / timeout / IDLE, **`eCore:isReady()`** csak boolean (0.1.7+, nincs `nil` „várakozás” sentinel). |
@@ -109,7 +109,7 @@ A tábla névsora = a fájlban lévő `exports(...)` sorok sorrendje; közvetlen
 
 A **`SetHttpHandler` alapú külső HTTP admin (`/admin/...`) el lett távolítva.** A beépített Svelte admin (`ecore_admin`, `src/web/src/lib/registry.ts`) a szerver felé **NUI callbacken** (`eCoreAdminApi`) hív: kliens `client/nui_admin_bridge.lua` → szerver `server/nui_admin_bridge.lua`, jogosultság **`hf.webConsoleAccess`** (ugyanaz, mint az admin NUI megnyitásához). Integritás checklist net: `e_core:integrityCheck:*` (`server/integrity_check.lua`).
 
-**Megjegyzés:** az operátori jogosultság és a szerver oldali policy **konfigurációjának** részletei (parancs, azonosítók, `Config.operator` / `Config.web` / `Config.adminApi` stb.) **nem** részei ennek a táblázatos API-szerződésnek — üzemeltetői lépések: **`docs/SZERVER_OPERATOR_CHECKLIST_HU.md`**, forrás: `standalone/config/main.lua` és a `libs/config_check.lua` szintézis.
+**Megjegyzés:** az operátori jogosultság és a szerver oldali policy **konfigurációjának** részletei (parancs, azonosítók, `Config.operator` / `Config.web` / `Config.adminApi` stb.) **nem** részei ennek a táblázatos API-szerződésnek — üzemeltetői lépések: **`docs/SZERVER_OPERATOR_CHECKLIST_HU.md`**, forrás: `src/config/main.lua` és a `libs/config_check.lua` szintézis.
 
 - Válasz alakja változatlan: `professionAdminList`, `professionAdminCreate`, `levelProfileAdminList`, stb. ugyanazt az `{ ok, code, message, data }` szerződést adják, mint az exportok.
 - **Böngészős `npm run dev`:** valós CRUD nélkül használd a mock registry-t (`VITE_USE_MOCK_REGISTRY=true`, lásd `src/web/.env.example`).
@@ -134,7 +134,7 @@ eCore = exports.e_core:getCore()
 
 `imports/client/hud_drag.lua`. Opcionális HUD drag preview proxy: az import réteg hallgatja az `e_core:hud:clientPreview` eseményt, és ha az `id` benne van a consumer oldali `RegisteredElements` map-ben, `SendNUIMessage({ action = 'ECORE_HUD_SYNC', id, pos })` üzenetet küld. Így a consumer oldali NUI üzenetkezelő egyetlen központi rune-state-ből (`.svelte.ts`) frissíthet minden komponenst.
 
-**Megjegyzés:** **`eCore.helper`** = base **`hf`** (`libs/helper.lua`) – változatlan bridge viselkedés. **`eCore.GroupAccess:check(playerData, data)`**: `src/libs/GroupAccess.lua` (job/gang whitelist–blacklist; lásd §6). **`eCore.Err`** = `libs/errors.lua` → **`eCoreErr`** (azonos kulcsok / string értékek); külső resource összehasonlíthat: `reason == exports.e_core:getCore().Err.inventory_full`.
+**Megjegyzés:** **`eCore.helper`** = base **`hf`** (`libs/helper.lua`) – változatlan bridge viselkedés. **`eCore.GroupAccess:check(playerData, data)`**: `src/libs/group_access.lua` (job/gang whitelist–blacklist; lásd §6). **`eCore.Err`** = `libs/errors.lua` → **`eCoreErr`** (azonos kulcsok / string értékek); külső resource összehasonlíthat: `reason == exports.e_core:getCore().Err.inventory_full`.
 
 ---
 
@@ -202,7 +202,7 @@ Forrás: **`libs/errors.lua`**. Az e_core belső kódja **`eCoreErr.xyz`** form�
 | `getRegisteredItem` |
 | `isReady` |
 
-**Kiegészítő közös helper (`src/libs/GroupAccess.lua`):**
+**Kiegészítő közös helper (`src/libs/group_access.lua`):**
 - Lua oldali osztály/tábla név: **`GroupAccess`**
 - Facade elérés: **`eCore.GroupAccess:check(playerData, data)`**
 - JS pár (`src/web/copyable/GroupAccess.js`): **`class GroupAccess`** + `GroupAccess.check(playerData, data)`

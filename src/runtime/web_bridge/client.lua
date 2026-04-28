@@ -47,7 +47,7 @@ local function registerWebCommand()
     RegisterCommand(cmd, function()
         if not Config.web or Config.web.enabled ~= true then
             print(
-                '[e_core] Admin console is disabled (Config.operator.admin.enabled = false). Set it to true (standalone/config/main.lua -> operator.admin, or override), then restart e_core.'
+                '[e_core] Admin console is disabled (Config.operator.admin.enabled = false). Set it to true (src/config/main.lua -> operator.admin, or override), then restart e_core.'
             )
             return
         end

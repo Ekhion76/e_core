@@ -35,7 +35,7 @@ A **glob** (`bridge/**/config.lua`) helyett **egy belépési pont** (`bridge/fra
 ## 4. Nem cél
 
 - Teljes `bridge/` modulrendszer újraírása.
-- Inventory override viselkedés megváltoztatása (`standalone/overrides/*`).
+- Inventory override viselkedés megváltoztatása (`overrides/*`).
 
 ---
 

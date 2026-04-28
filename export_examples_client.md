@@ -98,7 +98,7 @@ exports.e_core:getConfig()
 
 ## isReady
 
-**@return**: boolean – `true` csak akkor, ha az item registry (`REGISTERED_ITEMS`) sikeresen betöltött és a core késznek tekinti magát. Betöltés alatt, timeout után és IDLE esetén `false`. **0.1.7+:** `exports.e_core:isReady()` és `eCore:isReady()` mindig **boolean** (nincs `nil` „várakozás” sentinel a facade-on); `CORE_READY` indulás `false` (`src/client/main.lua`).
+**@return**: boolean – `true` csak akkor, ha az item registry (`REGISTERED_ITEMS`) sikeresen betöltött és a core késznek tekinti magát. Betöltés alatt, timeout után és IDLE esetén `false`. **0.1.7+:** `exports.e_core:isReady()` és `eCore:isReady()` mindig **boolean** (nincs `nil` „várakozás” sentinel a facade-on); `CORE_READY` indulás `false` (`src/runtime/bootstrap/client/main.lua`).
 
 ```lua
 if exports.e_core:isReady() then

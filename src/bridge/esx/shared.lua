@@ -1,6 +1,6 @@
 if ESX_CORE then
     -- if you want to rewrite a function, don't do it here!
-    -- copy it to the standalone/ directory and modify it there!
+    -- use `overrides/...` or `src/config/`; do not edit bridge files in place.
     -- this way, your changes will not be lost in future e_core updates
 
     local hf = hf

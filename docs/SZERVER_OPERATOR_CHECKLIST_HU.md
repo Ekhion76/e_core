@@ -17,14 +17,14 @@ Egy oldalnyi ellenőrzés **éles vagy teszt szerver** indítás előtt / után.
 - [ ] **Inventory override:** ha ox / qs / avp stb., a megfelelő resource is fusson; ütköző két override ne írja felül egymást véletlenül (`fxmanifest` betöltési sorrend + `overrides/**` mappa).
 - [ ] **Indulási log:** konzolon megjelenik-e az egységes sor (`logEcoreStartupSummary`): verzió, framework, inventory címke, `items=ready|timeout|pending`. `timeout` esetén: item registry / inventory integráció ellenőrzése.
 - [ ] **Opcionális ConVarok** (ha nem az alap kell): `e_core:framework`, `e_core:framework_resource`, `e_core:items_ready_timeout_ms`, `e_core:items_ready_poll_ms`, `e_core:loadmeta_rate_ms` (net rate limit meta betöltéshez), `e_core:labor_tick_chunk` (labor auto tick: 0 = mind egyben, pl. 32–128 = hullámonkénti feldolgozás nagy online létszámnál).
-- [ ] **Admin konzol (`/ecore_admin`):** `Config.operator.admin.enabled = true` + `Config.operator.identifiers` és/vagy ACE (`add_ace … ecore.admin allow`). Alap: `standalone/config/main.lua` → `Config.operator.admin` (a betöltéskor szintetizált `Config.web` mezők csak belső használatra maradnak).
-- [ ] **Integritás parancs (`/ecore_diag`):** `Config.operator.integrityCheck.enabled = true`. Ha az admin NUI be van kapcsolva (`Config.operator.admin.enabled`), a jog a **`hf.webConsoleAccess`** (admin policy) szerint van; különben `integrityCheck` ACE + azonosítók. Részletek: `standalone/config/main.lua` → `Config.operator.integrityCheck`.
+- [ ] **Admin konzol (`/ecore_admin`):** `Config.operator.admin.enabled = true` + `Config.operator.identifiers` és/vagy ACE (`add_ace … ecore.admin allow`). Alap: `src/config/main.lua` → `Config.operator.admin` (a betöltéskor szintetizált `Config.web` mezők csak belső használatra maradnak).
+- [ ] **Integritás parancs (`/ecore_diag`):** `Config.operator.integrityCheck.enabled = true`. Ha az admin NUI be van kapcsolva (`Config.operator.admin.enabled`), a jog a **`hf.webConsoleAccess`** (admin policy) szerint van; különben `integrityCheck` ACE + azonosítók. Részletek: `src/config/main.lua` → `Config.operator.integrityCheck`.
 
 ---
 
 ## 1.1 `Config` felülírás — **sekély merge** (kanonikus szabály)
 
-Az e_core **`Config`** táblája több **Lua chunk**-ból épül fel (`fxmanifest.lua` `shared_scripts` sorrend: alapértelmezett bridge / `standalone/config/main.lua`, majd `overrides/**/config.lua` a glob szerint). **Nincs beépített rekurzív (mély) merge:** ha egy későbbi fájl **új táblát** rendel egy top-level kulcshoz (pl. `Config.operator = { … }`), az **lecseréli** az előző chunk ugyanilyen kulcs alatti **teljes** tábláját — az előző almezők, amiket nem másoltál át, **nem** maradnak „alapértelmezés alatt” automatikusan.
+Az e_core **`Config`** táblája több **Lua chunk**-ból épül fel (`fxmanifest.lua` `shared_scripts` sorrend: alapértelmezett bridge / `src/config/main.lua`, majd `overrides/**/config.lua` a glob szerint). **Nincs beépített rekurzív (mély) merge:** ha egy későbbi fájl **új táblát** rendel egy top-level kulcshoz (pl. `Config.operator = { … }`), az **lecseréli** az előző chunk ugyanilyen kulcs alatti **teljes** tábláját — az előző almezők, amiket nem másoltál át, **nem** maradnak „alapértelmezés alatt” automatikusan.
 
 | Szabály | Gyakorlat |
 |----------|-----------|
@@ -33,7 +33,7 @@ Az e_core **`Config`** táblája több **Lua chunk**-ból épül fel (`fxmanifes
 | **Szintézis után** | `src/libs/config_check.lua` induláskor `Config.operator` alapján tölti a **`Config.web`**, **`Config.integrityCheck`**, **`Config.adminApi`** stb. mezőket — ha az `operator` „hiányos” maradt, **default** ágak léphetnek fel (`applyOperatorConfig` logika); üzemeltetői cél: **ne** támaszkodj véletlenszerű defaultokra élesben, hanem **tudatos** `operator` tábla. |
 | **Mély merge igény** | Saját helper vagy **egyetlen** saját `config.lua`, ahol kézzel egyesíted a részfákat — az e_core **nem** ígér rekurzív merge-t. |
 
-**Ellenőrzés override után:** `Config.operator` (és más felülírt top-level kulcs) tartalmazza-e az összes **számodra szükséges** alkulcsot; ha csak „diffet” írtál, hasonlítsd össze a **`standalone/config/main.lua`** referenciával.
+**Ellenőrzés override után:** `Config.operator` (és más felülírt top-level kulcs) tartalmazza-e az összes **számodra szükséges** alkulcsot; ha csak „diffet” írtál, hasonlítsd össze a **`src/config/main.lua`** referenciával.
 
 ---
 
@@ -48,7 +48,7 @@ Az e_core **`Config`** táblája több **Lua chunk**-ból épül fel (`fxmanifes
 | **Hamis net `loadMeta` / abuse** | forrás ellenőrzés + rate limit (`e_core:loadmeta_rate_ms`) |
 | **Régi kliens `e_core:playerLoaded`** | csak szerver `TriggerEvent` + `AddEventHandler` – kliens hívás nem támogatott |
 | **Jármű spawn** | csak `e_core:createVehicle` **callback** + forrás check |
-| **Config „eltűnő” ágak** override után | §1.1 sekély merge: teljes `operator` (vagy érintett top-level kulcs) másolása / egy fájlban tartás; összevetés `standalone/config/main.lua`-val |
+| **Config „eltűnő” ágak** override után | §1.1 sekély merge: teljes `operator` (vagy érintett top-level kulcs) másolása / egy fájlban tartás; összevetés `src/config/main.lua`-val |
 
 ---
 

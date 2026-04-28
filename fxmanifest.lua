@@ -1,7 +1,7 @@
 fx_version 'cerulean'
 game 'gta5'
 description 'ECO CORE'
-version '0.1.13'
+version '0.1.14'
 
 shared_scripts {
     '@ox_lib/init.lua',
@@ -11,8 +11,8 @@ shared_scripts {
     'src/bridge/qb/config_defaults.lua',
     'src/bridge/framework_resource_registry.lua',
     'src/bridge/framework_config.lua',
-    'src/standalone/config/main.lua',
-    'src/standalone/config/levels.lua',
+    'src/config/main.lua',
+    'src/config/levels.lua',
     'overrides/**/config.lua',
 
     'src/imports/shared/utils.lua',
@@ -22,7 +22,7 @@ shared_scripts {
     'src/libs/itemconvert_console_sink.lua',
     'src/libs/itemconvert_diag.lua',
     'src/libs/itemconvert_pipeline.lua',
-    'src/libs/GroupAccess.lua',
+    'src/libs/group_access.lua',
     'src/libs/errors.lua',
 
     'src/libs/meta.lua',
@@ -51,15 +51,15 @@ client_scripts {
 
     'src/bridge/main.lua',
 
-    'src/client/ecore_nui.lua',
-    'src/client/client_meta_store.lua',
-    'src/client/hud_layout_registry.lua',
-    'src/client/main.lua',
-    'src/client/integrity_check.lua',
-    'src/client/web.lua',
-    'src/client/nui_admin_bridge.lua',
-    'src/client/nui_diagnostics_bridge.lua',
-    'src/client/exports.lua',
+    'src/runtime/web_bridge/ecore_nui.lua',
+    'src/runtime/meta/client.lua',
+    'src/runtime/hud/client/registry.lua',
+    'src/runtime/bootstrap/client/main.lua',
+    'src/runtime/integrity/client.lua',
+    'src/runtime/web_bridge/client.lua',
+    'src/runtime/admin/client_nui_bridge.lua',
+    'src/runtime/diagnostics/client_nui_bridge.lua',
+    'src/runtime/exports/client.lua',
 }
 
 server_scripts {
@@ -87,24 +87,24 @@ server_scripts {
 
     'src/bridge/global/callbacks/server.lua',
 
-    'src/server/player_meta_store.lua',
-    'src/server/main.lua',
-    'src/server/meta.lua',
-    'src/server/hud_layout.lua',
-    'src/server/labor.lua',
-    'src/server/quote.lua',
-    'src/server/db_migrations.lua',
+    'src/runtime/meta/player_meta_store.lua',
+    'src/runtime/bootstrap/server/main.lua',
+    'src/runtime/meta/server.lua',
+    'src/runtime/hud/server/layout.lua',
+    'src/runtime/labor/server.lua',
+    'src/runtime/quote/server.lua',
+    'src/runtime/db/migrations.lua',
     'src/libs/profession_levels.lua',
-    'src/server/admin_denied_audit.lua',
-    'src/server/professions.lua',
-    'src/server/db.lua',
-    'src/server/exports.lua',
-    'src/server/integrity_check.lua',
-    'src/server/diagnostics.lua',
-    'src/server/web.lua',
-    'src/server/admin_inventory_sample.lua',
-    'src/server/nui_admin_bridge.lua',
-    'src/server/nui_diagnostics_bridge.lua',
+    'src/runtime/admin/server_denied_audit.lua',
+    'src/runtime/professions/server.lua',
+    'src/runtime/db/server.lua',
+    'src/runtime/exports/server.lua',
+    'src/runtime/integrity/server.lua',
+    'src/runtime/diagnostics/server.lua',
+    'src/runtime/web_bridge/server.lua',
+    'src/runtime/admin/server_inventory_sample.lua',
+    'src/runtime/admin/server_nui_bridge.lua',
+    'src/runtime/diagnostics/server_nui_bridge.lua',
     'src/standalone/usableitem.lua',
 }
 

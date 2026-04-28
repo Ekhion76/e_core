@@ -48,7 +48,7 @@ local balance = laborOrErr
 
 Részletes szerződés: `docs/PUBLIC_API_HU.md` §2–§3 + §5, `export_examples_server.md` / `export_examples_client.md`, `changelog.md` (0.0.41).
 
-**Példa hívás a repóban:** `standalone/usableitem.lua` – `labor_enhancer` → `addLabor`.
+**Példa hívás a repóban:** `src/standalone/usableitem.lua` – `labor_enhancer` → `addLabor`.
 
 ## Szinkron és mentés
 
@@ -68,12 +68,12 @@ Részletes szerződés: `docs/PUBLIC_API_HU.md` §2–§3 + §5, `export_example
 
 ## Konfiguráció
 
-- `standalone/config/main.lua`: `systemMode.labor`, `displayComponent.laborHud`, `defaultLabor`, `laborLimit`, `laborIncreaseTime`, `laborIncrease`, `laborIncreaseOffline`.
+- `src/config/main.lua`: `systemMode.labor`, `displayComponent.laborHud`, `defaultLabor`, `laborLimit`, `laborIncreaseTime`, `laborIncrease`, `laborIncreaseOffline`.
 - `libs/config_check.lua`: labor mezők `tonumber` normalizálása.
 
 ## Jártasság / labor költség (nem `labor.lua`, de együtt tervezendő)
 
-- `standalone/config/levels.lua`: rangonkénti **`labor` %** (kedvezmény).
+- `src/config/levels.lua`: rangonkénti **`labor` %** (kedvezmény).
 - `libs/meta.lua` – `getDiscounts(value)`: a `Config.levels` sorok **numerikus mezőit** interpolálja (köztük `labor`). A tényleges „mennyi laborba kerül egy akció” logika tipikusan **külső szkript** + export / discount.
 
 ## Refaktor / optimalizálás fókuszlista
@@ -316,7 +316,7 @@ Ez a szakasz **egy közös, dokumentált szabályt** ad: ugyanazt a számot kapj
 
 ### Szemantika (`Config.levels`, `getDiscounts`)
 
-- A `standalone/config/levels.lua` kommentje szerint a `labor` mező: **„labor cost reduction as a percentage”** – tehát **0–100 közötti százalék**: mennyivel csökken az alap munkapont-költség.
+- A `src/config/levels.lua` kommentje szerint a `labor` mező: **„labor cost reduction as a percentage”** – tehát **0–100 közötti százalék**: mennyivel csökken az alap munkapont-költség.
 - A `exports.e_core:getDiscounts(proficiencyPoints)` (vagy kliensen ugyanez) a jártasság pontszáma alapján **interpolált** kedvezményt ad vissza; a visszatérési táblában a **`labor` mező = aktuális kedvezmény százalék** (`p`), ugyanabban a jelentésben, mint a `Config.levels` sorokban.
 
 ### Kanonikus képlet

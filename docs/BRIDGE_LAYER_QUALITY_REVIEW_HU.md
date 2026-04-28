@@ -1,7 +1,7 @@
 # e_core – Bridge réteg minőségi áttekintés
 
 **Dátum:** 2026-04-27  
-**Scope:** `src/bridge/`, kapcsolódó `fxmanifest.lua`, `src/libs/helper_ecore.lua`, `src/server/integrity_check.lua`, `overrides/` minták; kiegészítve: memória, hot reload / migráció / NUI, QBox adapter.  
+**Scope:** `src/bridge/`, kapcsolódó `fxmanifest.lua`, `src/libs/helper_ecore.lua`, `src/runtime/integrity/server.lua`, `overrides/` minták; kiegészítve: memória, hot reload / migráció / NUI, QBox adapter.  
 **Kontextus:** FiveM framework bridge (ESX, QBCore; QBox jegyzetek). A dokumentum **összeállított áttekintés**; részletes üzemeltetési stratégia: [FRAMEWORK_CONFIG_REFACTOR_TERVEZES_HU.md](FRAMEWORK_CONFIG_REFACTOR_TERVEZES_HU.md), [FRAMEWORK_IDLE_GUARD_STRATEGY_HU.md](FRAMEWORK_IDLE_GUARD_STRATEGY_HU.md).
 
 ### Státusz jelölés (ebben a fájlban)
@@ -40,9 +40,9 @@
 
 **[Orvosolva 0.1.7] – rövid lista:**
 
-- `src/client/main.lua`, `src/server/main.lua` – **`CORE_READY`** indulás **`false`** (korábban `nil`).
+- `src/runtime/bootstrap/client/main.lua`, `src/runtime/bootstrap/server/main.lua` – **`CORE_READY`** indulás **`false`** (korábban `nil`).
 - `src/bridge/global/shared.lua` – **`eCore:isReady()`** → **`CORE_READY == true`** (mindig boolean).
-- `src/client/exports.lua`, `src/server/exports.lua` – **`isReady`** export a facade booleanját adja.
+- `src/runtime/exports/client.lua`, `src/runtime/exports/server.lua` – **`isReady`** export a facade booleanját adja.
 
 ---
 
@@ -168,7 +168,7 @@ A `getCore()` nem ad külön `bridgeVersion` / `contractVersion` mezőt; a resou
 
 ## 3. Overrides rendszer és bővíthetőség
 
-**Betöltési sorrend** (`fxmanifest.lua`): bridge ESX/QB → **utána** `overrides/**` → események → `src/bridge/main.lua` → `src/client|server/...`.
+**Betöltési sorrend** (`fxmanifest.lua`): bridge ESX/QB → **utána** `overrides/**` → események → `src/bridge/main.lua` → `src/runtime/...`.
 
 ```39:52:fxmanifest.lua
     'src/bridge/esx/client.lua',
@@ -218,7 +218,7 @@ if not CUSTOM_INVENTORY then return end
 
 **Integrity / env lépés:** `getFrameWork()` + `isReady` + item convert diagnosztika – alap környezet; nem teszteli külön az összes exportot / mindkét framework ágat egy futásban.
 
-```462:469:src/server/integrity_check.lua
+```462:469:src/runtime/integrity/server.lua
     if only == 'env' then
         -- ...
         local fw = exports[GetCurrentResourceName()]:getFrameWork()
@@ -236,7 +236,7 @@ if not CUSTOM_INVENTORY then return end
 
 **[Nyitott]** **NUI:** `eCoreNui.isReady()` egyszerű boolean; nincs Lua oldali üzenetsor – extrém `SendNUIMessage` flood esetén a weboldal oldalon kell backpressure.
 
-```7:12:src/client/ecore_nui.lua
+```7:12:src/runtime/web_bridge/ecore_nui.lua
 function eCoreNui.isReady()
     return shellReady
 end
@@ -301,7 +301,7 @@ A pontos MiB arányokat érdemes egyszer mérni (`collectgarbage`, profiler), de
 
 - **`e_core` újraindítása:** új Lua kontextus; a bridge `RegisterNetEvent` regisztrációk a `src/bridge/main.lua` (és framework event fájlok) betöltésekor **újra egyszer** lefutnak – ugyanazon resource példányán **nem** maradnak „dupla” bridge handlerek.
 - **Duplikáció gyakoribb forrása:** **consumer** vagy más resource, amelyik `AddEventHandler` / saját net eseményt **minden** `onResourceStart`-nál újra regisztrál védelem nélkül. Ott idempotencia (`if _registered then return end`) vagy célzott `RemoveEventHandler` indokolt.
-- **Dokumentáció:** saját net felület: [NET_EVENTS_AUDIT_HU.md](NET_EVENTS_AUDIT_HU.md). Az `e_core` meta mentés `onResourceStop`-on: `src/server/meta.lua` (resource stop → `saveAllMeta`).
+- **Dokumentáció:** saját net felület: [NET_EVENTS_AUDIT_HU.md](NET_EVENTS_AUDIT_HU.md). Az `e_core` meta mentés `onResourceStop`-on: `src/runtime/meta/server.lua` (resource stop → `saveAllMeta`).
 
 ### 9.2 Cross-framework adatmigráció (pl. ESX → QB)
 
@@ -313,7 +313,7 @@ Ez **nem a bridge**, hanem **adat-szerződés + migrációs terv**:
 
 ### 9.3 NUI bridge – üzenetflood és backpressure
 
-A kliensen `SendNUIMessage` több modulból hívódik (`src/client/main.lua`, integrity, hud, web, stb.); **Lua oldalon nincs beépített üzenetsor vagy throttle**. Sűrű, egymás utáni üzenetek (pl. meta `UPDATE` tick szerűen) terhelhetik a CEF-et.
+A kliensen `SendNUIMessage` több modulból hívódik (`src/runtime/bootstrap/client/main.lua`, integrity, hud, web, stb.); **Lua oldalon nincs beépített üzenetsor vagy throttle**. Sűrű, egymás utáni üzenetek (pl. meta `UPDATE` tick szerűen) terhelhetik a CEF-et.
 
 **Javasolt gyakorlat:** azonos típusú üzenetek **összevonása** (debounce / „csak utolsó állapot” frame-enként), progress tick inkább natív vagy ox_lib, ne NUI-on keresztül; szükség esetén a Svelte oldalon queue + `requestAnimationFrame` szintű feldolgozás.
 

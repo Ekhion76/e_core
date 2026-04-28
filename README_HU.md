@@ -20,8 +20,8 @@ Az **e_core** egy **FiveM resource**, önálló **core platform**: nem csak „b
 - **Más resource belépés:** tipikusan import / bootstrap: `exports['e_core']:getCore()` és a dokumentált exportok; opcionálisan `full_import` (lásd: Betöltés és memória).
 - **Proficiency + labor + tudás** (megtanult receptek) és **meta** tárolás; **oxmysql** séma migrációk.
 - **Központi HUD pozicionálás:** a consumer szkriptek regisztrálhatják a HUD elemeiket, az e_core mozgatja és tárolja a pozícióikat (`registerHudElement` / kapcsolódó API).
-- **Whitelist / blacklist AccessGate** job / gang és grade alapon ([src/libs/group_access.lua](src/libs/group_access.lua)).
-- **Hibák:** strukturált `eCoreErr`, fájlba író eseménynaplózás ([docs/ECORE_ERR_HIBA_NYOMON_HU.md](docs/ECORE_ERR_HIBA_NYOMON_HU.md)).
+- **GroupAccess:** whitelist / blacklist job / gang és grade alapon ([src/libs/group_access.lua](src/libs/group_access.lua)).
+- **Hibák és auditálhatóság:** strukturált `eCoreErr` táblázat + fájlba író eseménynapló ([src/libs/file_event_logger.lua](src/libs/file_event_logger.lua), [docs/ECORE_ERR_HIBA_NYOMON_HU.md](docs/ECORE_ERR_HIBA_NYOMON_HU.md)).
 - **Fordítás:** locale fájlok + translate / translateU a publikus `eCore` felületen.
 - **Kliens–szerver:** **ox_lib** callback minták; NUI / UX: modal, notification, progress, form; grid snapping, preset mentés, export / import.
 - **Discord log** osztály (szerver, ha elérhető a `createDiscordLog` hook).
@@ -31,7 +31,7 @@ Az **e_core** egy **FiveM resource**, önálló **core platform**: nem csak „b
 - **Labor quote** – árajánlat / időbecslés vonal a laborhoz.
 - **Item convert pipeline** + konzol / diagnosztika sink.
 - **Integrity check** kliens és szerver oldalon.
-- **Admin API denied audit** – elutasított admin hívások nyomon követése / törlése.
+- **Admin denied audit** – elutasított admin hívások nyomon követése / törlése.
 - **NUI admin és diagnostics bridge** – operátori / fejlesztői felület felé.
 - **Usable item** hook (`src/standalone/usableitem.lua`).
 - **DB migrációk** központilag; export: `getDbSchemaVersion`.
@@ -116,19 +116,19 @@ Alap szerveren vagy **ox_inventory** mellett gyakran nincs szükség extra módo
 e_core/
   fxmanifest.lua          # betöltési sorrend, függőségek, files{} (imports + NUI dist)
   src/
-    bridge/               # ESX / QB / global illesztés, framework_config, events, main.lua
-    client/               # kliens runtime, NUI bridge Lua, HUD registry, exportok
-    server/               # szerver: db, migrációk, labor, meta, profession, diagnostics, exportok
-    libs/                 # közös Lua: helper, hibák, GroupAccess, meta, napló, itemconvert, …
-    imports/              # más resource: @e_core/... include + LoadResourceFile célok
+    bridge/               # framework illesztés és lifecycle (esx/, qb/, global/, events/, main.lua)
+    runtime/              # domain modulok (bootstrap, db, hud, labor, meta, professions, diagnostics, admin, web_bridge, integrity, exports)
+    libs/                 # közös Lua libek (helper, hibák, GroupAccess, meta, file logger, itemconvert, profession levels)
+    imports/              # consumer belépési pontok/segédek (shared/, client/, server/)
     locales/              # fordítások
     config/               # globális config + levels (main.lua, levels.lua)
-    web/                    # Svelte + TS NUI FORRÁS (npm run build → dist)
-    web/dist/               # build kimenet (ui_page erre mutat)
+    standalone/           # standalone hookok (usableitem.lua)
+    web/                  # Svelte + TS NUI FORRÁS (npm run build → dist)
+    web/dist/             # build kimenet (ui_page erre mutat)
   overrides/              # stack szerinti Lua + config (inventory, notify, …)
-  docs/                     # kanonikus belső szerződés + üzemeltetés (nem futó kód) — belépő: INDEX_HU.md
-  types/                    # LuaLS stubok
-  scripts/                  # CI / dev segédek
+  docs/                   # kanonikus belső szerződés + üzemeltetés (nem futó kód) — belépő: INDEX_HU.md
+  types/                  # LuaLS stubok
+  scripts/                # CI / dev segédek
 ```
 
 Ha NUI-t vagy Svelte-et fejlesztesz: **`src/web/`**, majd build → **`src/web/dist/`**.

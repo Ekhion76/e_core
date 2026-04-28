@@ -20,8 +20,8 @@
 - **Other resources:** typically bootstrap via `exports['e_core']:getCore()` and documented exports; optional `full_import` (see **Loading and memory**).
 - **Proficiency + labor + learned recipes** and **meta** storage; **oxmysql** schema migrations.
 - **Central HUD positioning:** consumers can register HUD elements; e_core moves and persists positions (`registerHudElement` and related API).
-- **Whitelist / blacklist AccessGate** by job / gang and grade ([src/libs/group_access.lua](src/libs/group_access.lua)).
-- **Errors:** structured `eCoreErr`, file-backed event logging ([docs/ECORE_ERR_HIBA_NYOMON_HU.md](docs/ECORE_ERR_HIBA_NYOMON_HU.md)).
+- **GroupAccess:** whitelist / blacklist by job / gang and grade ([src/libs/group_access.lua](src/libs/group_access.lua)).
+- **Errors and auditability:** structured `eCoreErr` table + file-backed event log writer ([src/libs/file_event_logger.lua](src/libs/file_event_logger.lua), [docs/ECORE_ERR_HIBA_NYOMON_HU.md](docs/ECORE_ERR_HIBA_NYOMON_HU.md)).
 - **i18n:** locale files + `translate` / `translateU` on the public `eCore` facade.
 - **Client–server:** **ox_lib** callback patterns; NUI / UX: modal, notification, progress, form; grid snapping, presets, export/import.
 - **Discord log** helper on the server when the `createDiscordLog` hook is available.
@@ -31,7 +31,7 @@
 - **Labor quote** – quoting / time-estimate path for labor.
 - **Item convert pipeline** + console/diagnostic sinks.
 - **Integrity check** on client and server.
-- **Admin API denied audit** – track/purge denied admin calls.
+- **Admin denied audit:** track/purge denied admin calls.
 - **NUI admin and diagnostics bridge** for operator/dev tooling.
 - **Usable item** hook (`src/standalone/usableitem.lua`).
 - **Central DB migrations**; export: `getDbSchemaVersion`.
@@ -116,19 +116,19 @@ Stock ESX/QB or **ox_inventory** often needs no extra edits; other inventories: 
 e_core/
   fxmanifest.lua          # load order, deps, files{} (imports + NUI dist)
   src/
-    bridge/               # ESX / QB / global adapters, framework_config, events, main.lua
-    client/               # client runtime, NUI Lua bridges, HUD registry, exports
-    server/               # server: db, migrations, labor, meta, profession, diagnostics, exports
-    libs/                 # shared Lua: helpers, errors, GroupAccess, meta, logging, itemconvert, …
-    imports/              # other resources: @e_core/... includes + LoadResourceFile targets
+    bridge/               # framework adapters and lifecycle (esx/, qb/, global/, events/, main.lua)
+    runtime/              # domain modules (bootstrap, db, hud, labor, meta, professions, diagnostics, admin, web_bridge, integrity, exports)
+    libs/                 # shared Lua libs (helpers, errors, GroupAccess, meta, file logger, itemconvert, profession levels)
+    imports/              # consumer entrypoints/helpers (shared/, client/, server/)
     locales/              # translations
     config/               # global config + levels (main.lua, levels.lua)
-    web/                    # Svelte + TS NUI sources (npm run build → dist)
-    web/dist/               # build output (ui_page points here)
+    standalone/           # standalone hooks (usableitem.lua)
+    web/                  # Svelte + TS NUI sources (npm run build → dist)
+    web/dist/             # build output (ui_page points here)
   overrides/              # per-stack Lua + config (inventory, notify, …)
-  docs/                     # canonical internal contract + ops docs (not runtime) — start: INDEX_HU.md
-  types/                    # LuaLS stubs
-  scripts/                  # CI / dev helpers
+  docs/                   # canonical internal contract + ops docs (not runtime) — start: INDEX_HU.md
+  types/                  # LuaLS stubs
+  scripts/                # CI / dev helpers
 ```
 
 For NUI / Svelte work: **`src/web/`**, then build → **`src/web/dist/`**.

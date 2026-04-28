@@ -1,22 +1,5 @@
-RegisterServerEvent('e_core:loadMeta', function()
-    local playerId = source
-    if not hf.isValidPlayerSource(playerId) then
-        return
-    end
-    local cooldown = GetConvarInt('e_core:loadmeta_rate_ms', 2500)
-    if cooldown < 500 then
-        cooldown = 500
-    end
-    if not hf.netRateLimit(playerId, 'e_core:loadMeta', cooldown) then
-        return
-    end
-    local xPlayer = eCore:getPlayer(playerId)
-    if not xPlayer then
-        return
-    end
-    loadMeta(xPlayer)
-end)
 local quote = lib.require('src/runtime/quote/logic')
+local M = {}
 
 --- Reserved root meta keys managed by lifecycle/save flow (`prepareMeta`, persistence).
 --- They are read-only for `registerMeta` / `setMeta` and excluded from ability APIs.
@@ -64,7 +47,7 @@ end
 --- @param category string|nil
 --- @param name string|nil
 --- @return number resolved ability cap (profession-specific if configured, else Config.abilityLimit)
-function resolveAbilityCap(category, name)
+function M.resolveAbilityCap(category, name)
     local fallback = tonumber(Config.abilityLimit) or 0
     local progression = Config.progression
     if type(progression) ~= 'table' then
@@ -121,7 +104,7 @@ end
 --- @param value table Key-value payload (stored as a shallow copy).
 --- @return boolean success
 --- @return string|nil reason eCoreErr when success is false.
-function setMeta(playerId, meta, value)
+function M.setMeta(playerId, meta, value)
     local row, err = meta_require_player_row(playerId)
     if not row then
         return false, err
@@ -138,7 +121,7 @@ function setMeta(playerId, meta, value)
 
     row[metaKey] = hf.shallowCopy(value)
     quote.invalidateLaborQuoteCache(playerId)
-    syncRequest(playerId)
+    M.syncRequest(playerId)
 
     return true
 end
@@ -146,7 +129,7 @@ end
 --- @param playerId number (source)
 --- @param meta string|nil Optional category key (trimmed; reserved keys are readable).
 --- @return boolean|table false, err | full meta table | category value (can be nil if key does not exist).
-function getMeta(playerId, meta)
+function M.getMeta(playerId, meta)
     local row, err = meta_require_player_row(playerId)
     if not row then
         return false, err
@@ -172,7 +155,7 @@ end
 --- @param defaultValue table|nil Defaults payload (nil becomes empty table).
 --- @return boolean success
 --- @return string|nil reason eCoreErr when success is false.
-function registerMeta(playerId, category, defaultValue)
+function M.registerMeta(playerId, category, defaultValue)
     local row, err = meta_require_player_row(playerId)
     if not row then
         return false, err
@@ -193,7 +176,7 @@ function registerMeta(playerId, category, defaultValue)
     if slot == nil then
         row[ck] = hf.shallowCopy(defaultValue)
         quote.invalidateLaborQuoteCache(playerId)
-        syncRequest(playerId)
+        M.syncRequest(playerId)
         return true
     end
 
@@ -211,7 +194,7 @@ function registerMeta(playerId, category, defaultValue)
 
     if dirty then
         quote.invalidateLaborQuoteCache(playerId)
-        syncRequest(playerId)
+        M.syncRequest(playerId)
     end
 
     return true
@@ -221,7 +204,7 @@ end
 --- @param category string Category key (for example: crafting).
 --- @param name string Ability key (for example: weaponry).
 --- @return boolean|number false, err | current ability value.
-function getAbility(playerId, category, name)
+function M.getAbility(playerId, category, name)
     local row, err = meta_require_player_row(playerId)
     if not row then
         return false, err
@@ -253,7 +236,7 @@ end
 --- @param value number|string Delta value to add.
 --- @return boolean success
 --- @return string|nil reason eCoreErr when success is false.
-function addAbility(playerId, category, name, value)
+function M.addAbility(playerId, category, name, value)
     local row, err = meta_require_player_row(playerId)
     if not row then
         return false, err
@@ -283,7 +266,7 @@ function addAbility(playerId, category, name, value)
 
     local metaValue = row[ck][nk]
     local baseValue = metaValue
-    local abilityCap = resolveAbilityCap(ck, nk)
+    local abilityCap = M.resolveAbilityCap(ck, nk)
 
     if metaValue >= abilityCap then
         return false, eCoreErr.has_already_reached_the_limit
@@ -297,7 +280,7 @@ function addAbility(playerId, category, name, value)
         row[ck][nk] = newValue
         messageIfLevelChange(playerId, ck, nk, baseValue, newValue)
         quote.invalidateLaborQuoteCache(playerId)
-        syncRequest(playerId)
+        M.syncRequest(playerId)
     end
 
     return true
@@ -309,7 +292,7 @@ end
 --- @param value number|string Delta value to subtract.
 --- @return boolean success
 --- @return string|nil reason eCoreErr when success is false.
-function removeAbility(playerId, category, name, value)
+function M.removeAbility(playerId, category, name, value)
     local row, err = meta_require_player_row(playerId)
     if not row then
         return false, err
@@ -339,7 +322,7 @@ function removeAbility(playerId, category, name, value)
 
     local metaValue = row[ck][nk]
     local baseValue = metaValue
-    local abilityCap = resolveAbilityCap(ck, nk)
+    local abilityCap = M.resolveAbilityCap(ck, nk)
 
     metaValue = metaValue - delta
 
@@ -349,7 +332,7 @@ function removeAbility(playerId, category, name, value)
         row[ck][nk] = newValue
         messageIfLevelChange(playerId, ck, nk, baseValue, newValue)
         quote.invalidateLaborQuoteCache(playerId)
-        syncRequest(playerId)
+        M.syncRequest(playerId)
     end
 
     return true
@@ -361,7 +344,7 @@ end
 --- @param value number|string Absolute value to set.
 --- @return boolean success
 --- @return string|nil reason eCoreErr when success is false.
-function setAbility(playerId, category, name, value)
+function M.setAbility(playerId, category, name, value)
     local row, err = meta_require_player_row(playerId)
     if not row then
         return false, err
@@ -391,14 +374,14 @@ function setAbility(playerId, category, name, value)
 
     local metaValue = row[ck][nk]
     local baseValue = metaValue
-    local abilityCap = resolveAbilityCap(ck, nk)
+    local abilityCap = M.resolveAbilityCap(ck, nk)
     local newValue = hf.clamp(numValue, abilityCap)
 
     if baseValue ~= newValue then
         row[ck][nk] = newValue
         messageIfLevelChange(playerId, ck, nk, baseValue, newValue)
         quote.invalidateLaborQuoteCache(playerId)
-        syncRequest(playerId)
+        M.syncRequest(playerId)
     end
 
     return true
@@ -407,7 +390,7 @@ end
 --- Queues meta sync for player and flushes batched sync events in next tick.
 --- @param playerId number
 --- @return nil
-function syncRequest(playerId)
+function M.syncRequest(playerId)
     PlayerMetaStore.queueSync(playerId)
 end
 
@@ -415,7 +398,7 @@ end
 --- @param playerId number
 --- @param meta table
 --- @return nil
-function prepareMeta(playerId, meta)
+function M.prepareMeta(playerId, meta)
     if type(meta) ~= 'table' then
         meta = {}
     end
@@ -449,23 +432,11 @@ function prepareMeta(playerId, meta)
     end
 end
 
----
---- SAVE AND LOAD EVENTS
----
---- Server-side bridge events only (TriggerEvent). Do not expose as RegisterServerEvent,
---- otherwise clients could inject forged xPlayer payloads.
-AddEventHandler('e_core:playerLoaded', function(xPlayer)
-    if not xPlayer or not xPlayer.source then
-        return
-    end
-    loadMeta(xPlayer)
-end)
-
 --- Persists player metadata if save cooldown allows it.
 --- @param playerId number
 --- @param event string
 --- @return nil
-function saveRequest(playerId, event)
+function M.saveRequest(playerId, event)
     local xPlayer = eCore:getPlayer(playerId)
 
     if xPlayer and PlayerMetaStore.get(playerId) then
@@ -484,41 +455,4 @@ function saveRequest(playerId, event)
     end
 end
 
-AddEventHandler('e_core:playerUnload', function(playerId)
-    saveRequest(playerId, 'unload')
-end)
-
-AddEventHandler('playerDropped', function()
-    local playerId = source
-    saveRequest(playerId, 'dropped')
-end)
-
-AddEventHandler('onResourceStop', function(resource)
-    if resource == GetCurrentResourceName() then
-        saveAllMeta()
-    end
-end)
-
-AddEventHandler('txAdmin:events:scheduledRestart', function(eventData)
-    if eventData.secondsRemaining == 60 then
-        CreateThread(function()
-            Wait(50000)
-            saveAllMeta()
-        end)
-    end
-end)
-
-AddEventHandler('txAdmin:events:serverShuttingDown', function()
-    saveAllMeta()
-end)
-
---- Periodic save loop (10-minute interval).
---- @return nil
-local function scheduledSave()
-    SetTimeout(60000 * 10, function()
-        saveAllMeta()
-        scheduledSave()
-    end)
-end
-
-scheduledSave()
+return M

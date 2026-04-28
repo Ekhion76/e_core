@@ -3,6 +3,7 @@
 
 local M = {}
 local quote = lib.require('src/runtime/quote/logic')
+local meta = lib.require('src/runtime/meta/logic')
 
 --- Checks whether labor subsystem is enabled.
 --- @return boolean ok True when labor operations are allowed.
@@ -67,7 +68,7 @@ function M.setLabor(playerId, amount)
     row.labor.time = os.time()
     quote.invalidateLaborQuoteCache(playerId)
 
-    syncRequest(playerId)
+    meta.syncRequest(playerId)
     return true
 end
 
@@ -99,7 +100,7 @@ function M.removeLabor(playerId, amount)
     row.labor.time = os.time()
     quote.invalidateLaborQuoteCache(playerId)
 
-    syncRequest(playerId)
+    meta.syncRequest(playerId)
     return true
 end
 
@@ -131,7 +132,7 @@ function M.addLabor(playerId, amount)
     row.labor.time = os.time()
     quote.invalidateLaborQuoteCache(playerId)
 
-    syncRequest(playerId)
+    meta.syncRequest(playerId)
     return true
 end
 
@@ -172,7 +173,7 @@ function M.applyIncreaseChunks(ids, timeStamp, fromIdx, chunkSize, onDone)
             if meta.labor.val < limit then
                 meta.labor.val = hf.clamp(meta.labor.val + step, limit)
                 quote.invalidateLaborQuoteCache(playerId)
-                syncRequest(playerId)
+                meta.syncRequest(playerId)
             end
         end
     end

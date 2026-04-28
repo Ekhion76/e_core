@@ -1,5 +1,6 @@
 local LABOR_QUOTE_CACHE_BY_PLAYER = {}
 local labor = lib.require('src/runtime/labor/logic')
+local meta = lib.require('src/runtime/meta/logic')
 
 --- Auto-generated annotation. Refine behavior details if needed.
 --- @return any result
@@ -148,7 +149,7 @@ local function getLaborQuote(playerId, context)
     local category = context.category
     local name = context.name
     if type(category) == 'string' and type(name) == 'string' and category ~= '' and name ~= '' then
-        local abilityValue, err = getAbility(playerId, category, name)
+        local abilityValue, err = meta.getAbility(playerId, category, name)
         if abilityValue == false then
             return false, err
         end
@@ -185,9 +186,7 @@ local function getLaborQuote(playerId, context)
     }
 
     if type(category) == 'string' and type(name) == 'string' and category ~= '' and name ~= '' then
-        local abilityCap = type(resolveAbilityCap) == 'function'
-            and resolveAbilityCap(category, name)
-            or (tonumber(Config.abilityLimit) or 0)
+        local abilityCap = meta.resolveAbilityCap(category, name)
         payload.abilityCap = abilityCap
         payload.checks.isCapped = proficiency >= abilityCap
     else

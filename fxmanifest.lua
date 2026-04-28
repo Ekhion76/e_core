@@ -90,6 +90,8 @@ server_scripts {
     'src/runtime/meta/player_meta_store.lua',
     'src/runtime/bootstrap/server/main.lua',
     'src/runtime/meta/server.lua',
+    'src/runtime/meta/logic.lua',
+    'src/runtime/meta/init.lua',
     'src/runtime/hud/server/layout.lua',
     'src/runtime/labor/init.lua',
     'src/runtime/quote/server.lua',

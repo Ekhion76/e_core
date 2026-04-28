@@ -4,12 +4,13 @@
 --- exports ---
 local labor = lib.require('src/runtime/labor/logic')
 local quote = lib.require('src/runtime/quote/logic')
+local meta = lib.require('src/runtime/meta/logic')
 local professions = lib.require('src/runtime/professions/logic')
 local diagnostics = lib.require('src/runtime/diagnostics/logic')
-exports("getAbility", getAbility)
-exports("setAbility", setAbility)
-exports("addAbility", addAbility)
-exports("removeAbility", removeAbility)
+exports("getAbility", meta.getAbility)
+exports("setAbility", meta.setAbility)
+exports("addAbility", meta.addAbility)
+exports("removeAbility", meta.removeAbility)
 
 exports("getLabor", labor.getLabor)
 exports("setLabor", labor.setLabor)
@@ -17,7 +18,7 @@ exports("addLabor", labor.addLabor)
 exports("removeLabor", labor.removeLabor)
 exports("getLaborQuote", quote.getLaborQuote)
 
-exports("registerMeta", registerMeta)
+exports("registerMeta", meta.registerMeta)
 exports("getProfessionRegistry", professions.getProfessionRegistry)
 exports("isValidProfession", professions.isValidProfession)
 exports("getProfessionDefaults", professions.getProfessionDefaults)
@@ -48,8 +49,8 @@ exports("diagnosticsAdminRun", diagnostics.diagnosticsAdminRun)
 exports("diagnosticsAdminGetRun", diagnostics.diagnosticsAdminGetRun)
 exports("diagnosticsAdminCancelRun", diagnostics.diagnosticsAdminCancelRun)
 
-exports("getMeta", getMeta)
-exports("setMeta", setMeta)
+exports("getMeta", meta.getMeta)
+exports("setMeta", meta.setMeta)
 
 --- SHARED exports --
 exports('getLevel', getLevel)

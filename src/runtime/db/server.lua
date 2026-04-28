@@ -2,6 +2,7 @@ local UPDATE_META = 'UPDATE `users` SET `e_core` = ? WHERE `identifier` = ?'
 local SELECT_META = 'SELECT `e_core` FROM `users` WHERE `identifier` = ?'
 local hfe = hfe
 local labor = lib.require('src/runtime/labor/logic')
+local metaLogic = lib.require('src/runtime/meta/logic')
 
 if QB_CORE then
     UPDATE_META = 'UPDATE `players` SET `e_core` = ? WHERE `citizenid` = ?'
@@ -96,7 +97,7 @@ function loadMeta(xPlayer)
         meta = decoded
     end
 
-    prepareMeta(playerId, meta)
+    metaLogic.prepareMeta(playerId, meta)
     labor.addOfflineLabor(playerId)
     PlayerMetaStore.setLastSave(playerId, os.time())
 

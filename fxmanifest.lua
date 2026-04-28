@@ -1,7 +1,7 @@
 fx_version 'cerulean'
 game 'gta5'
 description 'ECO CORE'
-version '0.1.14'
+version '0.1.15'
 
 shared_scripts {
     '@ox_lib/init.lua',
@@ -135,6 +135,11 @@ files {
     'src/imports/sdk/shared/helper_base.lua',
     'src/imports/sdk/client/hud_drag.lua',
     'src/imports/sdk/server/discord_log.lua',
+    'src/runtime/bootstrap/client/logic.lua',
+    'src/runtime/integrity/client_logic.lua',
+    'src/runtime/admin/client_nui_logic.lua',
+    'src/runtime/diagnostics/client_nui_logic.lua',
+    'src/runtime/web_bridge/client_logic.lua',
     'src/web/dist/**'
 }
 

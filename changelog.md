@@ -2,6 +2,10 @@
 
 A projekt új fázist kezd: a korábbi verziós napló helyett innen a **kiadás szerinti** rövid összegzés. Breaking változásnál emeld a `fxmanifest.lua` `version` mezőjét, és frissítsd a `docs/PUBLIC_API_HU.md` + `export_examples_*.md` fájlokat, ahol kell.
 
+## [0.1.15]
+
+- **Dokumentáció (SDK + modularchitektúra):** `docs/PUBLIC_API_HU.md` §4.1 — teljes **consumer SDK fájl ↔ manifest** mátrix (7 fájl); profession exportok **`feature_disabled`** szerződés rögzítve §3-ban. Új kanonikus oldalak: `docs/ECORE_IMPORTS_SDK_LAYER_TERVEZES_HU.md`, `docs/ECORE_ARCHITECTURE_MODULARITY_HU.md`, `docs/ECORE_SIDE_EFFECT_AUDIT_HU.md`; `docs/INDEX_HU.md` §4 bővítve. `docs/LUA_ANNOTATION_MAINTENANCE_EN.md` §6 — hivatkozás a modularity policy-re.
+
 ## [0.1.0]
 
 - Dokumentáció: belső munkanaplók és lezárt tervdokik eltávolítva; belépési pont: `docs/INDEX_HU.md`. A teljes Docusaurus fa helyett `tech_docs/README.md` helykitöltő. `fxmanifest` verzió **0.1.0** (új fázis jelzés; nem kötelező semver-folytonosság a korábbi 0.0.x-szel).

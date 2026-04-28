@@ -36,6 +36,9 @@ Egy fejlesztő / AI asszisztens számára elég innen kinavigálni. A cél: **ox
 | [BRIDGE_LAYER_QUALITY_REVIEW_HU.md](BRIDGE_LAYER_QUALITY_REVIEW_HU.md) | Bridge réteg minőség (IDLE / isReady, overrides, QBox jegyzetek, kódhivatkozások) |
 | [LABOR_KEZELES_MUNKAFIL_HU.md](LABOR_KEZELES_MUNKAFIL_HU.md) | Labor + meta szinkron részletek |
 | [PROFESSION_REGISTRY_ES_META_CLEANUP_TERV_HU.md](PROFESSION_REGISTRY_ES_META_CLEANUP_TERV_HU.md) | Profession registry határ: e_core = source of truth |
+| [ECORE_IMPORTS_SDK_LAYER_TERVEZES_HU.md](ECORE_IMPORTS_SDK_LAYER_TERVEZES_HU.md) | **SDK imports** szótár: platform shared vs. `src/imports/sdk/*`, fájllista, `full_import`, `lib.require` + `files {}` |
+| [ECORE_ARCHITECTURE_MODULARITY_HU.md](ECORE_ARCHITECTURE_MODULARITY_HU.md) | **Modularchitektúra policy:** pure modul vs. `init`, feature gate, `feature_disabled`, `_G` + SDK kivételek |
+| [ECORE_SIDE_EFFECT_AUDIT_HU.md](ECORE_SIDE_EFFECT_AUDIT_HU.md) | Side-effect audit **állapot** + PR-checklist (labor/professions kész, bridge/libs iteratív) |
 
 ## 5. Fejlesztői minőség (DX)
 

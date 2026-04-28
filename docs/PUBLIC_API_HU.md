@@ -56,6 +56,8 @@ A tábla névsora = a fájlban lévő `exports(...)` sorok sorrendje; közvetlen
 
 A tábla névsora = a fájlban lévő `exports(...)` sorok sorrendje; vékony kötés a domain modulokra (különösen a `src/runtime/professions/logic.lua` facade-ra), nincs rejtett üzleti ág (`getConfig` / `isReady` / `getDbSchemaVersion` csak vékony burkoló).
 
+**Profession / level-profile admin exportok:** ha **`Config.systemMode.profession`** vagy a szabály szerinti **`Config.systemMode.labor`** ki van kapcsolva, a profession és level-profile exportok **nem** némán `nil`-lel térnek vissza: olvasó exportok **`false`, `eCoreErr.feature_disabled`**; admin CRUD / cleanup válasz **`{ ok = false, code = feature_disabled, … }`** szerződés (implementáció: `src/runtime/professions/logic.lua`).
+
 | Export | Mire való | Paraméterek |
 |--------|-----------|-------------|
 | `getAbility` | Egy meta kulcs értékének olvasása adott játékosnál (csak már létező meta). | `playerId`, `category`, `name` |
@@ -127,6 +129,26 @@ eCore = exports.e_core:getCore()
 -- eCore.framework, eCore.config, eCore.i18n.*, eCore.util.* már mergeelve (0.1.3+)
 -- Szerver: opcionálisan eCore.log.discord.create(...) ha a Discord modul aktív
 ```
+
+**Szótár (ne keverd):** az e_core saját **`fxmanifest.lua` → `shared_scripts`** blokkja = **platform shared** (ugyanabban az **e_core** resource-ban fut kliensen és szerveren). A **`src/imports/sdk/shared/**`** útvonal a **consumer** manifest **`shared_scripts`** listájába való chunkokra utal — **nem** ugyanaz a fogalom. Részletek: **`docs/ECORE_IMPORTS_SDK_LAYER_TERVEZES_HU.md`**.
+
+### 4.1 Consumer SDK fájlok ↔ ajánlott manifest lista
+
+Minden fájl fizikailag az **e_core** repóban van; a consumer a **`@e_core/src/imports/sdk/...`** útvonalon hivatkozik. A sorrend a consumer resource-ban: tipikusan `core` → `locale` → `utils` (lásd `full_import`).
+
+| e_core útvonal (relatív a resource gyökeréhez) | Consumer manifest | Rövid leírás |
+|-----------------------------------------------|-------------------|---------------|
+| `src/imports/sdk/shared/core.lua` | `shared_scripts` | `eCore` / `getCore()` egy sor; opcionális `FRAMEWORK` / `eCoreConfig` alias |
+| `src/imports/sdk/shared/locale.lua` | `shared_scripts` | i18n betöltés a core után |
+| `src/imports/sdk/shared/utils.lua` | `shared_scripts` | közös util chunk |
+| `src/imports/sdk/shared/helper_base.lua` | `shared_scripts` | opcionális `hf = getHelperBase()` inicializálás |
+| `src/imports/sdk/shared/full_import.lua` | `shared_scripts` | `LoadResourceFile('e_core', …)` chunkok futtatása (core → locale → utils); resource név: **`e_core`** |
+| `src/imports/sdk/client/hud_drag.lua` | `client_scripts` | HUD DnD preview / `e_core:hud:clientPreview` → NUI sync |
+| `src/imports/sdk/server/discord_log.lua` | `server_scripts` | thin Discord log segéd (ha használod) |
+
+**Kliens `lib.require('@e_core/src/runtime/...')`:** a cél fájlnak szerepelnie kell az **e_core** `fxmanifest.lua` → **`files { }`** listájában, különben a kliens nem tölti le. SDK chunkok alapbént fel vannak sorolva.
+
+---
 
 `imports/sdk/shared/core.lua` – egy sor `getCore()`, és opcionálisan **deprecated** globál alias: `FRAMEWORK = eCore.framework`, `eCoreConfig = eCore.config` (fokozatos migrációhoz). **Egy soros bootstrap:** `imports/sdk/shared/full_import.lua` (`shared_script '@e_core/src/imports/sdk/shared/full_import.lua'`) – sorrend: `core` → `locale` → `utils`; a `full_import` a **`e_core` resource nevet** feltételezi (`LoadResourceFile('e_core', …)`).
 

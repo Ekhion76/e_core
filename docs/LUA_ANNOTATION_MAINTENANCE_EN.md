@@ -71,3 +71,13 @@ When touching annotations for a big change, prefer checking these areas first �
 
 - **`types/fivem_ox_stubs.lua`:** intentionally minimal; full semantic docs are low value. Do not hold it to public-contract strictness.
 - All annotation **wording** must follow **`docs/LUA_ANNOTATION_STYLE_EN.md`** (English).
+
+---
+
+## 6. Module architecture (e_core policy, not annotation syntax)
+
+**Where the rules live (Hungarian, canonical for this repo):** [`docs/ECORE_ARCHITECTURE_MODULARITY_HU.md`](ECORE_ARCHITECTURE_MODULARITY_HU.md) — **pure** module vs **`init.lua` / bootstrap**, **`Config.systemMode`**, export contract when a feature is off (**`false`, `eCoreErr.feature_disabled`**), and documented **SDK** exceptions for globals.
+
+**SDK path vocabulary** (consumer `shared_scripts` vs e_core platform `shared_scripts`): [`docs/ECORE_IMPORTS_SDK_LAYER_TERVEZES_HU.md`](ECORE_IMPORTS_SDK_LAYER_TERVEZES_HU.md).
+
+**When refactoring** a domain, update public annotations in the same change (per this file §2) **and** align with the modularity policy above if the change moves registration or export behavior.

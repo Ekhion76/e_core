@@ -67,6 +67,9 @@ Kapcsolódó fájlok a repóban
 - docs/SUPPORTED_STACK_MATRIX_HU.md – Tier 0–2 stack, override checklist
 - docs/PROJECT_STRUCTURE.txt      – könyvtárfa
 - docs/INDEX_HU.md                     – dokumentáció belépési pont
+- docs/ECORE_IMPORTS_SDK_LAYER_TERVEZES_HU.md – SDK imports szótár (platform shared vs consumer sdk/shared)
+- docs/ECORE_ARCHITECTURE_MODULARITY_HU.md   – pure modul vs init, feature_disabled, _G policy
+- docs/ECORE_SIDE_EFFECT_AUDIT_HU.md         – side-effect audit állapot + PR-checklist
 - .cursor/rules/e_core-context.mdc
 - export_examples_client.md, export_examples_server.md (gyökér) – **exports.e_core**
   példahívások (angol); kiegészítik a szekció **2** összefoglalóját. Mérvadó

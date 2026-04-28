@@ -126,7 +126,7 @@ Kapcsolódó fájlok a repóban
 - src/web/dist/index.html, src/web/src/app.css, src/web/src/**/*, src/web/public/img/*.png – NUI felület;
   részletek: **1.5 NUI (html/)**
 - src/runtime/bootstrap/server/main.lua, src/runtime/meta/server.lua, src/runtime/labor/logic.lua, src/runtime/labor/init.lua, src/runtime/db/server.lua,
-  src/runtime/exports/server.lua, src/runtime/professions/server.lua, src/runtime/diagnostics/server.lua – szerver PlayerMetaStore,
+  src/runtime/exports/server.lua, src/runtime/professions/logic.lua, src/runtime/professions/init.lua, src/runtime/professions/server.lua, src/runtime/diagnostics/server.lua – szerver PlayerMetaStore,
   meta sync/mentés, labor, MySQL, profession registry, diagnostics; részletek:
   „Server resource (src/runtime/)” szekció **1.4**
 
@@ -1303,7 +1303,7 @@ Mérvadó forrásfájlok (fxmanifest.lua → server_scripts sorrend, releváns r
     src/runtime/labor/logic.lua     – labor CRUD (pure)
     src/runtime/labor/init.lua      – labor automatikus tick (side effects)
     src/runtime/db/migrations.lua – `e_core_migrations` tábla + `e_core_run_db_migrations`
-    src/runtime/professions/server.lua – profession registry bootstrap + read model export logika
+    src/runtime/professions/logic.lua + init.lua + server.lua – profession domain (logic facade + side-effect init + implementáció)
     src/runtime/db/server.lua        – MySQL.ready → migrációk, majd saveMeta / loadMeta / saveAllMeta
     src/runtime/exports/server.lua   – `exports.e_core:*` regisztráció
     src/runtime/diagnostics/server.lua – `ecore_diag` ellenőrzés (inventory + profession registry)
@@ -1433,13 +1433,12 @@ src/runtime/db/server.lua
 
 ---
 
-src/runtime/professions/server.lua
+src/runtime/professions/logic.lua + init.lua + server.lua
   Szerep
     Profession registry életciklus:
-    - startup bootstrap (default profile/profession seed),
-    - DB read model cache,
-    - read-only export backend (`getProfessionRegistry`, `isValidProfession`,
-      `getProfessionDefaults`, `getProfessionLevelProfile`).
+    - `init.lua`: startup side effects (MySQL.ready -> bootstrap),
+    - `logic.lua`: pure facade + feature gate (`feature_disabled` / admin `ok=false, code=feature_disabled`),
+    - `server.lua`: DB read model cache + admin/cleanup implementáció.
   Határ (eco_* consumer)
     Új profession / táblák / validációs szerződés: **e_core**; pl. `eco_crafting` csak
     exportokat hív (`getProfessionDefaults`, stb.), **nem** hoz létre párhuzamos registryt.
@@ -1449,7 +1448,7 @@ src/runtime/professions/server.lua
       migráció után lefut (`src/runtime/db/server.lua`), ellenőrzi a registry táblák darabszámát,
       majd szükség esetén default profile + minimális profession seed.
   Read model
-    DB join: `e_core_professions` + `e_core_level_profiles`, rövid TTL cache.
+    DB join: `e_core_professions` + `e_core_level_profiles`, rövid TTL cache (`server.lua` implementáció).
     Hibák: `profession_registry_unavailable`, `profession_*_not_found`.
 
 ---

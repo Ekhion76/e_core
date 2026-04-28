@@ -1874,3 +1874,29 @@ function levelProfileAdminDelete(profileKey)
         deletedProfileKey = pk,
     })
 end
+
+return {
+    bootstrapProfessionRegistry = e_core_bootstrap_profession_registry,
+    bootstrapCleanupJobs = e_core_bootstrap_cleanup_jobs,
+    getProfessionRegistry = getProfessionRegistry,
+    isValidProfession = isValidProfession,
+    getProfessionDefaults = getProfessionDefaults,
+    getProfessionLevelProfile = getProfessionLevelProfile,
+    validateProfessionKeys = validateProfessionKeys,
+    professionAdminList = professionAdminList,
+    professionAdminCreate = professionAdminCreate,
+    professionAdminUpdate = professionAdminUpdate,
+    professionAdminSetEnabled = professionAdminSetEnabled,
+    professionAdminDelete = professionAdminDelete,
+    professionAdminDeleteDryRun = professionAdminDeleteDryRun,
+    professionAdminDeleteApply = professionAdminDeleteApply,
+    professionAdminCleanupJobList = professionAdminCleanupJobList,
+    professionAdminCleanupJobGet = professionAdminCleanupJobGet,
+    professionAdminCleanupJobAbort = professionAdminCleanupJobAbort,
+    professionAdminCleanupJobResume = professionAdminCleanupJobResume,
+    professionAdminAuditList = professionAdminAuditList,
+    levelProfileAdminList = levelProfileAdminList,
+    levelProfileAdminCreate = levelProfileAdminCreate,
+    levelProfileAdminUpdate = levelProfileAdminUpdate,
+    levelProfileAdminDelete = levelProfileAdminDelete,
+}

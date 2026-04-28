@@ -85,7 +85,7 @@ Az `exports.e_core:*` **vékony réteg** (`runtime/exports/client.lua`, `runtime
 | `meta_category_not_table` | ugyanaz | Meglévő kategória slot sérült (nem tábla) | `server/meta.lua` (`registerMeta` merge) |
 | `diagnostics_run_not_found` | ugyanaz | `diagnosticsAdminGetRun` / `diagnosticsAdminCancelRun`: nincs ilyen `runId` a memóriabeli diagnosztikai futás tárolóban | `src/runtime/diagnostics/server.lua` |
 | `profession_key_validation_failed` | ugyanaz | Admin diagnostics `profession-key-validation` teszt eredményében (`run.results[]`), ha invalid / hiányzó profession kulcsok voltak; **nem** a `getProfessionRegistry` / `getProfessionLevelProfile` exportok hibakódja | `src/runtime/diagnostics/server.lua` (`runProfessionKeyValidationAudit`) |
-| `cleanup_scan_failed` | `'scan_failed'` | Profession meta cleanup: DB sorok beolvasása sikertelen | `src/runtime/professions/server.lua` (`cleanup_job_step`) |
+| `cleanup_scan_failed` | `'scan_failed'` | Profession meta cleanup: DB sorok beolvasása sikertelen | `src/runtime/professions/server.lua` (`cleanup_job_step`), hívási kapu: `src/runtime/professions/logic.lua` |
 | `mysql_missing` | `'mysql_missing'` | MySQL / oxmysql nem áll készen a `mysqlAwait` híváskor | `src/libs/helper_ecore.lua` |
 | `admin_missing_auth_source` | angol szöveg (lásd `errors.lua`) | Admin API policy: hiányzik a kötelező `auth.source` | `src/libs/helper_ecore.lua` (`hf.adminApiCanAccess`) |
 | `admin_invalid_auth_source` | angol szöveg | Admin API policy: érvénytelen / offline `auth.source` | `src/libs/helper_ecore.lua` |

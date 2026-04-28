@@ -52,9 +52,9 @@ A tábla névsora = a fájlban lévő `exports(...)` sorok sorrendje; közvetlen
 
 ---
 
-## 3. Csak szerver (`server/exports.lua`)
+## 3. Csak szerver (`src/runtime/exports/server.lua`)
 
-A tábla névsora = a fájlban lévő `exports(...)` sorok sorrendje; közvetlen hivatkozás a szerver implementációkra, nincs rejtett üzleti ág (`getConfig` / `isReady` / `getDbSchemaVersion` csak vékony burkoló).
+A tábla névsora = a fájlban lévő `exports(...)` sorok sorrendje; vékony kötés a domain modulokra (különösen a `src/runtime/professions/logic.lua` facade-ra), nincs rejtett üzleti ág (`getConfig` / `isReady` / `getDbSchemaVersion` csak vékony burkoló).
 
 | Export | Mire való | Paraméterek |
 |--------|-----------|-------------|

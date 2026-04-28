@@ -44,7 +44,7 @@ src/runtime/
   meta/             player_meta_store, server (meta CRUD), client (ClientMetaStore).
   hud/              server/layout.lua, client/registry.lua.
   labor/, db/, professions/, diagnostics/, admin/, integrity/, web_bridge/, quote/
-  Mindegyik séma: adott almappa alatt server/client (pl. professions/server.lua).
+  Mindegyik séma domaines: logic (pure) + init (side effects) + szükség szerint server/client implementáció (pl. professions/logic.lua + professions/init.lua + professions/server.lua).
 
 src/libs/
   Közös helper modulok (`hf`, `errors`, `meta`, `config_check`).

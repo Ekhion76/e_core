@@ -2,6 +2,12 @@
 
 A projekt új fázist kezd: a korábbi verziós napló helyett innen a **kiadás szerinti** rövid összegzés. Breaking változásnál emeld a `fxmanifest.lua` `version` mezőjét, és frissítsd a `docs/PUBLIC_API_HU.md` + `export_examples_*.md` fájlokat, ahol kell.
 
+## [0.1.16]
+
+- **Runtime modularity hardening:** `web_bridge`, `integrity`, `admin` NUI bridge és `diagnostics` NUI bridge fájlok pure modulokra lettek szétválasztva (`register...()`), a side-effect regisztráció külön init entrypointokba került (`init.lua` / `init_client.lua`).
+- **HUD client registry:** a top-level net event / command kötés `ECoreHudLayout.registerClientBindings()` függvénybe került; új `src/runtime/hud/client/init.lua` kezeli a tényleges regisztrációt.
+- **Manifest:** új init entryk felvéve a client/server script sorrendbe; `fxmanifest.lua` verzió: **0.1.16**.
+
 ## [0.1.15]
 
 - **Dokumentáció (SDK + modularchitektúra):** `docs/PUBLIC_API_HU.md` §4.1 — teljes **consumer SDK fájl ↔ manifest** mátrix (7 fájl); profession exportok **`feature_disabled`** szerződés rögzítve §3-ban. Új kanonikus oldalak: `docs/ECORE_IMPORTS_SDK_LAYER_TERVEZES_HU.md`, `docs/ECORE_ARCHITECTURE_MODULARITY_HU.md`, `docs/ECORE_SIDE_EFFECT_AUDIT_HU.md`; `docs/INDEX_HU.md` §4 bővítve. `docs/LUA_ANNOTATION_MAINTENANCE_EN.md` §6 — hivatkozás a modularity policy-re.
@@ -54,10 +60,10 @@ A projekt új fázist kezd: a korábbi verziós napló helyett innen a **kiadás
 - **HUD DnD (hibrid proxy):** új kliens-szerver alapok a per-player HUD layout mentéshez (`hudLayout` meta kulcs, normalizált `x,y,w,h` + `anchor`, rate-limited `e_core:hud:commit`).
 - **Új kliens exportok:** `registerHudElement`, `unregisterHudElement` (consumer HUD elemek regisztrációja az e_core edit/sync réteghez).
 - **Edit mode NUI réteg:** Svelte 5 ghost layer + throttled preview callback (`hudPreview`), pointer-trap szabály (`ghost layer: pointer-events: all`, háttér: `none`), fókusz guard `openMeta` / admin web útvonalon.
-- **Import réteg szétválasztás (side szerinti mappákkal):** új canonical consumer útvonalak: `src/imports/sdk/shared/core.lua`, `src/imports/sdk/shared/helper_base.lua`, `src/imports/sdk/client/hud_drag.lua`, `src/imports/sdk/server/discord_log.lua`.
+- **Import réteg szétválasztás (module/side sémára):** canonical consumer útvonalak: `src/imports/sdk/core/shared.lua`, `src/imports/sdk/helper_base/shared.lua`, `src/imports/sdk/hud_drag/client.lua`, `src/imports/sdk/discord_log/server.lua`.
 - **Legacy aliasok megszüntetve:** a korábbi gyökérszintű import útvonalak kivezetve; az új canonical importok a `src/imports/shared|client|server/` struktúrában érhetők el.
-- **HUD preview opt-in:** az `e_core:hud:clientPreview` -> `ECORE_HUD_SYNC` proxy canonical útvonala `src/imports/sdk/client/hud_drag.lua` (csak HUD szerkesztést használó consumer importálja).
-- **DiscordLog helper init:** `src/imports/sdk/server/discord_log.lua` modul-szinten, egyszeri lekéréssel inicializálja a base helper táblát (`hf = hf or exports.e_core:getHelperBase()`).
+- **HUD preview opt-in:** az `e_core:hud:clientPreview` sync réteg canonical útvonala `src/imports/sdk/hud_drag/client.lua`; pure modul, automatikus handler-regisztráció nélkül.
+- **DiscordLog export factory:** a canonical szerver modul `src/imports/sdk/discord_log/server.lua`; publikus létrehozás: `exports.e_core:createDiscordLog(...)`.
 - **Helper szeparáció (base vs e_core):** az e_core-specifikus segédek külön `hfe` objektumba kerültek (`src/libs/helper_ecore.lua`), a generikus utilok `hf`-ben maradtak (`src/libs/helper.lua`). Új exportok: `getHelperBase`, `getHelperEcore`; a `getCore()` továbbra is elérhető.
 
 - **Keretrendszer:** `src/bridge/framework_config.lua` újraírva (egyszerű ágak). ConVar: `e_core:framework_resource` – üres = nincs override; csak **kényszerített** `esx`|`qb` mellett írja felül az alap resource nevet; `auto` + nem üres override → figyelmen kívül + log. **`e_core:esx_resource` / `e_core:qb_resource` eltávolítva.** Registry: `src/bridge/framework_resource_registry.lua` (`ecore_framework_resource_set`, `ecore_framework_resource_esx`, `ecore_framework_resource_qb`) – nincs `_G._ECORE_LEGACY_*`.

@@ -165,8 +165,8 @@ Use the dedicated base helper export (`getHelperBase`) instead of relying on `ge
 
 ```lua
 -- manifest include (optional helper import)
--- shared_script '@e_core/src/imports/sdk/shared/helper_base.lua'
+-- shared_script '@e_core/src/imports/sdk/helper_base/shared.lua'
 
--- after import:
+local hf = lib.require('src/imports/sdk/helper_base/shared')
 local value = hf.trim('  hello  ')
 ```

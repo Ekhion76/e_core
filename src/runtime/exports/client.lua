@@ -7,6 +7,7 @@ exports("getMeta", getMeta)
 --- Returns current labor points on client cache.
 --- @return number labor Current labor points.
 exports("getLabor", getLabor)
+local hudDragModule = lib.require('src/imports/sdk/hud_drag/client')
 
 
 --- SHARED exports --
@@ -47,4 +48,10 @@ exports('unregisterHudElement', function(id)
     if eCore and eCore.UI and type(eCore.UI.UnregisterHudElement) == 'function' then
         eCore.UI.UnregisterHudElement(id)
     end
+end)
+
+--- Creates a new pure HUD drag instance.
+--- @return table hudDrag
+exports('createHudDrag', function()
+    return hudDragModule.new()
 end)

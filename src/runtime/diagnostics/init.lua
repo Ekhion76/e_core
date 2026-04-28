@@ -1,3 +1,5 @@
---- Diagnostics domain init (server): side-effect entrypoint placeholder.
---- Kept for domain parity (logic/init split); currently no startup side effects.
+--- Diagnostics domain init (server): side-effect registration only.
+local diagnosticsServerBridge = lib.require('src/runtime/diagnostics/server_nui_bridge')
+
+diagnosticsServerBridge.registerServerEvents()
 

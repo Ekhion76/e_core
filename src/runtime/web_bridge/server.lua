@@ -1,7 +1,15 @@
---- Web bridge domain (server): side-effect bootstrap only.
---- Net event registration stays here, access logic lives in `logic.lua`.
+--- Web bridge domain module (server): pure module, no side effects.
+--- Net event registration is performed from `init.lua`.
 local webBridge = lib.require('src/runtime/web_bridge/logic')
 
-RegisterNetEvent('e_core:web:requestOpen', function()
-    webBridge.onWebRequestOpen(source)
-end)
+local M = {}
+
+--- Registers web bridge server net events.
+--- @return nil
+function M.registerServerEvents()
+    RegisterNetEvent('e_core:web:requestOpen', function()
+        webBridge.onWebRequestOpen(source)
+    end)
+end
+
+return M

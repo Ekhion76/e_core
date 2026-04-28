@@ -1,11 +1,11 @@
 fx_version 'cerulean'
 game 'gta5'
 description 'ECO CORE'
-version '0.1.15'
+version '0.1.16'
 
 shared_scripts {
     '@ox_lib/init.lua',
-    'src/imports/sdk/shared/locale.lua',
+    'src/imports/sdk/locale/shared.lua',
 
     'src/bridge/esx/config_defaults.lua',
     'src/bridge/qb/config_defaults.lua',
@@ -15,7 +15,7 @@ shared_scripts {
     'src/config/levels.lua',
     'overrides/**/config.lua',
 
-    'src/imports/sdk/shared/utils.lua',
+    'src/imports/sdk/utils/shared.lua',
     'src/libs/helper.lua',
     'src/libs/helper_ecore.lua',
     'src/libs/file_event_logger.lua',
@@ -54,15 +54,20 @@ client_scripts {
     'src/runtime/web_bridge/ecore_nui.lua',
     'src/runtime/meta/client.lua',
     'src/runtime/hud/client/registry.lua',
+    'src/runtime/hud/client/init.lua',
     'src/runtime/bootstrap/client/logic.lua',
     'src/runtime/bootstrap/client/main.lua',
     'src/runtime/integrity/client_logic.lua',
     'src/runtime/integrity/client.lua',
+    'src/runtime/integrity/init_client.lua',
     'src/runtime/web_bridge/client.lua',
+    'src/runtime/web_bridge/init_client.lua',
     'src/runtime/admin/client_nui_logic.lua',
     'src/runtime/admin/client_nui_bridge.lua',
+    'src/runtime/admin/init_client.lua',
     'src/runtime/diagnostics/client_nui_logic.lua',
     'src/runtime/diagnostics/client_nui_bridge.lua',
+    'src/runtime/diagnostics/init_client.lua',
     'src/runtime/exports/client.lua',
 }
 
@@ -85,7 +90,7 @@ server_scripts {
     'src/bridge/esx/events/server.lua',
     'src/bridge/qb/events/server.lua',
 
-    'src/imports/sdk/server/discord_log.lua',
+    'src/imports/sdk/discord_log/server.lua',
 
     'src/bridge/main.lua',
 
@@ -114,12 +119,15 @@ server_scripts {
     'src/runtime/professions/init.lua',
     'src/runtime/exports/server.lua',
     'src/runtime/integrity/server.lua',
+    'src/runtime/integrity/init.lua',
     'src/runtime/diagnostics/server.lua',
     'src/runtime/diagnostics/logic.lua',
     'src/runtime/diagnostics/init.lua',
     'src/runtime/web_bridge/server.lua',
+    'src/runtime/web_bridge/init.lua',
     'src/runtime/admin/server_inventory_sample.lua',
     'src/runtime/admin/server_nui_bridge.lua',
+    'src/runtime/admin/init.lua',
     'src/runtime/diagnostics/server_nui_bridge.lua',
     'src/standalone/usableitem.lua',
 }
@@ -128,13 +136,12 @@ server_scripts {
 ui_page 'http://127.0.0.1:5173/'
 
 files {
-    'src/imports/sdk/shared/core.lua',
-    'src/imports/sdk/shared/full_import.lua',
-    'src/imports/sdk/shared/locale.lua',
-    'src/imports/sdk/shared/utils.lua',
-    'src/imports/sdk/shared/helper_base.lua',
-    'src/imports/sdk/client/hud_drag.lua',
-    'src/imports/sdk/server/discord_log.lua',
+    'src/imports/sdk/core/shared.lua',
+    'src/imports/sdk/locale/shared.lua',
+    'src/imports/sdk/utils/shared.lua',
+    'src/imports/sdk/helper_base/shared.lua',
+    'src/imports/sdk/hud_drag/client.lua',
+    'src/imports/sdk/discord_log/server.lua',
     'src/runtime/bootstrap/client/logic.lua',
     'src/runtime/integrity/client_logic.lua',
     'src/runtime/admin/client_nui_logic.lua',

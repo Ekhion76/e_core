@@ -91,7 +91,7 @@ Kapcsolódó fájlok a repóban
 - src/imports/sdk/shared/core.lua          – consumer minimál bootstrap (`eCore` +
   merge-elt `eCore.framework` / `config` / `i18n` / `util`; opcionális legacy
   globál alias `FRAMEWORK` / `eCoreConfig`)
-- src/imports/sdk/shared/helper_base.lua   – opcionális consumer helper import (`hf`)
+- src/imports/sdk/helper_base/shared.lua   – opcionális consumer helper import (`local hf = lib.require(...)`)
 - src/imports/sdk/client/hud_drag.lua      – opcionális HUD drag preview proxy import
   (`e_core:hud:clientPreview` -> `ECORE_HUD_SYNC`)
 - Legacy alias útvonalak kivezetve; canonical import útvonalak:
@@ -1035,9 +1035,9 @@ src/imports/sdk/shared/core.lua (files – consumer include)
     `setr e_core_dev "true"` mellett opcionális `exports.e_core:getInternal()` –
     csak debug; részlet: `docs/EXTENSION_CONTRACT_HU.md`.
 
-src/imports/sdk/shared/helper_base.lua (files – opcionális consumer include)
+src/imports/sdk/helper_base/shared.lua (files – opcionális consumer include)
   Szerep
-    Base helper bootstrap: `hf = exports.e_core:getHelperBase()`.
+    Base helper modul: `local hf = lib.require('src/imports/sdk/helper_base/shared')`.
   Mikor használd
     Ha a consumer script ténylegesen használ `hf.*` utility hívásokat.
 
@@ -1617,7 +1617,7 @@ getConfig()
 Megjegyzés (helper)
   Nincs `exports.e_core:getHelper()` export. A base helper elérése:
   `exports.e_core:getHelperBase()` (vagy consumer include:
-  `@e_core/src/imports/sdk/shared/helper_base.lua`), részletek: szekció **1.2**,
+  `@e_core/src/imports/sdk/helper_base/shared.lua`), részletek: szekció **1.2**,
   `src/bridge/main.lua`.
 
 --- Client (src/runtime/exports/client.lua) ---

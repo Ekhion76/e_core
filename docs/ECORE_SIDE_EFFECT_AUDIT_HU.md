@@ -9,12 +9,16 @@
 | **Labor** | Refaktorálva | `logic.lua` (pure), `init.lua` (timer / regisztráció), `Config.systemMode.labor` gate |
 | **Professions** | Facade + gate | `professions/logic.lua` — `profession` + `labor` flag; exportok `feature_disabled`; bootstrap `init.lua` / DB hook szétválasztva ahol bevezetve |
 | **SDK útvonalak** | Lezárt | `src/imports/sdk/{shared,client,server}` + `fxmanifest` `files { }` |
+| **Web bridge** | Refaktorálva | `web_bridge/server.lua` + `client.lua` pure modul; regisztráció: `init.lua` + `init_client.lua` |
+| **Integrity bridge** | Refaktorálva | `integrity/server.lua` + `client.lua` pure modul; regisztráció: `init.lua` + `init_client.lua` |
+| **Admin/Diagnostics NUI bridge** | Refaktorálva | `server_nui_bridge.lua` / `client_nui_bridge.lua` pure; domain initből történik a regisztráció |
+| **HUD client registry** | Refaktorálva | `registerClientBindings()` + külön `hud/client/init.lua` side-effect entry |
 
 ## Átnézendő (nagyobb felület – iteratív)
 
 - **Bridge** (`src/bridge/**`): megfelelő helyen shared vs. server/client; top-level események indokolt-e.
 - **Libs** (`src/libs/**`): helper modulok maradjanak többségében pure; ritka globális (`eCoreErr`) dokumentált.
-- **További runtime domainek** (`admin`, `diagnostics`, `integrity`, `web_bridge`, …): új refaktor követi a **logic / init** mintát, ahol van értelmes határ.
+- **További runtime domainek**: a mintát tartsd új moduloknál is (logic pure, side-effect init/bootstrap).
 
 ## Ellenőrző kérdések (PR-ben)
 

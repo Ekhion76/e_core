@@ -34,13 +34,10 @@ function eCoreLifecycle_initInternal()
     _eCoreInternal.helpers.ecore = hfe
 end
 
---- Registers Discord extension on server when `createDiscordLog` global exists.
+--- Registers Discord extension on server via export factory.
 --- @return nil
 function eCoreLifecycle_registerDiscordExtension()
     if not IsDuplicityVersion() then
-        return
-    end
-    if type(createDiscordLog) ~= 'function' then
         return
     end
     _eCoreInternal.extensions.discordLog = {
@@ -48,7 +45,9 @@ function eCoreLifecycle_registerDiscordExtension()
         --- @param botName string|nil
         --- @param opts table|nil
         --- @return table|false
-        create = createDiscordLog,
+        create = function(webhook, botName, opts)
+            return exports.e_core:createDiscordLog(webhook, botName, opts)
+        end,
     }
 end
 

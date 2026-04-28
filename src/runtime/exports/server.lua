@@ -7,6 +7,7 @@ local quote = lib.require('src/runtime/quote/logic')
 local meta = lib.require('src/runtime/meta/logic')
 local professions = lib.require('src/runtime/professions/logic')
 local diagnostics = lib.require('src/runtime/diagnostics/logic')
+local discordLogModule = lib.require('src/imports/sdk/discord_log/server')
 exports("getAbility", meta.getAbility)
 exports("setAbility", meta.setAbility)
 exports("addAbility", meta.addAbility)
@@ -76,4 +77,13 @@ end)
 exports('getDbSchemaVersion', function()
 
     return e_core_get_applied_migration_id()
+end)
+
+--- Creates a new Discord log builder instance.
+--- @param webhook string
+--- @param botName string|nil
+--- @param opts table|nil
+--- @return table|false
+exports('createDiscordLog', function(webhook, botName, opts)
+    return discordLogModule.createDiscordLog(webhook, botName, opts)
 end)

@@ -283,37 +283,42 @@ function ECoreHudLayout.commit(payload)
     TriggerServerEvent('e_core:hud:commit', { v = 1, elements = elements })
 end
 
-RegisterNetEvent('e_core:hud:applied', function(layout)
-    applyCommittedLayout(layout)
-    previewById = {}
-    notifyConsumerAll()
-    emitNuiState()
-end)
-
-RegisterNetEvent('e_core:sync', function(payload)
-    if type(payload) ~= 'table' then
-        return
-    end
-    local data = payload
-    if payload.v == 1 and payload.kind == 'full' and type(payload.data) == 'table' then
-        data = payload.data
-    end
-    if type(data) ~= 'table' then
-        return
-    end
-    applyCommittedLayout(data[HUD_LAYOUT_META_KEY])
-    if not editMode then
+--- Registers HUD client net events and edit command.
+--- Side-effect entrypoint should call this from init/bootstrap.
+--- @return nil
+function ECoreHudLayout.registerClientBindings()
+    RegisterNetEvent('e_core:hud:applied', function(layout)
+        applyCommittedLayout(layout)
         previewById = {}
-    end
-    notifyConsumerAll()
-    emitNuiState()
-end)
+        notifyConsumerAll()
+        emitNuiState()
+    end)
 
-RegisterCommand('ecore_hud_edit', function()
-    if eCore.UI.IsEditMode() then
-        eCore.UI.ExitEditMode()
-    else
-        eCore.UI.EnterEditMode()
-    end
-end, false)
+    RegisterNetEvent('e_core:sync', function(payload)
+        if type(payload) ~= 'table' then
+            return
+        end
+        local data = payload
+        if payload.v == 1 and payload.kind == 'full' and type(payload.data) == 'table' then
+            data = payload.data
+        end
+        if type(data) ~= 'table' then
+            return
+        end
+        applyCommittedLayout(data[HUD_LAYOUT_META_KEY])
+        if not editMode then
+            previewById = {}
+        end
+        notifyConsumerAll()
+        emitNuiState()
+    end)
+
+    RegisterCommand('ecore_hud_edit', function()
+        if eCore.UI.IsEditMode() then
+            eCore.UI.ExitEditMode()
+        else
+            eCore.UI.EnterEditMode()
+        end
+    end, false)
+end
 

@@ -1,7 +1,15 @@
---- Admin domain (server): side-effect bootstrap only.
---- Net event registration stays here, domain logic lives in `nui_logic.lua`.
+--- Admin NUI bridge module (server): pure module, no side effects.
+--- Net event registration is performed from `init.lua`.
 local adminNui = lib.require('src/runtime/admin/nui_logic')
 
-RegisterNetEvent('e_core:nuiAdminRpc', function(requestId, data)
-    adminNui.onNuiAdminRpc(source, requestId, data)
-end)
+local M = {}
+
+--- Registers admin NUI server bridge events.
+--- @return nil
+function M.registerServerEvents()
+    RegisterNetEvent('e_core:nuiAdminRpc', function(requestId, data)
+        adminNui.onNuiAdminRpc(source, requestId, data)
+    end)
+end
+
+return M

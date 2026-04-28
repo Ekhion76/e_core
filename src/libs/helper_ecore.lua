@@ -323,7 +323,7 @@ function hfe.auditAdminApiDenied(section, action, payload, reason)
         return
     end
 
-    if storage == 'discord' and type(createDiscordLog) == 'function' then
+    if storage == 'discord' then
         local url = hf.trim(tostring(da.webhookUrl or ''))
         if url == '' then
             return
@@ -332,7 +332,7 @@ function hfe.auditAdminApiDenied(section, action, payload, reason)
         if botName == '' then
             botName = tostring((type(Config) == 'table' and Config.discordBotName) or 'ECOBOT')
         end
-        local log = createDiscordLog(url, botName, {})
+        local log = exports.e_core:createDiscordLog(url, botName, {})
         if log then
             log:embed({
                 color = 'orange',

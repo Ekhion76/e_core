@@ -130,31 +130,30 @@ eCore = exports.e_core:getCore()
 -- Szerver: opcionálisan eCore.log.discord.create(...) ha a Discord modul aktív
 ```
 
-**Szótár (ne keverd):** az e_core saját **`fxmanifest.lua` → `shared_scripts`** blokkja = **platform shared** (ugyanabban az **e_core** resource-ban fut kliensen és szerveren). A **`src/imports/sdk/shared/**`** útvonal a **consumer** manifest **`shared_scripts`** listájába való chunkokra utal — **nem** ugyanaz a fogalom. Részletek: **`docs/ECORE_IMPORTS_SDK_LAYER_TERVEZES_HU.md`**.
+**Szótár (ne keverd):** az e_core saját **`fxmanifest.lua` → `shared_scripts`** blokkja = **platform shared** (ugyanabban az **e_core** resource-ban fut kliensen és szerveren). A consumer SDK útvonalak a **`src/imports/sdk/<module>/<side>.lua`** sémát követik. Részletek: **`docs/ECORE_IMPORTS_SDK_LAYER_TERVEZES_HU.md`**.
 
 ### 4.1 Consumer SDK fájlok ↔ ajánlott manifest lista
 
-Minden fájl fizikailag az **e_core** repóban van; a consumer a **`@e_core/src/imports/sdk/...`** útvonalon hivatkozik. A sorrend a consumer resource-ban: tipikusan `core` → `locale` → `utils` (lásd `full_import`).
+Minden fájl fizikailag az **e_core** repóban van; a consumer a **`@e_core/src/imports/sdk/...`** útvonalon hivatkozik. Ajánlott sorrend: `core/shared.lua` → `locale/shared.lua` → `utils/shared.lua` (nincs kötelező láncolás).
 
 | e_core útvonal (relatív a resource gyökeréhez) | Consumer manifest | Rövid leírás |
 |-----------------------------------------------|-------------------|---------------|
-| `src/imports/sdk/shared/core.lua` | `shared_scripts` | `eCore` / `getCore()` egy sor; opcionális `FRAMEWORK` / `eCoreConfig` alias |
-| `src/imports/sdk/shared/locale.lua` | `shared_scripts` | i18n betöltés a core után |
-| `src/imports/sdk/shared/utils.lua` | `shared_scripts` | közös util chunk |
-| `src/imports/sdk/shared/helper_base.lua` | `shared_scripts` | opcionális `hf = getHelperBase()` inicializálás |
-| `src/imports/sdk/shared/full_import.lua` | `shared_scripts` | `LoadResourceFile('e_core', …)` chunkok futtatása (core → locale → utils); resource név: **`e_core`** |
-| `src/imports/sdk/client/hud_drag.lua` | `client_scripts` | HUD DnD preview / `e_core:hud:clientPreview` → NUI sync |
-| `src/imports/sdk/server/discord_log.lua` | `server_scripts` | thin Discord log segéd (ha használod) |
+| `src/imports/sdk/core/shared.lua` | `shared_scripts` | kanonikus bootstrap: `eCore = exports.e_core:getCore()` |
+| `src/imports/sdk/locale/shared.lua` | `shared_scripts` | i18n helper chunk |
+| `src/imports/sdk/utils/shared.lua` | `shared_scripts` | közös util chunk |
+| `src/imports/sdk/helper_base/shared.lua` | `shared_scripts` | helper base modul (`return M`) |
+| `src/imports/sdk/hud_drag/client.lua` | `client_scripts` | pure HUD DnD modul (`M.new()`) |
+| `src/imports/sdk/discord_log/server.lua` | `server_scripts` | pure Discord log factory modul (`M.createDiscordLog`) |
 
 **Kliens `lib.require('@e_core/src/runtime/...')`:** a cél fájlnak szerepelnie kell az **e_core** `fxmanifest.lua` → **`files { }`** listájában, különben a kliens nem tölti le. SDK chunkok alapbént fel vannak sorolva.
 
 ---
 
-`imports/sdk/shared/core.lua` – egy sor `getCore()`, és opcionálisan **deprecated** globál alias: `FRAMEWORK = eCore.framework`, `eCoreConfig = eCore.config` (fokozatos migrációhoz). **Egy soros bootstrap:** `imports/sdk/shared/full_import.lua` (`shared_script '@e_core/src/imports/sdk/shared/full_import.lua'`) – sorrend: `core` → `locale` → `utils`; a `full_import` a **`e_core` resource nevet** feltételezi (`LoadResourceFile('e_core', …)`).
+`imports/sdk/core/shared.lua` – kanonikus egy soros bootstrap (`eCore = exports.e_core:getCore()`), `FRAMEWORK`/`eCoreConfig` globálok nélkül.
 
-`imports/sdk/shared/helper_base.lua`. Opcionális helper-import: globális `hf = exports.e_core:getHelperBase()` inicializálás consumer oldalon.
+`imports/sdk/helper_base/shared.lua` – helper base modul (`local M = {}; return M`), globális `hf` nélkül.
 
-`imports/sdk/client/hud_drag.lua`. Opcionális HUD drag preview proxy: az import réteg hallgatja az `e_core:hud:clientPreview` eseményt, és ha az `id` benne van a consumer oldali `RegisteredElements` map-ben, `SendNUIMessage({ action = 'ECORE_HUD_SYNC', id, pos })` üzenetet küld. Így a consumer oldali NUI üzenetkezelő egyetlen központi rune-state-ből (`.svelte.ts`) frissíthet minden komponenst.
+`imports/sdk/hud_drag/client.lua` – pure, side-effect mentes kliens modul; automatikus handler-regisztráció nincs, `M.new()` példányból `enable()` hívással aktiválható.
 
 **Megjegyzés:** **`eCore.helper`** = base **`hf`** (`libs/helper.lua`) – változatlan bridge viselkedés. **`eCore.GroupAccess:check(playerData, data)`**: `src/libs/group_access.lua` (job/gang whitelist–blacklist; lásd §6). **`eCore.Err`** = `libs/errors.lua` → **`eCoreErr`** (azonos kulcsok / string értékek); külső resource összehasonlíthat: `reason == exports.e_core:getCore().Err.inventory_full`.
 

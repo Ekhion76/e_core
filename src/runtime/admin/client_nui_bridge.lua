@@ -1,46 +1,11 @@
---- NUI -> server bridge for profession / level-profile admin (`registry.ts` -> `eCoreAdminApi`).
-local pending = {}
-local seq = 0
+--- Admin domain (client): side-effect bootstrap only.
+--- Event/NUI callback registrations stay here, RPC behavior lives in `client_nui_logic.lua`.
+local adminNui = lib.require('src/runtime/admin/client_nui_logic')
 
 RegisterNetEvent('e_core:nuiAdminRpcResult', function(requestId, result)
-    requestId = tostring(requestId or '')
-    local entry = pending[requestId]
-    if not entry then
-        return
-    end
-    pending[requestId] = nil
-    if entry.timeout then
-        ClearTimeout(entry.timeout)
-    end
-    if entry.cb then
-        entry.cb(result)
-    end
+    adminNui.onNuiAdminRpcResult(requestId, result)
 end)
 
 RegisterNUICallback('eCoreAdminApi', function(data, cb)
-    seq = seq + 1
-    local requestId = ('%d-%d'):format(seq, GetGameTimer())
-    local finished = false
-    --- Auto-generated annotation. Refine behavior details if needed.
-    --- @param payload table
-    --- @return any result
-    local function done(payload)
-        if finished then
-            return
-        end
-        finished = true
-        cb(payload)
-    end
-
-    pending[requestId] = {
-        cb = done,
-        timeout = SetTimeout(60000, function()
-            if pending[requestId] then
-                pending[requestId] = nil
-                done({ ok = false, code = 'timeout', message = 'NUI admin RPC timeout (60s).' })
-            end
-        end),
-    }
-
-    TriggerServerEvent('e_core:nuiAdminRpc', requestId, type(data) == 'table' and data or {})
+    adminNui.onNuiAdminApi(data, cb)
 end)

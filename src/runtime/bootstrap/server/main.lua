@@ -1,15 +1,7 @@
-local hf = hf
-local hfe = hfe
-
--- `false` indulásig / hiba után; `true` csak sikeres registry után (lásd kliens `main.lua` ugyanilyen komment).
-CORE_READY, REGISTERED_ITEMS = false, nil
+--- Bootstrap domain (server): side-effect bootstrap only.
+--- Thread registration stays here, wait/log behavior lives in `logic.lua`.
+local bootstrap = lib.require('src/runtime/bootstrap/server/logic')
 
 CreateThread(function()
-    cLog('REGISTERED ITEMS', 'Loading...', 2)
-
-    if hfe.awaitItemRegistryReady('REGISTERED ITEMS') then
-        cLog('REGISTERED ITEMS', 'Loaded', 2)
-    end
-
-    hfe.logEcoreStartupSummary('server')
+    bootstrap.runServerBootstrap()
 end)

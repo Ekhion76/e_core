@@ -91,6 +91,7 @@ server_scripts {
     'src/bridge/global/callbacks/server.lua',
 
     'src/runtime/meta/player_meta_store.lua',
+    'src/runtime/bootstrap/server/logic.lua',
     'src/runtime/bootstrap/server/main.lua',
     'src/runtime/meta/server.lua',
     'src/runtime/meta/logic.lua',

@@ -8,6 +8,10 @@ A projekt új fázist kezd: a korábbi verziós napló helyett innen a **kiadás
 
 ## [Unreleased]
 
+- **Profession levels (refactor):** `src/libs/profession_levels.lua` — szintgörbe / normalizálás / `levels_json` decode / admin payload feloldás (`eCoreProfessionLevels.*`); `src/server/professions.lua` ezt hívja. Export szerződés változatlan.
+
+- **Denied audit (0.1.13):** új modul `src/server/admin_denied_audit.lua` (lista/purge/schedule + `adminDenied` író export + NUI snapshot). `Config.operator.deniedAudit`: **`storage`** `mysql`|`discord`, **`webhookUrl`** (discord), **`discordBotName`** opcionális; `config_check` érvénytelen discord URL → `mysql` + `cLog`. `hfe.auditAdminApiDenied`: szerveren `mysql` = INSERT tábla, `discord` = `createDiscordLog` embed; ütemezett purge csak `mysql` mellett. **Admin NUI:** „Denied audit” fül (`DeniedAuditPanel.svelte`), actionök: `getDeniedAuditConfig`, `listDeniedAudit`, `purgeDeniedAudit`. Export átnevezés: `adminDeniedAuditList` / `adminDeniedAuditPurge` (korábbi `adminApiDeniedAudit*` név eltávolítva). `PUBLIC_API_HU.md`, `ECORE_ERR`, `export_examples_server.md`, `web` build `dist`.
+
 - **Admin inventory minta:** ox blokk **csak** ha `ox_inventory` `started` (UI nem említ nem futó stacket); szerver hint ox nélkül rövidebb.
 
 - **Admin inventory minta:** `adminGetInventorySamples` játékbeli NUI-ban **mindig** szerver RPC (nem takarja a `VITE_USE_MOCK_REGISTRY` mock); mock csak böngészőben, NUI nélkül.

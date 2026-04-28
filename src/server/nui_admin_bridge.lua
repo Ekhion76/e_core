@@ -132,6 +132,22 @@ local function dispatchNuiAdmin(src, data)
         return adminNuiGetInventorySamples(src, payload)
     end
 
+    if action == 'getDeniedAuditConfig' then
+        return e_core_get_denied_audit_admin_snapshot()
+    end
+
+    if action == 'listDeniedAudit' then
+        local p = type(payload) == 'table' and payload or {}
+        p.auth = { source = src }
+        return adminDeniedAuditList(p)
+    end
+
+    if action == 'purgeDeniedAudit' then
+        local p = type(payload) == 'table' and payload or {}
+        p.auth = { source = src }
+        return adminDeniedAuditPurge(p)
+    end
+
     return {
         ok = false,
         code = eCoreErr.invalid_item_data,

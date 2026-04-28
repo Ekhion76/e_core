@@ -21,7 +21,7 @@ Config.versionCheck = true
     step-by-step run does not wait for this cooldown).
   • `cleanup` - server admin cleanup policy (`Config.adminApi.cleanup`).
   • `registryDiagnostics` - profession registry admin runs (`Config.adminApi.diagnostics`). Legacy: `adminApi.diagnostics`.
-  • `deniedAudit` - denied audit storage. Legacy: `adminApi.deniedAudit`.
+  • `deniedAudit` - operator permission-denied audit: `storage` `mysql`|`discord`, optional `webhookUrl` (discord), retention. Legacy: `adminApi.deniedAudit`.
 
   Technical details (cooldown, test item, NUI checklist timing) are fixed in code,
   while interactive test-item values can be changed in the admin Integrity tab.
@@ -52,6 +52,10 @@ Config.operator = {
     },
     deniedAudit = {
         enabled = true,
+        --- `mysql`: `e_core_admin_denied_audit` + scheduled purge. `discord`: webhook embed only (no DB rows).
+        storage = 'mysql',
+        webhookUrl = '',
+        discordBotName = '',
         retentionDays = 30,
         purgeIntervalMinutes = 60,
         maxDeletePerRun = 2000,

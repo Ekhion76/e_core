@@ -23,6 +23,20 @@ local function copyIdList(list)
     return out
 end
 
+--- Discord webhook URL shape (aligned with `imports/server/discord_log.lua`).
+--- @param url any
+--- @return boolean ok True when URL looks like `https://…/api/webhooks/…`.
+local function is_e_core_discord_webhook_url(url)
+    if type(url) ~= 'string' then
+        return false
+    end
+    local u = hf.trim(url)
+    if #u < 40 or u:sub(1, 8) ~= 'https://' then
+        return false
+    end
+    return u:find('/api/webhooks/', 1, true) ~= nil
+end
+
 --- Auto-generated annotation. Refine behavior details if needed.
 --- @return boolean applied
 local function applyOperatorConfig()
@@ -85,12 +99,27 @@ local function applyOperatorConfig()
                 or copyIdList(ids),
             allowServerWithoutSource = diagApi.allowServerWithoutSource ~= false,
         },
-        deniedAudit = {
-            enabled = denied.enabled ~= false,
-            retentionDays = tonumber(denied.retentionDays) or 30,
-            purgeIntervalMinutes = tonumber(denied.purgeIntervalMinutes) or 60,
-            maxDeletePerRun = tonumber(denied.maxDeletePerRun) or 2000,
-        },
+        deniedAudit = (function()
+            local storageRaw = tostring(denied.storage or 'mysql'):lower()
+            local storage = (storageRaw == 'discord' or storageRaw == 'mysql') and storageRaw or 'mysql'
+            local webhookUrl = hf.trim(tostring(denied.webhookUrl or ''))
+            if storage == 'discord' and not is_e_core_discord_webhook_url(webhookUrl) then
+                storage = 'mysql'
+                if type(cLog) == 'function' then
+                    cLog('[e_core] Config.operator.deniedAudit: storage=discord but webhookUrl invalid — using mysql.', 'warning', 1)
+                end
+            end
+            local discordBotName = hf.trim(tostring(denied.discordBotName or ''))
+            return {
+                enabled = denied.enabled ~= false,
+                storage = storage,
+                webhookUrl = webhookUrl,
+                discordBotName = discordBotName,
+                retentionDays = tonumber(denied.retentionDays) or 30,
+                purgeIntervalMinutes = tonumber(denied.purgeIntervalMinutes) or 60,
+                maxDeletePerRun = tonumber(denied.maxDeletePerRun) or 2000,
+            }
+        end)(),
     }
 
     return true
@@ -179,6 +208,19 @@ function configCheck()
         Config.adminApi.cleanup = hf.hasEntries(Config.adminApi.cleanup) and Config.adminApi.cleanup or {}
         Config.adminApi.diagnostics = hf.hasEntries(Config.adminApi.diagnostics) and Config.adminApi.diagnostics or {}
         Config.adminApi.deniedAudit = hf.hasEntries(Config.adminApi.deniedAudit) and Config.adminApi.deniedAudit or {}
+        local da = Config.adminApi.deniedAudit
+        da.storage = tostring(da.storage or 'mysql'):lower()
+        if da.storage ~= 'mysql' and da.storage ~= 'discord' then
+            da.storage = 'mysql'
+        end
+        da.webhookUrl = hf.trim(tostring(da.webhookUrl or ''))
+        da.discordBotName = hf.trim(tostring(da.discordBotName or ''))
+        if da.storage == 'discord' and not is_e_core_discord_webhook_url(da.webhookUrl) then
+            da.storage = 'mysql'
+            if type(cLog) == 'function' then
+                cLog('[e_core] Config.adminApi.deniedAudit: storage=discord but webhookUrl invalid — using mysql.', 'warning', 1)
+            end
+        end
     end
 
     applyIntegrityCheckFixedDefaults()

@@ -106,7 +106,7 @@ eCoreErr = {
     admin_web_unconfigured = 'No permission: configure Config.web permission fields or allowedIdentifiers.',
     --- `hf.webConsoleAccess`: configured policy did not allow this player.
     admin_web_denied = 'No permission for admin console (policy or identifier list).',
-    --- `adminApiDeniedAuditList` gate: neither cleanup nor diagnostics admin policy matched.
+    --- `adminDeniedAuditList` gate: neither cleanup nor diagnostics admin policy matched.
     admin_audit_dual_policy_denied = 'Nincs jogosultság (cleanup/diagnostics admin policy).',
 
     --- Integrity checklist (`integrityCanRun` / policy): invalid source.

@@ -746,3 +746,106 @@ export async function adminGetInventorySamples(payload?: {
   }
   return { message: res.message, data: res.data }
 }
+
+export type DeniedAuditStorage = 'mysql' | 'discord'
+
+export type DeniedAuditItem = {
+  id?: number
+  ts?: string
+  section: string
+  action: string
+  source?: number | null
+  requestedBy?: string | null
+  reason: string
+  eventType?: string
+  actor?: unknown
+  target?: unknown
+  outcome?: unknown
+}
+
+export type DeniedAuditListResult = {
+  items: DeniedAuditItem[]
+  total: number
+  limit: number
+  offset: number
+  dataSource?: string
+}
+
+/** Operator denied-audit storage flag (NUI). */
+export async function getDeniedAuditConfig(): Promise<{ storage: DeniedAuditStorage; enabled: boolean }> {
+  if (useMock && !isFivemNui()) {
+    return { storage: 'mysql', enabled: true }
+  }
+  const res = await invokeAdminApi<{ storage?: string; enabled?: boolean }>({
+    action: 'getDeniedAuditConfig',
+    payload: {}
+  })
+  if (!res.ok || !res.data) {
+    throw new Error(res.message ?? String(res.code ?? 'getDeniedAuditConfig'))
+  }
+  const storage: DeniedAuditStorage = res.data.storage === 'discord' ? 'discord' : 'mysql'
+  return { storage, enabled: res.data.enabled !== false }
+}
+
+/** Paginated denied-audit rows (DB or memory); server injects `auth.source`. */
+export async function listDeniedAudit(params?: {
+  section?: string
+  action?: string
+  limit?: number
+  offset?: number
+}): Promise<DeniedAuditListResult> {
+  if (useMock && !isFivemNui()) {
+    return { items: [], total: 0, limit: 20, offset: 0, dataSource: 'memory' }
+  }
+  const p: Record<string, unknown> = {
+    limit: params?.limit ?? 20,
+    offset: params?.offset ?? 0
+  }
+  if (params?.section) p.section = params.section
+  if (params?.action) p.action = params.action
+  const res = await invokeAdminApi<DeniedAuditListResult>({
+    action: 'listDeniedAudit',
+    payload: p
+  })
+  if (!res.ok || !res.data) {
+    throw new Error(res.message ?? String(res.code ?? 'listDeniedAudit'))
+  }
+  const d = res.data
+  return {
+    items: Array.isArray(d.items) ? d.items : [],
+    total: Number(d.total ?? 0),
+    limit: Number(d.limit ?? 20),
+    offset: Number(d.offset ?? 0),
+    dataSource: typeof d.dataSource === 'string' ? d.dataSource : undefined
+  }
+}
+
+/** Retention purge or dry-run (`dryRun: true`). */
+export async function purgeDeniedAudit(dryRun: boolean): Promise<{
+  dryRun: boolean
+  deleted?: number
+  wouldDelete?: number
+  retentionDays?: number
+}> {
+  if (useMock && !isFivemNui()) {
+    return { dryRun, wouldDelete: 0, deleted: 0, retentionDays: 30 }
+  }
+  const res = await invokeAdminApi<{
+    dryRun?: boolean
+    deleted?: number
+    wouldDelete?: number
+    retentionDays?: number
+  }>({
+    action: 'purgeDeniedAudit',
+    payload: { dryRun }
+  })
+  if (!res.ok || !res.data) {
+    throw new Error(res.message ?? String(res.code ?? 'purgeDeniedAudit'))
+  }
+  return {
+    dryRun: res.data.dryRun === true,
+    deleted: res.data.deleted,
+    wouldDelete: res.data.wouldDelete,
+    retentionDays: res.data.retentionDays
+  }
+}

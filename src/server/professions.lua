@@ -24,6 +24,8 @@ local CLEANUP_AUDIT_LIMIT = 100
 local CLEANUP_MAX_CONCURRENT = 1
 local CLEANUP_ACTIVE_RUNS = 0
 local hfe = hfe
+--- Level curve / payload helpers (`src/libs/profession_levels.lua`, loaded before this file).
+local profession_levels = eCoreProfessionLevels
 local db_execute
 local db_single
 local db_query
@@ -78,21 +80,6 @@ end
 --- @return any result
 local function cleanup_admin_can_access(payload)
     return hfe.adminApiCanAccess('cleanup', payload)
-end
-
---- Auto-generated annotation. Refine behavior details if needed.
---- @param payload table
---- @return any result
-local function admin_audit_can_access(payload)
-    local okCleanup = hfe.adminApiCanAccess('cleanup', payload)
-    if okCleanup then
-        return true, nil
-    end
-    local okDiagnostics = hfe.adminApiCanAccess('diagnostics', payload)
-    if okDiagnostics then
-        return true, nil
-    end
-    return false, eCoreErr.admin_audit_dual_policy_denied
 end
 
 --- Auto-generated annotation. Refine behavior details if needed.
@@ -1643,438 +1630,6 @@ function professionAdminAuditList(limit, payload)
 end
 
 --- Auto-generated annotation. Refine behavior details if needed.
---- @param row any
---- @return any result
-local function build_denied_audit_item(row)
-    local section = tostring(row.section or ((type(row.target) == 'table' and row.target.scope) or 'unknown'))
-    local action = tostring(row.action or ((type(row.target) == 'table' and row.target.action) or 'unknown'))
-    local source = row.source
-    if source ~= nil then
-        source = tonumber(source)
-    end
-    local requestedBy = row.requestedBy or row.requested_by
-    local reason = tostring(row.reason or ((type(row.outcome) == 'table' and row.outcome.reason) or 'access_denied'))
-
-    return {
-        id = row.id ~= nil and tonumber(row.id) or nil,
-        ts = row.ts,
-        eventType = row.eventType or 'admin_api_denied',
-        actor = type(row.actor) == 'table' and row.actor or {
-            source = source,
-            requestedBy = requestedBy,
-        },
-        target = type(row.target) == 'table' and row.target or {
-            scope = section,
-            action = action,
-        },
-        outcome = type(row.outcome) == 'table' and row.outcome or {
-            status = 'denied',
-            reason = reason,
-        },
-        section = section,
-        action = action,
-        source = source,
-        requestedBy = requestedBy,
-        reason = reason,
-    }
-end
-
---- Auto-generated annotation. Refine behavior details if needed.
---- @param filters any
---- @return any result
-function adminApiDeniedAuditList(filters)
-    local f = type(filters) == 'table' and filters or {}
-    local accessOk, accessErr = admin_audit_can_access(f)
-    if not accessOk then
-        return admin_response(false, eCoreErr.access_denied, accessErr or 'Nincs jogosultság.')
-    end
-
-    local sectionFilter = f.section ~= nil and hf.trim(tostring(f.section)) or ''
-    local actionFilter = f.action ~= nil and hf.trim(tostring(f.action)) or ''
-    local limit = math.floor(tonumber(f.limit) or 20)
-    limit = math.max(1, math.min(200, limit))
-    local offset = math.floor(tonumber(f.offset) or 0)
-    offset = math.max(0, offset)
-
-    local whereParts = {}
-    local params = {}
-    if sectionFilter ~= '' then
-        whereParts[#whereParts + 1] = '`section` = ?'
-        params[#params + 1] = sectionFilter
-    end
-    if actionFilter ~= '' then
-        whereParts[#whereParts + 1] = '`action` = ?'
-        params[#params + 1] = actionFilter
-    end
-    local whereSql = ''
-    if #whereParts > 0 then
-        whereSql = ' WHERE ' .. table.concat(whereParts, ' AND ')
-    end
-
-    local countSql = 'SELECT COUNT(*) AS `count` FROM `e_core_admin_denied_audit`' .. whereSql
-    local rowsSql = [[
-        SELECT `id`, `ts`, `section`, `action`, `source`, `requested_by`, `reason`
-        FROM `e_core_admin_denied_audit`
-    ]] .. whereSql .. ' ORDER BY `id` DESC LIMIT ? OFFSET ?'
-
-    local countOk, countRows = db_query('admin_denied_audit:list:count', countSql, params)
-    local items = {}
-    local total = 0
-
-    if countOk then
-        total = tonumber((countRows[1] or {}).count) or 0
-        local rowsParams = {}
-        for i = 1, #params do
-            rowsParams[i] = params[i]
-        end
-        rowsParams[#rowsParams + 1] = limit
-        rowsParams[#rowsParams + 1] = offset
-
-        local rowsOk, rows = db_query('admin_denied_audit:list:rows', rowsSql, rowsParams)
-        if rowsOk then
-            for _, row in ipairs(rows) do
-                items[#items + 1] = build_denied_audit_item(row)
-            end
-        else
-            total = 0
-        end
-    end
-
-    -- Fallback: in-memory audit ring if DB table not yet available.
-    if total == 0 and #items == 0 then
-        local source = hf.__adminApiDeniedAudit or {}
-        local filtered = {}
-        for i = #source, 1, -1 do
-            local row = source[i]
-            if type(row) == 'table' then
-                local sectionOk = sectionFilter == '' or tostring(row.section) == sectionFilter
-                local actionOk = actionFilter == '' or tostring(row.action) == actionFilter
-                if sectionOk and actionOk then
-                    filtered[#filtered + 1] = row
-                end
-            end
-        end
-        total = #filtered
-        for i = offset + 1, math.min(total, offset + limit) do
-            items[#items + 1] = build_denied_audit_item(filtered[i])
-        end
-    end
-
-    return admin_response(true, eCoreErr.ok, 'Admin denied audit lista lekérve.', {
-        items = items,
-        total = total,
-        limit = limit,
-        offset = offset,
-    })
-end
-
---- Auto-generated annotation. Refine behavior details if needed.
---- @param action any
---- @param payload table
---- @param reason string
---- @return any result
-local function denied_audit_access_denied(action, payload, reason)
-    if type(hf.auditAdminApiDenied) == 'function' then
-        hfe.auditAdminApiDenied('deniedAudit', action, payload, reason)
-    end
-    return admin_response(false, eCoreErr.access_denied, reason or 'Nincs jogosultság.')
-end
-
---- Auto-generated annotation. Refine behavior details if needed.
---- @return any result
-local function denied_audit_config()
-    local cfg = (((Config or {}).adminApi or {}).deniedAudit or {})
-    local enabled = cfg.enabled ~= false
-    local retentionDays = math.floor(tonumber(cfg.retentionDays) or 30)
-    retentionDays = math.max(1, math.min(3650, retentionDays))
-    local intervalMinutes = math.floor(tonumber(cfg.purgeIntervalMinutes) or 60)
-    intervalMinutes = math.max(5, math.min(1440, intervalMinutes))
-    local maxDelete = math.floor(tonumber(cfg.maxDeletePerRun) or 2000)
-    maxDelete = math.max(100, math.min(50000, maxDelete))
-    return {
-        enabled = enabled,
-        retentionDays = retentionDays,
-        intervalMinutes = intervalMinutes,
-        maxDelete = maxDelete,
-    }
-end
-
---- Auto-generated annotation. Refine behavior details if needed.
---- @return any result
-function e_core_purge_admin_denied_audit_once()
-    local cfg = denied_audit_config()
-    if not cfg.enabled then
-        return true, 0
-    end
-
-    local ok, affected = hfe.mysqlAwait('admin_denied_audit:purge', function()
-        return MySQL.update.await(
-            [[
-                DELETE FROM `e_core_admin_denied_audit`
-                WHERE `ts` < DATE_SUB(NOW(), INTERVAL ? DAY)
-                LIMIT ?
-            ]],
-            { cfg.retentionDays, cfg.maxDelete }
-        )
-    end)
-    if not ok then
-        cLog('[e_core] admin denied audit purge sikertelen', 'warning', 2)
-        return false, 0
-    end
-
-    local deleted = tonumber(affected) or 0
-    if deleted > 0 then
-        cLog(
-            ('[e_core] admin denied audit purge: %s sor törölve (retentionDays=%s, limit=%s)'):format(
-                deleted,
-                cfg.retentionDays,
-                cfg.maxDelete
-            ),
-            'info',
-            2
-        )
-    end
-    return true, deleted
-end
-
---- Auto-generated annotation. Refine behavior details if needed.
---- @return any result
-local function e_core_count_admin_denied_audit_candidates()
-    local cfg = denied_audit_config()
-    if not cfg.enabled then
-        return true, 0
-    end
-
-    local ok, rows = hfe.mysqlAwait('admin_denied_audit:purge_count', function()
-        return MySQL.query.await(
-            [[
-                SELECT COUNT(*) AS `count`
-                FROM `e_core_admin_denied_audit`
-                WHERE `ts` < DATE_SUB(NOW(), INTERVAL ? DAY)
-            ]],
-            { cfg.retentionDays }
-        )
-    end)
-    if not ok then
-        return false, 0
-    end
-    return true, tonumber((rows and rows[1] or {}).count) or 0
-end
-
---- Auto-generated annotation. Refine behavior details if needed.
---- @param payload table
---- @return any result
-function adminApiDeniedAuditPurge(payload)
-    local p = type(payload) == 'table' and payload or {}
-    local accessOk, accessErr = admin_audit_can_access(p)
-    if not accessOk then
-        return denied_audit_access_denied('adminApiDeniedAuditPurge', p, accessErr)
-    end
-
-    local dryRun = p.dryRun == true
-    if dryRun then
-        local okCount, candidates = e_core_count_admin_denied_audit_candidates()
-        if not okCount then
-            return admin_response(false, eCoreErr.profession_registry_unavailable, 'Admin denied audit dry-run count sikertelen.')
-        end
-        return admin_response(true, eCoreErr.ok, 'Admin denied audit purge dry-run lefutott.', {
-            dryRun = true,
-            wouldDelete = candidates,
-            retentionDays = denied_audit_config().retentionDays,
-        })
-    end
-
-    local ok, deleted = e_core_purge_admin_denied_audit_once()
-    if not ok then
-        return admin_response(false, eCoreErr.profession_registry_unavailable, 'Admin denied audit purge sikertelen.')
-    end
-
-    return admin_response(true, eCoreErr.ok, 'Admin denied audit purge lefutott.', {
-        dryRun = false,
-        deleted = deleted,
-    })
-end
-
---- Auto-generated annotation. Refine behavior details if needed.
---- @return any result
-function e_core_schedule_admin_denied_audit_purge()
-    local cfg = denied_audit_config()
-    if not cfg.enabled then
-        return
-    end
-
-    --- Auto-generated annotation. Refine behavior details if needed.
-    --- @return any result
-    local function tick()
-        e_core_purge_admin_denied_audit_once()
-        SetTimeout(cfg.intervalMinutes * 60000, tick)
-    end
-
-    SetTimeout(5000, tick)
-end
-
-local LEVEL_MODIFIERS = { 'labor', 'time', 'price', 'chance', 'speed' }
-
---- Auto-generated annotation. Refine behavior details if needed.
---- @param value any
---- @param minValue any
---- @param maxValue any
---- @return any result
-local function clamp(value, minValue, maxValue)
-    if value < minValue then
-        return minValue
-    end
-    if value > maxValue then
-        return maxValue
-    end
-    return value
-end
-
---- Auto-generated annotation. Refine behavior details if needed.
---- @param index number
---- @param total any
---- @param curveType any
---- @return any result
-local function easing_factor(index, total, curveType)
-    if total <= 1 then
-        return 1
-    end
-
-    local t = (index - 1) / (total - 1)
-    if curveType == 'aggressive' then
-        return t * t
-    end
-    if curveType == 'soft' then
-        return math.sqrt(t)
-    end
-    return t
-end
-
---- Auto-generated annotation. Refine behavior details if needed.
---- @param settings any
---- @return any result
-local function generate_easy_levels(settings)
-    if type(settings) ~= 'table' then
-        return false, eCoreErr.invalid_item_data
-    end
-
-    local milestones = math.floor(tonumber(settings.milestones) or 0)
-    local maxPoints = math.floor(tonumber(settings.maxPoints) or 0)
-    if milestones < 2 or maxPoints <= 0 then
-        return false, eCoreErr.invalid_item_data
-    end
-
-    local curveType = tostring(settings.curveType or 'linear')
-    if curveType ~= 'linear' and curveType ~= 'soft' and curveType ~= 'aggressive' then
-        return false, eCoreErr.invalid_item_data
-    end
-
-    local max = {}
-    for _, key in ipairs(LEVEL_MODIFIERS) do
-        local parsed = tonumber((settings.max or {})[key] or 0)
-        if parsed == nil then
-            return false, eCoreErr.not_valid_amount
-        end
-        max[key] = clamp(math.floor(parsed), 0, 100)
-    end
-
-    local levels = {}
-    for i = 1, milestones do
-        local f = easing_factor(i, milestones, curveType)
-        local row = {
-            limit = math.floor((maxPoints * i) / milestones),
-        }
-        for _, key in ipairs(LEVEL_MODIFIERS) do
-            row[key] = math.floor(max[key] * f)
-        end
-        levels[#levels + 1] = row
-    end
-
-    return true, levels
-end
-
---- Auto-generated annotation. Refine behavior details if needed.
---- @param levels any
---- @return any result
-local function normalize_levels_table(levels)
-    if type(levels) ~= 'table' or #levels == 0 then
-        return false, eCoreErr.not_levels_data
-    end
-
-    local normalized = {}
-    local previousLimit = -1
-    for idx, row in ipairs(levels) do
-        if type(row) ~= 'table' then
-            return false, eCoreErr.invalid_item_data
-        end
-
-        local limit = row.limit
-        if limit == nil and idx == #levels then
-            limit = previousLimit + 1
-        end
-        limit = tonumber(limit)
-        if not limit then
-            return false, eCoreErr.not_valid_amount
-        end
-        limit = math.floor(limit)
-        if limit <= previousLimit then
-            return false, eCoreErr.not_levels_data
-        end
-        previousLimit = limit
-
-        local normalizedRow = { limit = limit }
-        for _, key in ipairs(LEVEL_MODIFIERS) do
-            local value = tonumber(row[key] or 0)
-            if value == nil then
-                return false, eCoreErr.not_valid_amount
-            end
-            value = math.floor(value)
-            if value < 0 or value > 100 then
-                return false, eCoreErr.not_valid_amount
-            end
-            normalizedRow[key] = value
-        end
-        normalized[#normalized + 1] = normalizedRow
-    end
-
-    return true, normalized
-end
-
---- Auto-generated annotation. Refine behavior details if needed.
---- @param payload table
---- @param fallbackLevels any
---- @return any result
-local function resolve_profile_levels_from_payload(payload, fallbackLevels)
-    if payload.easyGenerator ~= nil then
-        return generate_easy_levels(payload.easyGenerator)
-    end
-
-    if payload.levels ~= nil then
-        return normalize_levels_table(payload.levels)
-    end
-
-    if fallbackLevels ~= nil then
-        return normalize_levels_table(fallbackLevels)
-    end
-
-    return false, eCoreErr.not_levels_data
-end
-
---- Auto-generated annotation. Refine behavior details if needed.
---- @param levelsJson any
---- @return any result
-local function decode_levels_json(levelsJson)
-    if type(levelsJson) ~= 'string' or levelsJson == '' then
-        return {}
-    end
-    local ok, decoded = pcall(json.decode, levelsJson)
-    if not ok or type(decoded) ~= 'table' then
-        return {}
-    end
-    return decoded
-end
-
---- Auto-generated annotation. Refine behavior details if needed.
 --- @param profileKey any
 --- @return any result
 local function fetch_level_profile_row(profileKey)
@@ -2095,8 +1650,8 @@ local function fetch_level_profile_row(profileKey)
         return false, eCoreErr.profession_profile_not_found
     end
 
-    local levels = decode_levels_json(row.levels_json)
-    local okLevels, normalizedOrErr = normalize_levels_table(levels)
+    local levels = profession_levels.decode_levels_json(row.levels_json)
+    local okLevels, normalizedOrErr = profession_levels.normalize_levels_table(levels)
     if not okLevels then
         return false, normalizedOrErr
     end
@@ -2108,20 +1663,6 @@ local function fetch_level_profile_row(profileKey)
         mode = row.mode,
         levels = normalizedOrErr,
     }
-end
-
---- Auto-generated annotation. Refine behavior details if needed.
---- @param mode any
---- @return any result
-local function normalize_profile_mode(mode)
-    if mode == nil then
-        return nil
-    end
-    local m = tostring(mode)
-    if m ~= 'easy' and m ~= 'advanced' then
-        return nil
-    end
-    return m
 end
 
 --- Auto-generated annotation. Refine behavior details if needed.
@@ -2148,8 +1689,8 @@ function levelProfileAdminList()
 
     local items = {}
     for _, row in ipairs(rows) do
-        local levels = decode_levels_json(row.levels_json)
-        local okLevels, normalizedOrErr = normalize_levels_table(levels)
+        local levels = profession_levels.decode_levels_json(row.levels_json)
+        local okLevels, normalizedOrErr = profession_levels.normalize_levels_table(levels)
         if not okLevels then
             return admin_response(false, normalizedOrErr, 'Sérült levels_json található a DB-ben.')
         end
@@ -2186,12 +1727,12 @@ function levelProfileAdminCreate(payload)
 
     local mode = 'advanced'
     if payload.mode ~= nil then
-        mode = normalize_profile_mode(payload.mode)
+        mode = profession_levels.normalize_profile_mode(payload.mode)
         if not mode then
             return admin_response(false, eCoreErr.invalid_item_data, 'Érvénytelen profile mode.')
         end
     end
-    local okLevels, levelsOrErr = resolve_profile_levels_from_payload(payload)
+    local okLevels, levelsOrErr = profession_levels.resolve_profile_levels_from_payload(payload)
     if not okLevels then
         return admin_response(false, levelsOrErr, 'Érvénytelen levels payload.')
     end
@@ -2248,12 +1789,12 @@ function levelProfileAdminUpdate(profileKey, payload)
 
     local nextMode = existingOrErr.mode
     if payload.mode ~= nil then
-        nextMode = normalize_profile_mode(payload.mode)
+        nextMode = profession_levels.normalize_profile_mode(payload.mode)
         if not nextMode then
             return admin_response(false, eCoreErr.invalid_item_data, 'Érvénytelen profile mode.')
         end
     end
-    local okLevels, levelsOrErr = resolve_profile_levels_from_payload(payload, existingOrErr.levels)
+    local okLevels, levelsOrErr = profession_levels.resolve_profile_levels_from_payload(payload, existingOrErr.levels)
     if not okLevels then
         return admin_response(false, levelsOrErr, 'Érvénytelen levels payload.')
     end

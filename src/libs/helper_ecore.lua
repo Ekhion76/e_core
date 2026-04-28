@@ -291,8 +291,19 @@ function hfe.auditAdminApiDenied(section, action, payload, reason)
         )
     end
 
-    -- Best-effort DB persistence (server only).
-    if rawget(_G, 'MySQL') ~= nil then
+    -- Server-only persistence: `mysql` (table) or `discord` (webhook); see `Config.adminApi.deniedAudit.storage`.
+    if not IsDuplicityVersion() then
+        return
+    end
+
+    local adminApi = (type(Config) == 'table' and type(Config.adminApi) == 'table') and Config.adminApi or {}
+    local da = type(adminApi.deniedAudit) == 'table' and adminApi.deniedAudit or {}
+    local storage = tostring(da.storage or 'mysql'):lower()
+    if storage ~= 'mysql' and storage ~= 'discord' then
+        storage = 'mysql'
+    end
+
+    if storage == 'mysql' and rawget(_G, 'MySQL') ~= nil then
         hfe.mysqlAwait('admin_denied_audit:insert', function()
             MySQL.query.await(
                 [[
@@ -309,6 +320,34 @@ function hfe.auditAdminApiDenied(section, action, payload, reason)
                 }
             )
         end)
+        return
+    end
+
+    if storage == 'discord' and type(createDiscordLog) == 'function' then
+        local url = hf.trim(tostring(da.webhookUrl or ''))
+        if url == '' then
+            return
+        end
+        local botName = hf.trim(tostring(da.discordBotName or ''))
+        if botName == '' then
+            botName = tostring((type(Config) == 'table' and Config.discordBotName) or 'ECOBOT')
+        end
+        local log = createDiscordLog(url, botName, {})
+        if log then
+            log:embed({
+                color = 'orange',
+                title = 'e_core: admin denied',
+                timestamp = true,
+                fields = {
+                    { name = 'Section', value = entry.section, inline = true },
+                    { name = 'Action', value = entry.action, inline = true },
+                    { name = 'Source', value = tostring(entry.source), inline = true },
+                    { name = 'Requested by', value = tostring(entry.requestedBy or '—'), inline = true },
+                    { name = 'Reason', value = entry.reason, inline = false },
+                },
+            })
+            log:send()
+        end
     end
 end
 

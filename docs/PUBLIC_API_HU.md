@@ -84,8 +84,9 @@ A tábla névsora = a fájlban lévő `exports(...)` sorok sorrendje; közvetlen
 | `professionAdminCleanupJobAbort` | Futó/queued cleanup job megszakításra jelölése. | `jobId`, `payload?` (`auth.source?`) |
 | `professionAdminCleanupJobResume` | Megszakított/hibás cleanup job folytatása az utolsó cursorról. | `jobId`, `payload?` (`auth.source?`) |
 | `professionAdminAuditList` | Profession/cleanup admin audit események listája egységes shape-ben (`eventType`, `actor`, `target`, `outcome`, `details`). | `limit?`, `payload?` (`auth.source?`) |
-| `adminApiDeniedAuditList` | Admin API jogosultság-elutasítás audit lista lapozással; egységes audit shape (`eventType`, `actor`, `target`, `outcome`) + legacy mezők. | `filters?` (`section?`, `action?`, `limit?`, `offset?`, `auth.source?`) |
-| `adminApiDeniedAuditPurge` | Manuális denied audit purge futtatás a retention policy szerint (`dryRun` támogatással). | `payload?` (`auth.source?`, `dryRun?`) |
+| `adminDenied` | Operátor jog megtagadva: naplózás ugyanarra a csatornára, mint a belső `hfe.auditAdminApiDenied` (`Config.adminApi.deniedAudit.storage`: `mysql` ↔ tábla, `discord` ↔ webhook). | `section`, `action`, `payload?`, `reason?` |
+| `adminDeniedAuditList` | Elutasított privilegizált admin műveletek auditja (nem „REST API hiba”). `storage=mysql`: tábla + opcionális memória fallback; `storage=discord`: csak memória gyűrű. Válasz `data.dataSource`: `mysql` \| `memory`. | `filters?` (`section?`, `action?`, `limit?`, `offset?`, `auth.source?`) |
+| `adminDeniedAuditPurge` | Retention purge csak **`storage=mysql`** mellett; `discord` módban hibaüzenet (`invalid_item_data`). | `payload?` (`auth.source?`, `dryRun?`) |
 | `levelProfileAdminList` | Admin read API: level profile lista lekérése (`levels`, használati darabszám). | – |
 | `levelProfileAdminCreate` | Admin CRUD: level profile létrehozás (`levels` vagy `easyGenerator` alapú generálás). | `payload` |
 | `levelProfileAdminUpdate` | Admin CRUD: level profile frissítés (`displayName`, `mode`, `levels`/`easyGenerator`). | `profileKey`, `payload` |
@@ -114,6 +115,8 @@ A **`SetHttpHandler` alapú külső HTTP admin (`/admin/...`) el lett távolítv
 - **Böngészős `npm run dev`:** valós CRUD nélkül használd a mock registry-t (`VITE_USE_MOCK_REGISTRY=true`, lásd `src/web/.env.example`).
 
 - **`getInventorySamples`:** `{ action: 'getInventorySamples', payload?: { targetSource?: number } }` — opcionális `targetSource` (alapértelmezés: a hívó `source`). Válasz `data`: `framework`, `targetSource`, `bridge` (`topLevelKeys`, `rowEstimate`, `sampleCount`, `samples`, `sampleJson`), `oxInventory` (`resourceStarted`, `sampleCount`, `samples`, `sampleJson`, `inventoryMeta?`). Cél: nyers inventory-sor kulcsok (`count` / `amount` / …) az `overrides/**/config.lua` `Config.fields` kitöltéséhez.
+
+- **Denied audit (operátor jog):** `getDeniedAuditConfig` → `data.storage` (`mysql`|`discord`), `data.enabled`. `listDeniedAudit` / `purgeDeniedAudit`: a szerver a hívó `source`-t `payload.auth.source`-ként injektálja (policy: cleanup **vagy** diagnostics admin, mint az exportoknál). UI: Admin **Denied audit** fül (`DeniedAuditPanel.svelte`).
 
 ---
 
@@ -176,7 +179,7 @@ Forrás: **`libs/errors.lua`**. Az e_core belső kódja **`eCoreErr.xyz`** form�
 | `cleanup_scan_failed` | `'scan_failed'` | `cleanup_job_step`: meta cleanup DB scan sikertelen |
 | `mysql_missing` | `'mysql_missing'` | `hf.mysqlAwait`: oxmysql nem elérhető |
 | `admin_missing_auth_source` … `admin_web_denied` | angol üzenet (kulcsonként egyedi szöveg) | `hf.adminApiCanAccess`, `hf.webConsoleAccess` (`libs/helper_ecore.lua`) |
-| `admin_audit_dual_policy_denied` | magyar üzenet (táblázat szerinti szöveg) | `server/professions.lua` (`adminApiDeniedAuditList` / denied audit gate) |
+| `admin_audit_dual_policy_denied` | magyar üzenet (táblázat szerinti szöveg) | `server/admin_denied_audit.lua` (`adminDeniedAuditList` gate) |
 | `integrity_invalid_player` … `integrity_policy_denied` | magyar / vegyes (kulcsonként) | `server/integrity_check.lua` (`integrityCanRun` / policy) |
 
 **Meta szerződés (szerver):** kategória / mező nevek **trim**elve; üres string → `no_valid_meta_name`. `registerMeta` / `setMeta` **nem** írhat a `login`, `logout`, `labor` gyökér kulcsokra. **Jártasság** exportok (`getAbility`, `addAbility`, `setAbility`, `removeAbility`) **nem** használhatók ezekre a kulcsokra – labor olvasásához `getLabor` / `getMeta(playerId, 'labor')`; íráshoz labor exportok.

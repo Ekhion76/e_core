@@ -1,7 +1,7 @@
 fx_version 'cerulean'
 game 'gta5'
 description 'ECO CORE'
-version '0.1.12'
+version '0.1.13'
 
 shared_scripts {
     '@ox_lib/init.lua',
@@ -94,6 +94,8 @@ server_scripts {
     'src/server/labor.lua',
     'src/server/quote.lua',
     'src/server/db_migrations.lua',
+    'src/libs/profession_levels.lua',
+    'src/server/admin_denied_audit.lua',
     'src/server/professions.lua',
     'src/server/db.lua',
     'src/server/exports.lua',

@@ -93,7 +93,7 @@ Az `exports.e_core:*` **vékony réteg** (`client/exports.lua`, `server/exports.
 | `admin_console_disabled` | angol szöveg | Web admin NUI ki van kapcsolva a configban | `src/libs/helper_ecore.lua` |
 | `admin_web_unconfigured` | angol szöveg | `Config.web` jog policy nincs kitöltve (nincs engedélyezési út) | `src/libs/helper_ecore.lua` |
 | `admin_web_denied` | angol szöveg | Web admin: policy elutasította a játékost | `src/libs/helper_ecore.lua` |
-| `admin_audit_dual_policy_denied` | magyar szöveg | Denied audit lista: sem cleanup, sem diagnostics admin policy nem engedélyezett | `src/server/professions.lua` |
+| `admin_audit_dual_policy_denied` | magyar szöveg | Denied audit lista: sem cleanup, sem diagnostics admin policy nem engedélyezett | `src/server/admin_denied_audit.lua` |
 | `integrity_invalid_player` | magyar szöveg | Integritás futtatás: érvénytelen `source` | `src/server/integrity_check.lua` |
 | `integrity_check_disabled` | magyar szöveg | `Config.integrityCheck.enabled` kikapcsolva | `src/server/integrity_check.lua` |
 | `integrity_cooldown_active` | magyar szöveg | Integritás parancs cooldown alatt | `src/server/integrity_check.lua` |

@@ -384,7 +384,13 @@ local audit = exports.e_core:professionAdminAuditList(20, {
 })
 print(audit.code, #audit.data.items)
 
-local deniedAudit = exports.e_core:adminApiDeniedAuditList({
+-- Külső resource: operátor jog megtagadva → ugyanaz a napló, mint a belső hívásoknál
+exports.e_core:adminDenied('my_resource', 'dangerousAction', {
+    auth = { source = playerId },
+    requestedBy = 'txAdmin',
+}, 'policy_denied')
+
+local deniedAudit = exports.e_core:adminDeniedAuditList({
     section = 'cleanup', -- opcionális: cleanup / diagnostics
     action = 'professionAdminCleanupJobAbort', -- opcionális
     limit = 20,
@@ -402,12 +408,12 @@ if deniedAudit.ok and deniedAudit.data.items[1] then
     )
 end
 
-local purge = exports.e_core:adminApiDeniedAuditPurge({
+local purge = exports.e_core:adminDeniedAuditPurge({
     auth = { source = playerId },
 })
 print(purge.code, purge.data and purge.data.deleted)
 
-local purgeDryRun = exports.e_core:adminApiDeniedAuditPurge({
+local purgeDryRun = exports.e_core:adminDeniedAuditPurge({
     dryRun = true,
     auth = { source = playerId },
 })

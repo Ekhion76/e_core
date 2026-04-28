@@ -14,6 +14,7 @@
   import ProfessionsPanel from './lib/ProfessionsPanel.svelte'
   import LevelProfilesPanel from './lib/LevelProfilesPanel.svelte'
   import InventorySamplesPanel from './lib/InventorySamplesPanel.svelte'
+  import DeniedAuditPanel from './lib/DeniedAuditPanel.svelte'
   import { postNui } from './lib/nui'
 
   type TabId =
@@ -24,6 +25,7 @@
     | 'professions'
     | 'level-profiles'
     | 'inventory-samples'
+    | 'denied-audit'
 
   type Tab = { id: TabId; label: string }
 
@@ -37,7 +39,8 @@
     { id: 'documentation', label: 'Documentation' },
     { id: 'professions', label: 'Professions' },
     { id: 'level-profiles', label: 'Level Profiles' },
-    { id: 'inventory-samples', label: 'Inventory minta' }
+    { id: 'inventory-samples', label: 'Inventory minta' },
+    { id: 'denied-audit', label: 'Denied audit' }
   ]
 
   let activeTab = $state<TabId>('overview')
@@ -226,6 +229,8 @@
       <ProfessionsPanel />
     {:else if activeTab === 'inventory-samples'}
       <InventorySamplesPanel />
+    {:else if activeTab === 'denied-audit'}
+      <DeniedAuditPanel />
     {:else}
       <LevelProfilesPanel />
     {/if}

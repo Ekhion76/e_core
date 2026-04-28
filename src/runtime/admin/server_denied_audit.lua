@@ -280,13 +280,13 @@ function e_core_purge_admin_denied_audit_once()
         )
     end)
     if not ok then
-        cLog('[e_core] admin denied audit purge sikertelen', 'warning', 2)
+        hf.cLog('[e_core] admin denied audit purge sikertelen', 'warning', 2)
         return false, 0
     end
 
     local deleted = tonumber(affected) or 0
     if deleted > 0 then
-        cLog(
+        hf.cLog(
             ('[e_core] admin denied audit purge: %s sor törölve (retentionDays=%s, limit=%s)'):format(
                 deleted,
                 cfg.retentionDays,

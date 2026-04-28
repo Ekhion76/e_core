@@ -3,7 +3,7 @@
 --- QB/ESX loops below only register framework events and do not alter export contracts.
 if QB_CORE then
     for _, event in ipairs(QBEvents) do
-        cLog('REGISTER EVENT:', event.name, 2)
+        hf.cLog('REGISTER EVENT:', event.name, 2)
         RegisterNetEvent(event.name, event.method)
     end
 end

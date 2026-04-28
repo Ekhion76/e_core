@@ -193,7 +193,7 @@ end
 --- @return table Response `{ ok, code, message?, data? }` matching other admin NUI handlers (`eCoreErr` codes).
 function adminNuiGetInventorySamples(adminSrc, payload)
     payload = type(payload) == 'table' and payload or {}
-    if _G._ECORE_INIT_FAILED or type(eCore) ~= 'table' or type(eCore.getInventory) ~= 'function' then
+    if _ECORE_INIT_FAILED or type(eCore) ~= 'table' or type(eCore.getInventory) ~= 'function' then
         return {
             ok = false,
             code = eCoreErr.not_ready,
@@ -269,7 +269,7 @@ function adminNuiGetInventorySamples(adminSrc, payload)
         message = hint,
         data = {
             framework = FRAMEWORK,
-            ecoreInitFailed = _G._ECORE_INIT_FAILED == true,
+            ecoreInitFailed = _ECORE_INIT_FAILED == true,
             targetSource = target,
             bridge = {
                 topLevelKeys = topLevelKeysSample(inv),

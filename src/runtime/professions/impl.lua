@@ -500,7 +500,7 @@ function e_core_bootstrap_cleanup_jobs()
         ]]
     )
     if not ok then
-        cLog('[e_core] cleanup bootstrap: e_core_cleanup_jobs nem olvasható', 'warning', 2)
+        hf.cLog('[e_core] cleanup bootstrap: e_core_cleanup_jobs nem olvasható', 'warning', 2)
         return
     end
 
@@ -525,7 +525,7 @@ function e_core_bootstrap_cleanup_jobs()
     end
 
     if recoveredRunning > 0 then
-        cLog(('[e_core] cleanup bootstrap: %s megszakadt job fail állapotba állítva (restart recovery)'):format(recoveredRunning), 'warning', 1)
+        hf.cLog(('[e_core] cleanup bootstrap: %s megszakadt job fail állapotba állítva (restart recovery)'):format(recoveredRunning), 'warning', 1)
     end
 end
 
@@ -599,7 +599,7 @@ local function get_registry_counts()
     end)
 
     if not ok then
-        cLog('[e_core] profession bootstrap: nem sikerült lekérdezni a registry táblák állapotát', 'warning', 2)
+        hf.cLog('[e_core] profession bootstrap: nem sikerült lekérdezni a registry táblák állapotát', 'warning', 2)
         return nil, nil
     end
 
@@ -630,7 +630,7 @@ local function ensure_default_profile(levelsJson)
     end)
 
     if not okInsert then
-        cLog('[e_core] profession bootstrap: default level profile mentése sikertelen', 'warning', 2)
+        hf.cLog('[e_core] profession bootstrap: default level profile mentése sikertelen', 'warning', 2)
         return nil
     end
 
@@ -642,7 +642,7 @@ local function ensure_default_profile(levelsJson)
     end)
 
     if not okId or not row or not row.id then
-        cLog('[e_core] profession bootstrap: default level profile ID lekérése sikertelen', 'warning', 2)
+        hf.cLog('[e_core] profession bootstrap: default level profile ID lekérése sikertelen', 'warning', 2)
         return nil
     end
 
@@ -667,7 +667,7 @@ local function seed_default_professions(profileId)
             end
         )
         if not ok then
-            cLog(
+            hf.cLog(
                 ('[e_core] profession bootstrap: profession seed sikertelen (%s.%s)'):format(
                     profession.category,
                     profession.name
@@ -709,9 +709,9 @@ function e_core_bootstrap_profession_registry()
         if not seeded then
             return false
         end
-        cLog('[e_core] profession bootstrap: default profession registry létrehozva', 'info', 1)
+        hf.cLog('[e_core] profession bootstrap: default profession registry létrehozva', 'info', 1)
     else
-        cLog('[e_core] profession bootstrap: profession rekordok már léteznek, csak default profile biztosítva', 'info', 2)
+        hf.cLog('[e_core] profession bootstrap: profession rekordok már léteznek, csak default profile biztosítva', 'info', 2)
     end
 
     return true

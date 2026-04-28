@@ -1,22 +1,79 @@
---- Legacy-compatible locale helpers exposed as shared chunk.
---- `Lang` must be present from e_core locale bootstrap.
+-- luacheck: push ignore 131
+--- Global locale tables loaded by `locales/<code>.lua` files (`locales["en"]`, etc.).
+local M = {}
+local locales = {}
 
-local function _normalizeArgs(key, ...)
-    local t = { ... }
-    if #t == 1 and type(t[1]) == 'table' then
-        return t[1]
+local fmt = string.format
+local unpack = table.unpack
+
+--- @return table|nil locale Resolved translation table, or nil if neither selected locale nor `en` is loaded.
+function M.resolveLocale()
+    local cfg = Config
+    local code = (cfg and type(cfg.locale) == "string" and cfg.locale ~= "") and cfg.locale or "en"
+    local pack = locales[code]
+    if pack then
+        return pack
     end
-    return t
-end
-
-function translate(key, ...)
-    if type(Lang) ~= 'function' then
-        return tostring(key or '')
+    if code ~= "en" then
+        return locales["en"]
     end
-    local args = _normalizeArgs(key, ...)
-    return Lang(key, table.unpack(args))
+    return nil
 end
 
-function translateU(key, ...)
-    return translate(key, ...):upper()
+--- Translates by key. Falls back to `en` when selected locale is missing (if available).
+--- `string.format` placeholders are applied only when text contains `%` and variadic arguments are provided.
+--- @param str any
+--- @param ... any
+--- @return string
+function M.translate(str, ...)
+    if str == nil then
+        return ""
+    end
+    if type(str) ~= "string" then
+        return tostring(str)
+    end
+
+    local locale = M.resolveLocale()
+    if not locale then
+        local cfg = Config
+        local code = (cfg and type(cfg.locale) == "string" and cfg.locale ~= "") and cfg.locale or "en"
+        return ("locale [%s] does not exist"):format(code)
+    end
+
+    local translation = locale[str]
+    if translation == nil then
+        return str
+    end
+
+    if type(translation) ~= "string" then
+        return str
+    end
+
+    local args = { ... }
+    if translation:find("%%") and #args > 0 then
+        local ok, formatted = pcall(fmt, translation, unpack(args))
+        if ok then
+            return formatted
+        end
+        return translation .. " (format error)"
+    end
+
+    return translation
 end
+
+--- Uppercases first character (ASCII `%l`); does not normalize multi-byte UTF-8 initials.
+--- @param str any
+--- @param ... any
+--- @return string
+function M.translateU(str, ...)
+    local translated = M.translate(str, ...)
+    if translated == "" then
+        return translated
+    end
+    return (translated:gsub("^%l", string.upper))
+end
+
+M.locales = locales
+
+return M
+-- luacheck: pop

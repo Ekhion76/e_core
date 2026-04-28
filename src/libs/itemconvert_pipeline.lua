@@ -261,15 +261,13 @@ function hf.itemConvertWarnCustomConvertItems(sourceTag)
         return
     end
     pipeline.warned[key] = true
-    if cLog then
-        cLog(
-            ('[e_core][itemconvert] custom override convertItems detected (%s). Recommended migration: use hf.convertItemsWithProfile(...) in getRegisteredItems only.'):format(
-                key
-            ),
-            'warning',
-            1
-        )
-    end
+    hf.cLog(
+        ('[e_core][itemconvert] custom override convertItems detected (%s). Recommended migration: use hf.convertItemsWithProfile(...) in getRegisteredItems only.'):format(
+            key
+        ),
+        'warning',
+        1
+    )
 end
 
 --- Converts an inventory item table through a profile-mapped pipeline.
@@ -384,14 +382,12 @@ function hf.convertItemsWithProfile(items, profileName, options)
                 })
             end
 
-            if debugEnabled and cLog then
-                cLog(('[e_core][itemconvert] converted %s via profile %s'):format(name, tostring(profileName or 'default')), 2)
+            if debugEnabled then
+                hf.cLog(('[e_core][itemconvert] converted %s via profile %s'):format(name, tostring(profileName or 'default')), 2)
             end
         end)
         if not okConv then
-            if cLog then
-                cLog(('eCore:convertItems(%s)'):format(sourceName), { err = tostring(errConv), item = tostring(item) }, 1)
-            end
+            hf.cLog(('eCore:convertItems(%s)'):format(sourceName), { err = tostring(errConv), item = tostring(item) }, 1)
             if hf.itemConvertDiagRecord then
                 hf.itemConvertDiagRecord({
                     source = sourceTag,

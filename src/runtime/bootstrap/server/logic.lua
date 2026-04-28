@@ -7,10 +7,10 @@ CORE_READY, REGISTERED_ITEMS = false, nil
 --- Performs server-side core bootstrap wait/log sequence.
 --- @return nil
 local function runServerBootstrap()
-    cLog('REGISTERED ITEMS', 'Loading...', 2)
+    hf.cLog('REGISTERED ITEMS', 'Loading...', 2)
 
     if hfe.awaitItemRegistryReady('REGISTERED ITEMS') then
-        cLog('REGISTERED ITEMS', 'Loaded', 2)
+        hf.cLog('REGISTERED ITEMS', 'Loaded', 2)
     end
 
     hfe.logEcoreStartupSummary('server')

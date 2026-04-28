@@ -99,7 +99,7 @@ function eCore:canSwapItems(swappingItems, itemData, playerData)
     local capacity = maxInventoryWeight - self:getInventoryWeight(playerData)
     local itemWeight = self:getItemWeight(itemData.name, itemData.metadata) * itemData.amount
 
-    cLog('canSwapItems', {
+    hf.cLog('canSwapItems', {
         maxInventoryWeight = maxInventoryWeight,
         freeSlots = freeSlots,
         capacity = capacity,

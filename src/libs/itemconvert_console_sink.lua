@@ -57,9 +57,5 @@ function hf.itemConvertConsoleSink.emit(evt, opts)
     local msg = ('[e_core][itemconvert][%s] code=%s item=%s reason=%s source=%s file=%s')
         :format(string.upper(severity), code, item ~= '' and item or '-', reason ~= '' and reason or '-', source, logFile)
 
-    if type(cLog) == 'function' then
-        cLog(msg, severity, severity == 'error' and 1 or 2)
-    else
-        print(msg)
-    end
+    hf.cLog(msg, severity, severity == 'error' and 1 or 2)
 end

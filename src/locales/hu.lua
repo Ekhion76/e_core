@@ -1,4 +1,6 @@
-locales['hu'] = {
+local localeSdk = lib.require('src/imports/sdk/locale/shared')
+
+localeSdk.locales['hu'] = {
     --Crafting:
     chemist = 'Vegyész',
     cooking = 'Szakács, italkészítő',

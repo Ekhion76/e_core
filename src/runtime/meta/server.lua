@@ -1,5 +1,6 @@
 local M = {}
 local quoteApi = nil
+local hf = hf
 
 --- Lazily resolves quote API to avoid load-time circular require.
 --- @return table
@@ -460,7 +461,7 @@ function M.saveRequest(playerId, event)
             end
             PlayerMetaStore.setLastSave(playerId, time)
             db.saveMeta(xPlayer, true)
-            cLog(xPlayer.name .. ' ' .. event, 'saving metadata...', 1)
+            hf.cLog(xPlayer.name .. ' ' .. event, 'saving metadata...', 1)
         end
     end
 end

@@ -105,9 +105,7 @@ local function applyOperatorConfig()
             local webhookUrl = hf.trim(tostring(denied.webhookUrl or ''))
             if storage == 'discord' and not is_e_core_discord_webhook_url(webhookUrl) then
                 storage = 'mysql'
-                if type(cLog) == 'function' then
-                    cLog('[e_core] Config.operator.deniedAudit: storage=discord but webhookUrl invalid — using mysql.', 'warning', 1)
-                end
+                hf.cLog('[e_core] Config.operator.deniedAudit: storage=discord but webhookUrl invalid — using mysql.', 'warning', 1)
             end
             local discordBotName = hf.trim(tostring(denied.discordBotName or ''))
             return {
@@ -217,9 +215,7 @@ function configCheck()
         da.discordBotName = hf.trim(tostring(da.discordBotName or ''))
         if da.storage == 'discord' and not is_e_core_discord_webhook_url(da.webhookUrl) then
             da.storage = 'mysql'
-            if type(cLog) == 'function' then
-                cLog('[e_core] Config.adminApi.deniedAudit: storage=discord but webhookUrl invalid — using mysql.', 'warning', 1)
-            end
+            hf.cLog('[e_core] Config.adminApi.deniedAudit: storage=discord but webhookUrl invalid — using mysql.', 'warning', 1)
         end
     end
 

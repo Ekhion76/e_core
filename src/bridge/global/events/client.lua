@@ -1,4 +1,5 @@
 sharedEvents = {}
+local hf = hf
 
 --- Only these methods are callable through `TriggerClientEvent('e_core:methodCaller', ...)` (client side).
 local methodCallerAllowed = {
@@ -13,7 +14,7 @@ table.insert(sharedEvents, {
                 tostring(method),
                 type(method)
             ))
-            cLog('e_core:methodCaller', ('rejected: %s'):format(tostring(method)), 1)
+            hf.cLog('e_core:methodCaller', ('rejected: %s'):format(tostring(method)), 1)
             return
         end
 

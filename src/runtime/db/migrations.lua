@@ -3,6 +3,7 @@
 --- Add new migration by extending `ECORE_DB_MIGRATIONS` and bumping `ECORE_DB_SCHEMA_TARGET` (export/docs).
 
 ECORE_DB_SCHEMA_TARGET = 4
+local hf = hf
 local hfe = hfe
 
 local MIGRATIONS_DDL = [[
@@ -198,7 +199,7 @@ function e_core_get_applied_migration_id()
     end
     local maxId = tonumber(rows[1].m) or 0
     if maxId < ECORE_DB_SCHEMA_TARGET then
-        cLog(
+        hf.cLog(
             ('[e_core] DB migrációk elmaradva: alkalmazott_max=%d, repó_cél=%d (indítsd újra az e_core-t / nézd a migrációs hibákat).'):format(
                 maxId,
                 ECORE_DB_SCHEMA_TARGET
@@ -219,7 +220,7 @@ function e_core_run_db_migrations()
             if not migration_applied(m.id) then
                 m.run()
                 mark_migration_applied(m.id, m.name)
-                cLog(('[e_core] DB migration %d applied: %s'):format(m.id, m.name), 'info', 1)
+                hf.cLog(('[e_core] DB migration %d applied: %s'):format(m.id, m.name), 'info', 1)
             end
         end
     end)

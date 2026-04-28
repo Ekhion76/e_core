@@ -1,4 +1,6 @@
-locales["en"] = {
+local localeSdk = lib.require('src/imports/sdk/locale/shared')
+
+localeSdk.locales["en"] = {
     --Crafting:
     chemist = 'Chemistry',
     cooking = 'Cooking',

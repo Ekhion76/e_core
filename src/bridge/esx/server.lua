@@ -176,7 +176,7 @@ if ESX_CORE then
             return false, eCoreErr.invalid_player
         end
 
-        cLog('eCore:removeItem', {item = item, count = count}, 4)
+        hf.cLog('eCore:removeItem', {item = item, count = count}, 4)
         xPlayer.removeInventoryItem(item, count, metadata, slot)
         return true
     end
@@ -213,7 +213,7 @@ if ESX_CORE then
             end
         end
 
-        cLog('eCore:removeItems', items, 4)
+        hf.cLog('eCore:removeItems', items, 4)
 
         for _, item in pairs(items) do
             local okRm, errRm = pcall(function()
@@ -221,7 +221,7 @@ if ESX_CORE then
             end)
 
             if not okRm then
-                cLog('eCore:removeItems:pcall', { item = item.name, err = tostring(errRm) }, 1)
+                hf.cLog('eCore:removeItems:pcall', { item = item.name, err = tostring(errRm) }, 1)
                 return false, eCoreErr.inventory_export_exception
             end
         end

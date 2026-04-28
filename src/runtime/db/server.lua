@@ -1,5 +1,6 @@
 local UPDATE_META = 'UPDATE `users` SET `e_core` = ? WHERE `identifier` = ?'
 local SELECT_META = 'SELECT `e_core` FROM `users` WHERE `identifier` = ?'
+local hf = hf
 local hfe = hfe
 local labor = lib.require('src/runtime/labor/logic')
 local metaLogic = lib.require('src/runtime/meta/logic')
@@ -26,13 +27,13 @@ function M.saveMeta(xPlayer, dropMeta)
             })
         end)
         if not ok then
-            cLog(('[e_core] saveMeta: DB hiba, meta nem mentve (%s)'):format(xPlayer.identifier), 'warning', 2)
+            hf.cLog(('[e_core] saveMeta: DB hiba, meta nem mentve (%s)'):format(xPlayer.identifier), 'warning', 2)
             return
         end
         if dropMeta then
             PlayerMetaStore.clear(playerId)
         end
-        cLog(xPlayer.name .. ' metadata', 'saved', 1)
+        hf.cLog(xPlayer.name .. ' metadata', 'saved', 1)
     end
 end
 
@@ -54,9 +55,9 @@ function M.saveAllMeta()
             MySQL.prepare.await(UPDATE_META, parameters)
         end)
         if ok then
-            cLog('all metadata', 'saved', 1)
+            hf.cLog('all metadata', 'saved', 1)
         else
-            cLog('[e_core] saveAllMeta: DB hiba, kötegelt mentés sikertelen', 'warning', 2)
+            hf.cLog('[e_core] saveAllMeta: DB hiba, kötegelt mentés sikertelen', 'warning', 2)
         end
     end
 end
@@ -71,7 +72,7 @@ function M.loadMeta(xPlayer)
         return MySQL.scalar.await(SELECT_META, { xPlayer.identifier })
     end)
     if not ok then
-        cLog(('[e_core] loadMeta: DB hiba, meta nem töltődött (%s)'):format(xPlayer.identifier), 'warning', 2)
+        hf.cLog(('[e_core] loadMeta: DB hiba, meta nem töltődött (%s)'):format(xPlayer.identifier), 'warning', 2)
         return
     end
 
@@ -79,7 +80,7 @@ function M.loadMeta(xPlayer)
     if result ~= nil and result ~= '' then
         local decodeOk, decoded = pcall(json.decode, result)
         if not decodeOk or type(decoded) ~= 'table' then
-            cLog(
+            hf.cLog(
                 ('[e_core] loadMeta: az e_core oszlop nem érvényes JSON objektum (%s); meta nem állítódik be (DB javítás, különben mentéskor felülírás veszélye)'):format(
                     xPlayer.identifier
                 ),

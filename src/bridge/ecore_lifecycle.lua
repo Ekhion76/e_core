@@ -1,6 +1,8 @@
 --- Internal bootstrap: `_eCoreInternal`, explicit extension registration, PURE public API slice.
 --- Contract: do not read `_eCoreInternal` from consumer code; use `exports.e_core:getCore()` only.
 --- @module 'src.bridge.ecore_lifecycle'
+local localeSdk = lib.require('src/imports/sdk/locale/shared')
+local utilsSdk = lib.require('src/imports/sdk/utils/shared')
 
 --- Bump when `eCore.bridgeContract` shape or semantics change (independent of `ecoreVersion` / fxmanifest semver).
 local ECORE_BRIDGE_CONTRACT_SCHEMA_VERSION = 1
@@ -64,16 +66,16 @@ function eCoreLifecycle_registerExtensions()
     eCoreLifecycle_initInternal()
     _eCoreInternal.facadeBindings = {
         i18n = {
-            translate = translate,
-            translateU = translateU,
+            translate = localeSdk.translate,
+            translateU = localeSdk.translateU,
         },
         util = {
-            cLog = cLog,
-            print_r = print_r,
-            createBlip = createBlip,
-            animDictLoader = animDictLoader,
-            modelLoader = modelLoader,
-            fxLoader = fxLoader,
+            cLog = utilsSdk.cLog,
+            print_r = utilsSdk.print_r,
+            createBlip = utilsSdk.createBlip,
+            animDictLoader = utilsSdk.animDictLoader,
+            modelLoader = utilsSdk.modelLoader,
+            fxLoader = utilsSdk.fxLoader,
         },
     }
     _eCoreInternal.runtime.frameworkKey = FRAMEWORK

@@ -2,7 +2,7 @@
 --- ConVar: `e_core:framework` = auto | esx | qb (trim, kisbetű).
 --- ConVar: `e_core:framework_resource` – nem üres és **kényszerített** esx|qb mellett felülírja az alap resource nevet (`es_extended` / `qb-core`). `auto` mellett figyelmen kívül hagyva (log).
 --- Hiba esetén: kontrollált `IDLE` állapot (nincs `error()`/resource stop), hogy a szerver indulása ne sérüljön.
-_G._ECORE_INIT_FAILED = false
+_ECORE_INIT_FAILED = false
 
 local ESX_DEFAULT = 'es_extended'
 local QB_DEFAULT = 'qb-core'
@@ -17,7 +17,7 @@ end
 ---@param msg string
 ---@return nil
 local function enterIdle(msg)
-    _G._ECORE_INIT_FAILED = true
+    _ECORE_INIT_FAILED = true
     FRAMEWORK = nil
     ESX_CORE = false
     QB_CORE = false
@@ -139,7 +139,7 @@ print(
 )
 -- Ugyanaz a szemantika, mint `enterIdle`-nál: a consumer `isReady` / `_ECORE_INIT_FAILED` guardok ne azt higgyék, „minden rendben, csak késik a core”.
 -- Korábban `_ECORE_INIT_FAILED` false maradt, így a hívók összekeverhették a „késő induló legacy core” és a „hibás ensure” esetét (lásd docs/BRIDGE_LAYER_QUALITY_REVIEW_HU.md).
-_G._ECORE_INIT_FAILED = true
+_ECORE_INIT_FAILED = true
 FRAMEWORK = nil
 eCore = {}
 Config = {}

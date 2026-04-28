@@ -1,10 +1,11 @@
 local hf = hf
 local hfe = hfe
+local localeSdk = lib.require('src/imports/sdk/locale/shared')
 
 --- Returns whether `eCore:isLoggedIn()` can be called (init not aborted and method exists).
 ---@return boolean
 local function eCoreClientReady()
-    if _G._ECORE_INIT_FAILED then
+    if _ECORE_INIT_FAILED then
         return false
     end
     return type(eCore) == 'table' and type(eCore.isLoggedIn) == 'function'
@@ -16,11 +17,11 @@ CORE_READY, REGISTERED_ITEMS = false, nil
 --- Runs client startup wait/log flow.
 --- @return nil
 local function runClientBootstrap()
-    cLog('CLIENT REGISTERED_ITEMS', 'Loading', 2)
+    hf.cLog('CLIENT REGISTERED_ITEMS', 'Loading', 2)
 
     if hfe.awaitItemRegistryReady('CLIENT REGISTERED_ITEMS') then
-        cLog('CLIENT REGISTERED_ITEMS', 'Loaded', 2)
-        cLog('CLIENT CORE', 'READY', 2)
+        hf.cLog('CLIENT REGISTERED_ITEMS', 'Loaded', 2)
+        hf.cLog('CLIENT CORE', 'READY', 2)
     end
 
     hfe.logEcoreStartupSummary('client')
@@ -106,11 +107,11 @@ end
 --- Waits for NUI readiness and sends initial payload.
 --- @return nil
 function nuiInit()
-    cLog('NUI INIT', 'Loading', 2)
+    hf.cLog('NUI INIT', 'Loading', 2)
 
     while not eCoreNui.isReady() do
         Wait(1000)
-        cLog('NUI INIT', 'Wait', 2)
+        hf.cLog('NUI INIT', 'Wait', 2)
     end
 
     local meta = ClientMetaStore.getMeta()
@@ -118,13 +119,13 @@ function nuiInit()
     SendNUIMessage({ action = 'INIT',
                      metadata = meta,
                      levels = Config.levels,
-                     locale = locales[Config.locale],
+                     locale = localeSdk.locales[Config.locale],
                      laborLimit = Config.laborLimit,
                      abilityLimit = Config.abilityLimit,
                      displayComponent = Config.displayComponent,
                    })
 
-    cLog('NUI INIT', 'Loaded...', 2)
+    hf.cLog('NUI INIT', 'Loaded...', 2)
 
     if eCoreClientReady() and eCore:isLoggedIn() then
         if eCoreNui.isReady() and Config.systemMode.labor and Config.displayComponent.laborHud then
@@ -136,7 +137,7 @@ end
 --- Handles player loaded event on client.
 --- @return nil
 local function onPlayerLoaded()
-    if _G._ECORE_INIT_FAILED then return end
+    if _ECORE_INIT_FAILED then return end
     if eCoreNui.isReady() and Config.systemMode.labor and Config.displayComponent.laborHud then
         SendNUIMessage({ action = 'OPEN', subject = 'hud' })
     end
@@ -157,7 +158,7 @@ end
 --- @param isPaused boolean
 --- @return nil
 local function onPauseMenuActive(isPaused)
-    if _G._ECORE_INIT_FAILED then return end
+    if _ECORE_INIT_FAILED then return end
     if isPaused then
         SetNuiFocus(false, false)
         SendNUIMessage({ action = 'CLOSE', subject = 'all' })
@@ -184,12 +185,12 @@ end
 --- @return nil
 local function onSync(payload)
     if type(payload) ~= 'table' then
-        cLog('e_core:sync', 'ignored: payload is not a table', 2)
+        hf.cLog('e_core:sync', 'ignored: payload is not a table', 2)
         return
     end
     local meta = ClientMetaStore.applyServerSync(payload)
     if not meta then
-        cLog('e_core:sync', 'ignored: could not apply payload', 2)
+        hf.cLog('e_core:sync', 'ignored: could not apply payload', 2)
         return
     end
 
@@ -285,11 +286,11 @@ local function registerStatMenuCommand()
 
     RegisterCommand('openMeta', function()
         if not eCoreNui.isReady() then
-            cLog('command openMeta', 'Waiting for NUI load', 2)
+            hf.cLog('command openMeta', 'Waiting for NUI load', 2)
             return false
         end
         if eCore and eCore.UI and type(eCore.UI.IsEditMode) == 'function' and eCore.UI.IsEditMode() then
-            cLog('command openMeta', 'Blocked while HUD edit mode is active', 2)
+            hf.cLog('command openMeta', 'Blocked while HUD edit mode is active', 2)
             return false
         end
 

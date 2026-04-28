@@ -110,9 +110,7 @@ function hfe.normalizeRegisteredItemDef(nameLower, row, diagCtx)
     end)
 
     if not ok then
-        if cLog then
-            cLog('eCore:normalizeRegisteredItemDef', { name = nameLower, err = tostring(err) }, 1)
-        end
+        hf.cLog('eCore:normalizeRegisteredItemDef', { name = nameLower, err = tostring(err) }, 1)
         if hf.itemConvertDiagRecord then
             hf.itemConvertDiagRecord({
                 source = sourceTag,
@@ -277,19 +275,17 @@ function hfe.auditAdminApiDenied(section, action, payload, reason)
         table.remove(hf.__adminApiDeniedAudit, 1)
     end
 
-    if type(cLog) == 'function' then
-        cLog(
-            ('[e_core] admin API denied: section=%s action=%s src=%s requestedBy=%s reason=%s'):format(
-                entry.section,
-                entry.action,
-                tostring(entry.source),
-                tostring(entry.requestedBy),
-                entry.reason
-            ),
-            'warning',
-            2
-        )
-    end
+    hf.cLog(
+        ('[e_core] admin API denied: section=%s action=%s src=%s requestedBy=%s reason=%s'):format(
+            entry.section,
+            entry.action,
+            tostring(entry.source),
+            tostring(entry.requestedBy),
+            entry.reason
+        ),
+        'warning',
+        2
+    )
 
     -- Server-only persistence: `mysql` (table) or `discord` (webhook); see `Config.adminApi.deniedAudit.storage`.
     if not IsDuplicityVersion() then
@@ -303,7 +299,7 @@ function hfe.auditAdminApiDenied(section, action, payload, reason)
         storage = 'mysql'
     end
 
-    if storage == 'mysql' and rawget(_G, 'MySQL') ~= nil then
+    if type(MySQL) == 'table' then
         hfe.mysqlAwait('admin_denied_audit:insert', function()
             MySQL.query.await(
                 [[
@@ -357,11 +353,9 @@ end
 ---@return boolean success
 function hfe.awaitItemRegistryReady(logTag)
     logTag = tostring(logTag or 'REGISTERED ITEMS')
-    if _G._ECORE_INIT_FAILED == true then
+    if _ECORE_INIT_FAILED == true then
         CORE_READY = false
-        if type(cLog) == 'function' then
-            cLog(logTag, 'Skipped item registry load: e_core is in IDLE state due to framework detect/init failure.', 1)
-        end
+        hf.cLog(logTag, 'Skipped item registry load: e_core is in IDLE state due to framework detect/init failure.', 1)
         return false
     end
 
@@ -398,8 +392,8 @@ function hfe.awaitItemRegistryReady(logTag)
                 REGISTERED_ITEMS = nil
             end
         else
-            if attempt == 1 and type(cLog) == 'function' then
-                cLog(logTag, ('getRegisteredItems failed: %s'):format(tostring(result)), 1)
+            if attempt == 1 then
+                hf.cLog(logTag, ('getRegisteredItems failed: %s'):format(tostring(result)), 1)
             end
             REGISTERED_ITEMS = nil
         end
@@ -407,24 +401,20 @@ function hfe.awaitItemRegistryReady(logTag)
         local elapsed = GetGameTimer() - start
         if elapsed >= timeout then
             CORE_READY = false
-            if type(cLog) == 'function' then
-                cLog(logTag,
-                    ('TIMEOUT after %d ms (%d polls). Item registry still empty; increase convar e_core:items_ready_timeout_ms (max 600000) if inventory starts late.'):format(
-                        elapsed, attempt), 1)
-            end
+            hf.cLog(logTag,
+                ('TIMEOUT after %d ms (%d polls). Item registry still empty; increase convar e_core:items_ready_timeout_ms (max 600000) if inventory starts late.'):format(
+                    elapsed, attempt), 1)
             return false
         end
 
         if elapsed >= nextLogAt then
-            if type(cLog) == 'function' then
-                cLog(logTag,
-                    ('still waiting for item registry (elapsed %d ms, poll %d, timeout %d ms)'):format(
-                        elapsed,
-                        attempt,
-                        timeout
-                    ),
-                    2)
-            end
+            hf.cLog(logTag,
+                ('still waiting for item registry (elapsed %d ms, poll %d, timeout %d ms)'):format(
+                    elapsed,
+                    attempt,
+                    timeout
+                ),
+                2)
             local step = elapsed < 30000 and 15000 or 45000
             nextLogAt = elapsed + step
         end
@@ -479,7 +469,7 @@ end
 --- Prints one-line startup summary: version, framework, inventory runtime descriptor, item-registry status.
 ---@param side string `server` or `client`
 function hfe.logEcoreStartupSummary(side)
-    if _G._ECORE_INIT_FAILED == true then
+    if _ECORE_INIT_FAILED == true then
         return
     end
 
@@ -520,22 +510,16 @@ end
 function hfe.mysqlAwait(tag, fn)
     tag = tostring(tag or 'mysqlAwait')
     if type(fn) ~= 'function' then
-        if type(cLog) == 'function' then
-            cLog(('[e_core][MySQL] %s: fn is not a function'):format(tag), 'error', 1)
-        end
+        hf.cLog(('[e_core][MySQL] %s: fn is not a function'):format(tag), 'error', 1)
         return false, 'invalid_function'
     end
-    if rawget(_G, 'MySQL') == nil then
-        if type(cLog) == 'function' then
-            cLog(('[e_core][MySQL] %s: MySQL global is missing (non-server context?)'):format(tag), 'error', 1)
-        end
+    if type(MySQL) ~= 'table' then
+        hf.cLog(('[e_core][MySQL] %s: MySQL global is missing (non-server context?)'):format(tag), 'error', 1)
         return false, eCoreErr.mysql_missing
     end
     local ok, res = pcall(fn)
     if not ok then
-        if type(cLog) == 'function' then
-            cLog(('[e_core][MySQL] %s: %s'):format(tag, tostring(res)), 'error', 1)
-        end
+        hf.cLog(('[e_core][MySQL] %s: %s'):format(tag, tostring(res)), 'error', 1)
         return false, res
     end
     return true, res

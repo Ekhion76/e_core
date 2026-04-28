@@ -54,6 +54,7 @@ client_scripts {
     'src/runtime/web_bridge/ecore_nui.lua',
     'src/runtime/meta/client.lua',
     'src/runtime/hud/client/registry.lua',
+    'src/runtime/bootstrap/client/logic.lua',
     'src/runtime/bootstrap/client/main.lua',
     'src/runtime/integrity/client_logic.lua',
     'src/runtime/integrity/client.lua',

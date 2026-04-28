@@ -1359,6 +1359,14 @@ src/runtime/meta/server.lua
       `e_core:sync` egy tickben (burkolt payload + `rev`).
     `prepareMeta(playerId, meta)` – DB-ből jövő tábla normalizálása, `labor.val`,
       `Config.metaFields` alapértékek, `login` időbélyeg.
+  Refaktor következő lépés (modernizációs terv)
+    A `meta/server.lua` jelenleg több felelősséget visz egy fájlban (meta CRUD, ability logika,
+    sync orchestration, lifecycle event kezelés). Következő iterációban javasolt `logic/init`
+    mintára bontani:
+    - `src/runtime/meta/logic.lua` (pure domain API),
+    - `src/runtime/meta/init.lua` (side effects: net/event regisztráció, periodikus save trigger),
+    - `src/runtime/meta/server.lua` (implementációs modul).
+    Cél: side-effect izoláció, vékonyabb export kötés, könnyebb tesztelhetőség és karbantarthatóság.
 
 ---
 

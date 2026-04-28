@@ -437,6 +437,7 @@ end
 --- @param event string
 --- @return nil
 function M.saveRequest(playerId, event)
+    local db = lib.require('src/runtime/db/logic')
     local xPlayer = eCore:getPlayer(playerId)
 
     if xPlayer and PlayerMetaStore.get(playerId) then
@@ -449,7 +450,7 @@ function M.saveRequest(playerId, event)
                 row['logout'] = time
             end
             PlayerMetaStore.setLastSave(playerId, time)
-            saveMeta(xPlayer, true)
+            db.saveMeta(xPlayer, true)
             cLog(xPlayer.name .. ' ' .. event, 'saving metadata...', 1)
         end
     end

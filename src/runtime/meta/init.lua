@@ -1,6 +1,7 @@
 --- Meta domain init (server): side effects only (event handlers / periodic save).
 
 local meta = lib.require('src/runtime/meta/logic')
+local db = lib.require('src/runtime/db/logic')
 
 RegisterServerEvent('e_core:loadMeta', function()
     local playerId = source
@@ -18,9 +19,7 @@ RegisterServerEvent('e_core:loadMeta', function()
     if not xPlayer then
         return
     end
-    if type(loadMeta) == 'function' then
-        loadMeta(xPlayer)
-    end
+    db.loadMeta(xPlayer)
 end)
 
 --- Server-side bridge events only (TriggerEvent). Do not expose as RegisterServerEvent,
@@ -29,9 +28,7 @@ AddEventHandler('e_core:playerLoaded', function(xPlayer)
     if not xPlayer or not xPlayer.source then
         return
     end
-    if type(loadMeta) == 'function' then
-        loadMeta(xPlayer)
-    end
+    db.loadMeta(xPlayer)
 end)
 
 AddEventHandler('e_core:playerUnload', function(playerId)
@@ -44,8 +41,8 @@ AddEventHandler('playerDropped', function()
 end)
 
 AddEventHandler('onResourceStop', function(resource)
-    if resource == GetCurrentResourceName() and type(saveAllMeta) == 'function' then
-        saveAllMeta()
+    if resource == GetCurrentResourceName() then
+        db.saveAllMeta()
     end
 end)
 
@@ -53,26 +50,20 @@ AddEventHandler('txAdmin:events:scheduledRestart', function(eventData)
     if eventData.secondsRemaining == 60 then
         CreateThread(function()
             Wait(50000)
-            if type(saveAllMeta) == 'function' then
-                saveAllMeta()
-            end
+            db.saveAllMeta()
         end)
     end
 end)
 
 AddEventHandler('txAdmin:events:serverShuttingDown', function()
-    if type(saveAllMeta) == 'function' then
-        saveAllMeta()
-    end
+    db.saveAllMeta()
 end)
 
 --- Periodic save loop (10-minute interval).
 --- @return nil
 local function scheduledSave()
     SetTimeout(60000 * 10, function()
-        if type(saveAllMeta) == 'function' then
-            saveAllMeta()
-        end
+        db.saveAllMeta()
         scheduledSave()
     end)
 end

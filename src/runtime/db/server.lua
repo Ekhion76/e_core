@@ -3,24 +3,18 @@ local SELECT_META = 'SELECT `e_core` FROM `users` WHERE `identifier` = ?'
 local hfe = hfe
 local labor = lib.require('src/runtime/labor/logic')
 local metaLogic = lib.require('src/runtime/meta/logic')
+local M = {}
 
 if QB_CORE then
     UPDATE_META = 'UPDATE `players` SET `e_core` = ? WHERE `citizenid` = ?'
     SELECT_META = 'SELECT `e_core` FROM `players` WHERE `citizenid` = ?'
 end
 
-MySQL.ready(function()
-    e_core_run_db_migrations()
-    if type(e_core_schedule_admin_denied_audit_purge) == 'function' then
-        e_core_schedule_admin_denied_audit_purge()
-    end
-end)
-
 --- Auto-generated annotation. Refine behavior details if needed.
 --- @param xPlayer table
 --- @param dropMeta any
 --- @return any result
-function saveMeta(xPlayer, dropMeta)
+function M.saveMeta(xPlayer, dropMeta)
     local playerId = xPlayer.source
     local row = PlayerMetaStore.get(playerId)
 
@@ -44,7 +38,7 @@ end
 
 --- Auto-generated annotation. Refine behavior details if needed.
 --- @return any result
-function saveAllMeta()
+function M.saveAllMeta()
     local parameters = {}
 
     for playerId, meta in PlayerMetaStore.eachLoaded() do
@@ -70,7 +64,7 @@ end
 --- Auto-generated annotation. Refine behavior details if needed.
 --- @param xPlayer table
 --- @return any result
-function loadMeta(xPlayer)
+function M.loadMeta(xPlayer)
     local playerId = xPlayer.source
 
     local ok, result = hfe.mysqlAwait(('loadMeta:%s'):format(xPlayer.identifier), function()
@@ -103,3 +97,5 @@ function loadMeta(xPlayer)
 
     PlayerMetaStore.pushFullSync(playerId)
 end
+
+return M

@@ -2,6 +2,7 @@
 --- Integrity checklist lives in `src/runtime/integrity/server.lua` (`e_core:integrityCheck:*`).
 local hf = hf
 local hfe = hfe
+local professions = lib.require('src/runtime/professions/logic')
 
 local diagnosticsRuns = {}
 local diagnosticsRunSeq = 0
@@ -96,7 +97,7 @@ local function runProfessionRegistryAudit()
     local lines = {}
     appendLine(lines, '--- Profession registry ellenőrzés ---')
 
-    local okRegistry, registryOrErr = getProfessionRegistry()
+    local okRegistry, registryOrErr = professions.getProfessionRegistry()
     if not okRegistry then
         appendLine(lines, ('getProfessionRegistry: HIBA (%s)'):format(tostring(registryOrErr)))
         return {
@@ -142,7 +143,7 @@ local function runProfessionRegistryAudit()
     for category, byName in pairs(registryOrErr) do
         if type(byName) == 'table' then
             for professionName in pairs(byName) do
-                local okProfile, profileOrErr = getProfessionLevelProfile(category, professionName)
+                local okProfile, profileOrErr = professions.getProfessionLevelProfile(category, professionName)
                 if not okProfile then
                     profileIssues = profileIssues + 1
                     appendLine(
@@ -202,7 +203,7 @@ local function runProfessionKeyValidationAudit(run)
     local lines = {}
     appendLine(lines, '--- Profession kulcs validacio ---')
 
-    local okRegistry, registryOrErr = getProfessionRegistry()
+    local okRegistry, registryOrErr = professions.getProfessionRegistry()
     if not okRegistry then
         appendLine(lines, ('getProfessionRegistry: HIBA (%s)'):format(tostring(registryOrErr)))
         return {
@@ -251,7 +252,7 @@ local function runProfessionKeyValidationAudit(run)
     local checkedCategories = 0
 
     for _, entry in ipairs(categoriesToValidate) do
-        local okValidate, validationOrErr = validateProfessionKeys(entry.category, entry.keys)
+        local okValidate, validationOrErr = professions.validateProfessionKeys(entry.category, entry.keys)
         if not okValidate then
             issueCount = issueCount + 1
             appendLine(
@@ -417,7 +418,7 @@ end
 --- Auto-generated annotation. Refine behavior details if needed.
 --- @param payload table
 --- @return any result
-function diagnosticsAdminListTests(payload)
+local function diagnosticsAdminListTests(payload)
     local accessOk, accessErr = diagnostics_admin_can_access(payload)
     if not accessOk then
         return diagnostics_access_denied('diagnosticsAdminListTests', payload, accessErr)
@@ -443,7 +444,7 @@ end
 --- Auto-generated annotation. Refine behavior details if needed.
 --- @param payload table
 --- @return any result
-function diagnosticsAdminListRuns(payload)
+local function diagnosticsAdminListRuns(payload)
     local accessOk, accessErr = diagnostics_admin_can_access(payload)
     if not accessOk then
         return diagnostics_access_denied('diagnosticsAdminListRuns', payload, accessErr)
@@ -463,7 +464,7 @@ end
 --- Auto-generated annotation. Refine behavior details if needed.
 --- @param payload table
 --- @return any result
-function diagnosticsAdminRun(payload)
+local function diagnosticsAdminRun(payload)
     if type(payload) ~= 'table' then
         return diagnostics_admin_response(false, eCoreErr.invalid_item_data, 'Érvénytelen payload.')
     end
@@ -519,7 +520,7 @@ end
 --- @param runId number
 --- @param payload table
 --- @return any result
-function diagnosticsAdminGetRun(runId, payload)
+local function diagnosticsAdminGetRun(runId, payload)
     local accessOk, accessErr = diagnostics_admin_can_access(payload)
     if not accessOk then
         return diagnostics_access_denied('diagnosticsAdminGetRun', payload, accessErr)
@@ -544,7 +545,7 @@ end
 --- @param runId number
 --- @param payload table
 --- @return any result
-function diagnosticsAdminCancelRun(runId, payload)
+local function diagnosticsAdminCancelRun(runId, payload)
     local accessOk, accessErr = diagnostics_admin_can_access(payload)
     if not accessOk then
         return diagnostics_access_denied('diagnosticsAdminCancelRun', payload, accessErr)
@@ -570,3 +571,11 @@ function diagnosticsAdminCancelRun(runId, payload)
         run = serialize_run_view(run),
     })
 end
+
+return {
+    diagnosticsAdminListTests = diagnosticsAdminListTests,
+    diagnosticsAdminListRuns = diagnosticsAdminListRuns,
+    diagnosticsAdminRun = diagnosticsAdminRun,
+    diagnosticsAdminGetRun = diagnosticsAdminGetRun,
+    diagnosticsAdminCancelRun = diagnosticsAdminCancelRun,
+}

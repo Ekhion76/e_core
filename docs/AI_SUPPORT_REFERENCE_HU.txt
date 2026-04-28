@@ -126,7 +126,7 @@ Kapcsolódó fájlok a repóban
 - src/web/dist/index.html, src/web/src/app.css, src/web/src/**/*, src/web/public/img/*.png – NUI felület;
   részletek: **1.5 NUI (html/)**
 - src/runtime/bootstrap/server/main.lua, src/runtime/meta/server.lua, src/runtime/labor/logic.lua, src/runtime/labor/init.lua, src/runtime/db/server.lua,
-  src/runtime/exports/server.lua, src/runtime/professions/logic.lua, src/runtime/professions/init.lua, src/runtime/professions/server.lua, src/runtime/diagnostics/server.lua – szerver PlayerMetaStore,
+  src/runtime/exports/server.lua, src/runtime/professions/logic.lua, src/runtime/professions/init.lua, src/runtime/professions/server.lua, src/runtime/diagnostics/logic.lua, src/runtime/diagnostics/init.lua, src/runtime/diagnostics/server.lua – szerver PlayerMetaStore,
   meta sync/mentés, labor, MySQL, profession registry, diagnostics; részletek:
   „Server resource (src/runtime/)” szekció **1.4**
 
@@ -1306,7 +1306,7 @@ Mérvadó forrásfájlok (fxmanifest.lua → server_scripts sorrend, releváns r
     src/runtime/professions/logic.lua + init.lua + server.lua – profession domain (logic facade + side-effect init + implementáció)
     src/runtime/db/server.lua        – MySQL.ready → migrációk, majd saveMeta / loadMeta / saveAllMeta
     src/runtime/exports/server.lua   – `exports.e_core:*` regisztráció
-    src/runtime/diagnostics/server.lua – `ecore_diag` ellenőrzés (inventory + profession registry)
+    src/runtime/diagnostics/logic.lua + init.lua + server.lua – diagnostics domain (logic facade + init entry + runner implementáció)
     src/standalone/usableitem.lua – (lásd 1.3)
 
 ---
@@ -1453,7 +1453,7 @@ src/runtime/professions/logic.lua + init.lua + server.lua
 
 ---
 
-src/runtime/diagnostics/server.lua
+src/runtime/diagnostics/logic.lua + init.lua + server.lua
   Új registry check
     `runProfessionRegistryChecks(lines)` – `ecore_diag` futás közben:
     - registry lekérés,
@@ -1470,6 +1470,10 @@ src/runtime/diagnostics/server.lua
   Megjelenítés
     NUI checklist új `registry` lépéssel, illetve console-only módban is ugyanaz
     a registry audit blokk látszik.
+  NUI bridge payload
+    `src/runtime/diagnostics/server_nui_bridge.lua` a `run` actionnél a teljes payloadot
+    továbbítja (`tests`, opcionális `professionKeysByCategory`, stb.), így a célzott
+    kulcsvalidációs bemenet sem vész el.
 
 ---
 

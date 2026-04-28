@@ -108,7 +108,12 @@
     }
     try {
       const run = await getDiagnosticsRun(selectedRunId)
-      diagnosticsRuns = diagnosticsRuns.map((item) => (item.runId === run.runId ? run : item))
+      const idx = diagnosticsRuns.findIndex((item) => item.runId === run.runId)
+      if (idx >= 0) {
+        diagnosticsRuns = diagnosticsRuns.map((item) => (item.runId === run.runId ? run : item))
+      } else {
+        diagnosticsRuns = [run, ...diagnosticsRuns]
+      }
     } catch (error) {
       diagnosticsError = error instanceof Error ? error.message : 'Unknown diagnostics run refresh error'
     }

@@ -102,6 +102,8 @@ server_scripts {
     'src/runtime/exports/server.lua',
     'src/runtime/integrity/server.lua',
     'src/runtime/diagnostics/server.lua',
+    'src/runtime/diagnostics/logic.lua',
+    'src/runtime/diagnostics/init.lua',
     'src/runtime/web_bridge/server.lua',
     'src/runtime/admin/server_inventory_sample.lua',
     'src/runtime/admin/server_nui_bridge.lua',

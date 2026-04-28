@@ -1,6 +1,7 @@
 --- NUI -> server diagnostics admin bridge (`eCoreDiagnosticsApi`), guarded by `hf.webConsoleAccess`.
 local hf = hf
 local hfe = hfe
+local diagnostics = lib.require('src/runtime/diagnostics/logic')
 
 --- Auto-generated annotation. Refine behavior details if needed.
 --- @param value any
@@ -43,9 +44,9 @@ RegisterNetEvent('e_core:nuiDiagnosticsRpc', function(requestId, data)
     local result
 
     if action == 'listTests' then
-        result = diagnosticsAdminListTests(authPayload)
+        result = diagnostics.diagnosticsAdminListTests(authPayload)
     elseif action == 'listRuns' then
-        result = diagnosticsAdminListRuns(authPayload)
+        result = diagnostics.diagnosticsAdminListRuns(authPayload)
     elseif action == 'run' then
         local tests = data.tests
         if type(tests) ~= 'table' then
@@ -56,16 +57,16 @@ RegisterNetEvent('e_core:nuiDiagnosticsRpc', function(requestId, data)
                 data = {},
             }
         else
-            result = diagnosticsAdminRun({
-                auth = authPayload.auth,
-                tests = tests,
-                requestedBy = GetPlayerName(src) or 'player',
-            })
+            local runPayload = type(data) == 'table' and data or {}
+            runPayload.auth = authPayload.auth
+            runPayload.tests = tests
+            runPayload.requestedBy = GetPlayerName(src) or 'player'
+            result = diagnostics.diagnosticsAdminRun(runPayload)
         end
     elseif action == 'getRun' then
-        result = diagnosticsAdminGetRun(trim(data.runId), authPayload)
+        result = diagnostics.diagnosticsAdminGetRun(trim(data.runId), authPayload)
     elseif action == 'cancelRun' then
-        result = diagnosticsAdminCancelRun(trim(data.runId), authPayload)
+        result = diagnostics.diagnosticsAdminCancelRun(trim(data.runId), authPayload)
     else
         result = {
             ok = false,

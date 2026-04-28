@@ -59,7 +59,7 @@ type DiagnosticsApiResponse<T> = {
   data?: T
 }
 
-const useMock = import.meta.env.VITE_USE_MOCK_DIAGNOSTICS !== 'false'
+const useMock = import.meta.env.VITE_USE_MOCK_DIAGNOSTICS === 'true'
 const docsBaseUrl =
   (import.meta.env.VITE_DOCS_BASE_URL as string | undefined)?.trim() || 'https://example.github.io/e_core-docs'
 

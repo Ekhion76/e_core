@@ -105,7 +105,7 @@ end
 --- Auto-generated annotation. Refine behavior details if needed.
 --- @param playerId number
 --- @return any result
-function invalidateLaborQuoteCache(playerId)
+local function invalidateLaborQuoteCache(playerId)
     playerId = tonumber(playerId)
     if not playerId then
         return
@@ -113,19 +113,11 @@ function invalidateLaborQuoteCache(playerId)
     LABOR_QUOTE_CACHE_BY_PLAYER[playerId] = nil
 end
 
-AddEventHandler('playerDropped', function()
-    invalidateLaborQuoteCache(source)
-end)
-
-AddEventHandler('e_core:playerUnload', function(playerId)
-    invalidateLaborQuoteCache(playerId)
-end)
-
 --- @param playerId number source
 --- @param context table|nil { baseLabor:number, category:string, name:string, actionKey:string, ttlMs:number }
 --- @return boolean ok
 --- @return table|string quote | eCoreErr
-function getLaborQuote(playerId, context)
+local function getLaborQuote(playerId, context)
     playerId = tonumber(playerId)
     if not playerId then
         return false, eCoreErr.not_found_metadata
@@ -212,4 +204,9 @@ function getLaborQuote(playerId, context)
 
     return true, withCacheMetadata(payload, false, ttlMs)
 end
+
+return {
+    getLaborQuote = getLaborQuote,
+    invalidateLaborQuoteCache = invalidateLaborQuoteCache,
+}
 

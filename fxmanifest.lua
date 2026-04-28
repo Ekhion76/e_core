@@ -93,6 +93,8 @@ server_scripts {
     'src/runtime/hud/server/layout.lua',
     'src/runtime/labor/init.lua',
     'src/runtime/quote/server.lua',
+    'src/runtime/quote/logic.lua',
+    'src/runtime/quote/init.lua',
     'src/runtime/db/migrations.lua',
     'src/libs/profession_levels.lua',
     'src/runtime/admin/server_denied_audit.lua',

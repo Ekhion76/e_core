@@ -3,6 +3,7 @@
 --- No business logic should be added here.
 --- exports ---
 local labor = lib.require('src/runtime/labor/logic')
+local quote = lib.require('src/runtime/quote/logic')
 local professions = lib.require('src/runtime/professions/logic')
 local diagnostics = lib.require('src/runtime/diagnostics/logic')
 exports("getAbility", getAbility)
@@ -14,7 +15,7 @@ exports("getLabor", labor.getLabor)
 exports("setLabor", labor.setLabor)
 exports("addLabor", labor.addLabor)
 exports("removeLabor", labor.removeLabor)
-exports("getLaborQuote", getLaborQuote)
+exports("getLaborQuote", quote.getLaborQuote)
 
 exports("registerMeta", registerMeta)
 exports("getProfessionRegistry", professions.getProfessionRegistry)

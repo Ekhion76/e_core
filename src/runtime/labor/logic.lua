@@ -2,6 +2,7 @@
 --- Side effects (timers) must live in `init.lua`.
 
 local M = {}
+local quote = lib.require('src/runtime/quote/logic')
 
 --- Checks whether labor subsystem is enabled.
 --- @return boolean ok True when labor operations are allowed.
@@ -64,9 +65,7 @@ function M.setLabor(playerId, amount)
 
     row.labor.val = hf.clamp(amount, Config.laborLimit)
     row.labor.time = os.time()
-    if type(invalidateLaborQuoteCache) == 'function' then
-        invalidateLaborQuoteCache(playerId)
-    end
+    quote.invalidateLaborQuoteCache(playerId)
 
     syncRequest(playerId)
     return true
@@ -98,9 +97,7 @@ function M.removeLabor(playerId, amount)
 
     row.labor.val = hf.clamp(row.labor.val - amount, Config.laborLimit)
     row.labor.time = os.time()
-    if type(invalidateLaborQuoteCache) == 'function' then
-        invalidateLaborQuoteCache(playerId)
-    end
+    quote.invalidateLaborQuoteCache(playerId)
 
     syncRequest(playerId)
     return true
@@ -132,9 +129,7 @@ function M.addLabor(playerId, amount)
 
     row.labor.val = hf.clamp(row.labor.val + amount, Config.laborLimit)
     row.labor.time = os.time()
-    if type(invalidateLaborQuoteCache) == 'function' then
-        invalidateLaborQuoteCache(playerId)
-    end
+    quote.invalidateLaborQuoteCache(playerId)
 
     syncRequest(playerId)
     return true
@@ -176,9 +171,7 @@ function M.applyIncreaseChunks(ids, timeStamp, fromIdx, chunkSize, onDone)
             meta.labor.time = timeStamp
             if meta.labor.val < limit then
                 meta.labor.val = hf.clamp(meta.labor.val + step, limit)
-                if type(invalidateLaborQuoteCache) == 'function' then
-                    invalidateLaborQuoteCache(playerId)
-                end
+                quote.invalidateLaborQuoteCache(playerId)
                 syncRequest(playerId)
             end
         end
@@ -227,9 +220,7 @@ function M.addOfflineLabor(playerId)
 
     row.labor.time = timeStamp
     row.labor.val = hf.clamp(row.labor.val + offlineLabor, Config.laborLimit)
-    if type(invalidateLaborQuoteCache) == 'function' then
-        invalidateLaborQuoteCache(playerId)
-    end
+    quote.invalidateLaborQuoteCache(playerId)
     return true
 end
 

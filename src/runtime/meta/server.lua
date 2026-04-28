@@ -16,6 +16,7 @@ RegisterServerEvent('e_core:loadMeta', function()
     end
     loadMeta(xPlayer)
 end)
+local quote = lib.require('src/runtime/quote/logic')
 
 --- Reserved root meta keys managed by lifecycle/save flow (`prepareMeta`, persistence).
 --- They are read-only for `registerMeta` / `setMeta` and excluded from ability APIs.
@@ -136,9 +137,7 @@ function setMeta(playerId, meta, value)
     end
 
     row[metaKey] = hf.shallowCopy(value)
-    if type(invalidateLaborQuoteCache) == 'function' then
-        invalidateLaborQuoteCache(playerId)
-    end
+    quote.invalidateLaborQuoteCache(playerId)
     syncRequest(playerId)
 
     return true
@@ -193,9 +192,7 @@ function registerMeta(playerId, category, defaultValue)
     local slot = rawget(row, ck)
     if slot == nil then
         row[ck] = hf.shallowCopy(defaultValue)
-        if type(invalidateLaborQuoteCache) == 'function' then
-            invalidateLaborQuoteCache(playerId)
-        end
+        quote.invalidateLaborQuoteCache(playerId)
         syncRequest(playerId)
         return true
     end
@@ -213,9 +210,7 @@ function registerMeta(playerId, category, defaultValue)
     end
 
     if dirty then
-        if type(invalidateLaborQuoteCache) == 'function' then
-            invalidateLaborQuoteCache(playerId)
-        end
+        quote.invalidateLaborQuoteCache(playerId)
         syncRequest(playerId)
     end
 
@@ -301,9 +296,7 @@ function addAbility(playerId, category, name, value)
     if baseValue ~= newValue then
         row[ck][nk] = newValue
         messageIfLevelChange(playerId, ck, nk, baseValue, newValue)
-        if type(invalidateLaborQuoteCache) == 'function' then
-            invalidateLaborQuoteCache(playerId)
-        end
+        quote.invalidateLaborQuoteCache(playerId)
         syncRequest(playerId)
     end
 
@@ -355,9 +348,7 @@ function removeAbility(playerId, category, name, value)
     if baseValue ~= newValue then
         row[ck][nk] = newValue
         messageIfLevelChange(playerId, ck, nk, baseValue, newValue)
-        if type(invalidateLaborQuoteCache) == 'function' then
-            invalidateLaborQuoteCache(playerId)
-        end
+        quote.invalidateLaborQuoteCache(playerId)
         syncRequest(playerId)
     end
 
@@ -406,9 +397,7 @@ function setAbility(playerId, category, name, value)
     if baseValue ~= newValue then
         row[ck][nk] = newValue
         messageIfLevelChange(playerId, ck, nk, baseValue, newValue)
-        if type(invalidateLaborQuoteCache) == 'function' then
-            invalidateLaborQuoteCache(playerId)
-        end
+        quote.invalidateLaborQuoteCache(playerId)
         syncRequest(playerId)
     end
 

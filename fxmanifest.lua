@@ -55,6 +55,7 @@ client_scripts {
     'src/runtime/meta/client.lua',
     'src/runtime/hud/client/registry.lua',
     'src/runtime/bootstrap/client/main.lua',
+    'src/runtime/integrity/client_logic.lua',
     'src/runtime/integrity/client.lua',
     'src/runtime/web_bridge/client.lua',
     'src/runtime/admin/client_nui_logic.lua',

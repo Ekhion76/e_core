@@ -59,7 +59,7 @@ A kiválasztott ág (`ESX_CORE` / `QB_CORE`) eseménylistájára `RegisterNetEve
 
 A szerver **nem** regisztrálja a `e_core:methodCaller` NetEventet (a `sharedEvents` szerver oldali kezdő táblája üres; csak a framework sorok kerülnek be).
 
-## 6. Kliens: további `e_core:*` NetEventek (`client/main.lua`)
+## 6. Kliens: további `e_core:*` NetEventek (`src/runtime/bootstrap/client/main.lua`)
 
 Csak **szerver** `TriggerClientEvent`-tel érkeznek (kliens–kliens spoof nem cél).
 
@@ -71,7 +71,7 @@ Csak **szerver** `TriggerClientEvent`-tel érkeznek (kliens–kliens spoof nem c
 **Kliens (`e_core:sync`):** `RegisterNetEvent` → `ClientMetaStore.applyServerSync` (`client_meta_store.lua`); `SendNUIMessage` INIT/UPDATE csak ha **`eCoreNui.isReady()`** (`ecore_nui.lua`).
 | `e_core:integrityCheck:nuiPush` / `consoleOnly` / `clientPrint` / `progressTest` | `server/integrity_check.lua` | Integritás NUI / konzol / progress; csak érvényes futásból. |
 
-**Labor HUD (`OPEN` subject `hud`):** a bridge `TriggerEvent('e_core:onPlayerLoaded'|'e_core:onPlayerUnload')` **lokális** eseményeket használ; a `client/main.lua` ezekre **`AddEventHandler`**-t használ (korábban `RegisterNetEvent` volt – a bridge nem küldött hálózati eseményt ugyanezen a néven, így a labor HUD nyitás nem futott a bridge útvonalon).
+**Labor HUD (`OPEN` subject `hud`):** a bridge `TriggerEvent('e_core:onPlayerLoaded'|'e_core:onPlayerUnload')` **lokális** eseményeket használ; a `src/runtime/bootstrap/client/main.lua` ezekre **`AddEventHandler`**-t használ (korábban `RegisterNetEvent` volt – a bridge nem küldött hálózati eseményt ugyanezen a néven, így a labor HUD nyitás nem futott a bridge útvonalon).
 
 ## 7. `e_core:methodCaller` (kliens)
 

@@ -9,7 +9,7 @@
 
 **Fájlok:** `server/db.lua` (`loadMeta`), `server/meta.lua` (`prepareMeta`, `syncRequest`).
 
-## Szerver: központi labor logika (`server/labor.lua`)
+## Szerver: központi labor logika (`src/runtime/labor/logic.lua` + `src/runtime/labor/init.lua`)
 
 | Függvény | Szerep |
 |----------|--------|
@@ -32,7 +32,7 @@ A korábbi egyetlen visszatéréses (`csak szám`) forma **eltávolítva**: az e
 ```lua
 local ok, laborOrErr = exports.e_core:getLabor(playerId)
 if not ok then
-    -- laborOrErr == 'not_found_metadata' | 'the_system_is_turned_off' | …
+    -- laborOrErr == 'not_found_metadata' | 'feature_disabled' | …
     return
 end
 local balance = laborOrErr  -- number
@@ -59,8 +59,8 @@ Részletes szerződés: `docs/PUBLIC_API_HU.md` §2–§3 + §5, `export_example
 
 | Hely | Szerep |
 |------|--------|
-| `client/main.lua` – `getLabor()` | Cache (`ClientMetaStore.getMeta()`): siker **`true`, labor.val**; labor ki → `false, reason`; nincs még `labor` blokk (sync előtt) → `false, not_found_metadata` |
-| `client/exports.lua` | `getLabor` export (kliensen nincs labor írás) |
+| `src/runtime/bootstrap/client/main.lua` – `getLabor()` | Cache (`ClientMetaStore.getMeta()`): siker **`true`, labor.val**; labor ki → `false, reason`; nincs még `labor` blokk (sync előtt) → `false, not_found_metadata` |
+| `src/runtime/exports/client.lua` | `getLabor` export (kliensen nincs labor írás) |
 | `e_core:sync` esemény | Teljes meta; INIT / UPDATE (page vs hud) |
 | `src/web/src/lib/LevelPreview.svelte` – `updateHud()` | Labor szám + progress (`model.laborLimit`) |
 | `src/web/src/lib/rankData.ts` | `laborLimit` |
@@ -78,7 +78,7 @@ Részletes szerződés: `docs/PUBLIC_API_HU.md` §2–§3 + §5, `export_example
 
 ## Refaktor / optimalizálás fókuszlista
 
-1. ~~**Ismétlődő validáció**~~ – kész: `laborRequireSystem` + `laborPlayerRow` a `server/labor.lua` tetején; `getLabor` / `setLabor` / `addLabor` / `removeLabor` ezekre épül.
+1. ~~**Ismétlődő validáció**~~ – kész: `requireLaborEnabled` + `playerRow` a `src/runtime/labor/logic.lua` elején; `getLabor` / `setLabor` / `addLabor` / `removeLabor` ezekre épül.
 2. **`laborIncrease` skálázhatóság:** **kész** – iteráció **online** forrásokon (`GetPlayers` + `hf.isValidPlayerSource` + meta.labor); nagy szerveren opcionálisan `setr e_core:labor_tick_chunk 64` (példa) több frame-re osztja a feldolgozást.
 3. ~~**Szinkron egységesítés**~~ – kész: auto tick alatt **`syncRequest(playerId)`** (kötegelt ugyanaz a mechanizmus, mint meta írásnál); közvetlen `TriggerClientEvent` ide nem kell.
 4. **`labor.time` viselkedés:** mindkét útvonal **`os.time()`** alapú periódus (`laborIncreaseTime` perc online; offline szorzó `addOfflineLabor`-ban). **Online tick:** `labor.time` mindig frissül; kliens sync csak ha `val < laborLimit` (volt tényleges növelés) – így cap mellett kevesebb hálózat, a szerver `labor.time` ettől még mindig aktuális offline számításhoz. **Betöltés:** `addOfflineLabor` után a meglévő `loadMeta` → `e_core:sync` küldi a kliensnek a frissített sort.
@@ -87,12 +87,12 @@ Részletes szerződés: `docs/PUBLIC_API_HU.md` §2–§3 + §5, `export_example
 
 ## Gyors fájlindex
 
-- `server/labor.lua` – labor CRUD, auto / offline növelés  
+- `src/runtime/labor/logic.lua` + `src/runtime/labor/init.lua` – labor CRUD, auto / offline növelés
 - `server/meta.lua` – `prepareMeta`, `syncRequest`  
 - `server/db.lua` – `loadMeta` + `addOfflineLabor` hívás  
 - `server/exports.lua` – labor exportok  
-- `client/main.lua`, `client/exports.lua` – kliens olvasás, NUI  
-- `fxmanifest.lua` – `server/labor.lua` betöltés
+- `src/runtime/bootstrap/client/main.lua`, `src/runtime/exports/client.lua` – kliens olvasás, NUI
+- `fxmanifest.lua` – `src/runtime/labor/init.lua` betöltés
 
 ---
 
@@ -281,7 +281,7 @@ Itt nem csak a `removeLabor` egy sora számít, hanem az a **végpontok között
 
 ### 4. Kijelzés frissítés (labor HUD / stat lap)
 
-**Kliens `e_core:sync` után** (`client/main.lua`):
+**Kliens `e_core:sync` után** (`src/runtime/bootstrap/client/main.lua`):
 
 - `ClientMetaStore.applyServerSync(payload)` → teljes meta csere a kliensen;
 - ha `nuiReady`: **egy** `SendNUIMessage` – `UPDATE`, `subject = 'page'` **vagy** `'hud'` (`IsNuiFocused()` szerint), a **teljes** `metadata`-val.
@@ -398,7 +398,7 @@ flowchart LR
 ### Miért teljes tömb, nem delta?
 
 1. **Konzisztencia:** A kliens meta cache mindig ugyanazt a táblát látja, mint a szerver `data` mezője az adott pillanatban. Nincs „labor már friss, jártasság még régi” két üzenet közötti ablak.
-2. **Egyszerű szerződés:** Egy eseménynév (`e_core:sync`), egy kezelő (`client/main.lua`: teljes csere + NUI `UPDATE` teljes `metadata`-val). Nincs merge logika, nincs mezőszintű verzió.
+2. **Egyszerű szerződés:** Egy eseménynév (`e_core:sync`), egy kezelő (`src/runtime/bootstrap/client/main.lua`: teljes csere + NUI `UPDATE` teljes `metadata`-val). Nincs merge logika, nincs mezőszintű verzió.
 3. **NUI igény:** A stat lap / HUD a **teljes** meta kontextusát használja; részleges üzenethez a kliensnek és a JS-nek össze kellene fésülnie a részpatch-et a korábbi állapottal (több hibaforrás).
 4. **Lua / FiveM:** Mélyen beágyazott táblák delta szinkronja és szerializációja könnyen elcsúszik; **teljes csere** előre jelezhető és könnyen tesztelhető.
 5. **Történeti kompromisszum:** Kis meta és ritkább akció mellett a teljes blob **fejlesztői idő és hibák** szempontjából olcsóbb, mint egy jól megtervezett részleges sync – tipikusan „először működjön, skálázás később” irány.

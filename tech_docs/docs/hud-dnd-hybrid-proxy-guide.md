@@ -92,7 +92,7 @@ end)
 ### Mi tortenik a hatterben?
 
 - Szerkesztes kozben az e_core `e_core:hud:clientPreview` eventet kuld.
-- Az import helper (`src/imports/client/hud_drag.lua`) ezt automatikusan NUI uzenette alakitja:
+- Az import helper (`src/imports/sdk/client/hud_drag.lua`) ezt automatikusan NUI uzenette alakitja:
   - `action = 'ECORE_HUD_SYNC'`
   - `id`, `pos`
 - A consumer NUI ezt olvassa, es runes state-be irja.

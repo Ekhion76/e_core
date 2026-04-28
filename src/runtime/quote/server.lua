@@ -1,4 +1,5 @@
 local LABOR_QUOTE_CACHE_BY_PLAYER = {}
+local labor = lib.require('src/runtime/labor/logic')
 
 --- Auto-generated annotation. Refine behavior details if needed.
 --- @return any result
@@ -146,7 +147,7 @@ function getLaborQuote(playerId, context)
         return true, cachedQuote
     end
 
-    local okLabor, currentLabor = getLabor(playerId)
+    local okLabor, currentLabor = labor.getLabor(playerId)
     if not okLabor then
         return false, currentLabor
     end

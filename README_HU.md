@@ -81,10 +81,10 @@ flowchart LR
 
 | Minta | Mi történik | Memória / költség |
 |--------|----------------|-------------------|
-| **Minimális** | Manifest: `shared_script '@e_core/src/imports/shared/core.lua'` → `eCore = exports.e_core:getCore()` | Nem másolja be az e_core teljes Lua kódját a consumerbe; referencia az e_core által már betöltött táblákra. |
-| **Teljes import** | `shared_script '@e_core/src/imports/shared/full_import.lua'` → `LoadResourceFile('e_core', …)` + `load(..., _G)` több fájlra | Több chunk **újra lefut** a consumer `_G` környezetében; az e_core resource ettől **ugyanúgy** betöltve marad. Ez **nem** csökkenti az e_core saját memória-lábnyomát; egységes bootstrap árán növelheti a consumer indulási költségét. |
+| **Minimális** | Manifest: `shared_script '@e_core/src/imports/sdk/shared/core.lua'` → `eCore = exports.e_core:getCore()` | Nem másolja be az e_core teljes Lua kódját a consumerbe; referencia az e_core által már betöltött táblákra. |
+| **Teljes import** | `shared_script '@e_core/src/imports/sdk/shared/full_import.lua'` → `LoadResourceFile('e_core', …)` + `load(..., _G)` több fájlra | Több chunk **újra lefut** a consumer `_G` környezetében; az e_core resource ettől **ugyanúgy** betöltve marad. Ez **nem** csökkenti az e_core saját memória-lábnyomát; egységes bootstrap árán növelheti a consumer indulási költségét. |
 
-A `full_import` által betöltött pathoknak szerepelniük kell az e_core **`files { }`** listájában (jelenleg többek között `src/imports/shared/*.lua`), különben `LoadResourceFile` üres.
+A `full_import` által betöltött pathoknak szerepelniük kell az e_core **`files { }`** listájában (jelenleg többek között `src/imports/sdk/shared/*.lua`), különben `LoadResourceFile` üres.
 
 **Üzemkész jel:** `exports.e_core:isReady()` (0.1.7+ mindig **boolean**: `false` induláskor / töltés / timeout / IDLE, `true` csak ha az item registry kész); kliensen az item registry és egyéb init után érdemes erre várni, nem csak a `getCore()` létezésére.
 

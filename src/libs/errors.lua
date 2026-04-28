@@ -4,6 +4,9 @@
 eCoreErr = {
     ok = 'ok',
 
+    --- Feature is disabled via config flags (e.g. `Config.systemMode.*`).
+    feature_disabled = 'feature_disabled',
+
     too_heavy = 'too_heavy',
     not_enough_space = 'not_enough_space',
 

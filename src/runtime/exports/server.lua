@@ -2,35 +2,103 @@
 --- This file is intentionally thin: direct bindings to implementation functions.
 --- No business logic should be added here.
 --- exports ---
+local labor = lib.require('src/runtime/labor/logic')
+local function professionsEnabled()
+    return Config.systemMode.profession == true and Config.systemMode.labor == true
+end
+
+local function disabledBool()
+    return false, eCoreErr.feature_disabled
+end
+
+local function disabledAdminResponse()
+    return {
+        ok = false,
+        code = eCoreErr.feature_disabled,
+        message = 'Feature disabled.',
+        data = {},
+    }
+end
 exports("getAbility", getAbility)
 exports("setAbility", setAbility)
 exports("addAbility", addAbility)
 exports("removeAbility", removeAbility)
 
-exports("getLabor", getLabor)
-exports("setLabor", setLabor)
-exports("addLabor", addLabor)
-exports("removeLabor", removeLabor)
+exports("getLabor", labor.getLabor)
+exports("setLabor", labor.setLabor)
+exports("addLabor", labor.addLabor)
+exports("removeLabor", labor.removeLabor)
 exports("getLaborQuote", getLaborQuote)
 
 exports("registerMeta", registerMeta)
-exports("getProfessionRegistry", getProfessionRegistry)
-exports("isValidProfession", isValidProfession)
-exports("getProfessionDefaults", getProfessionDefaults)
-exports("getProfessionLevelProfile", getProfessionLevelProfile)
-exports("validateProfessionKeys", validateProfessionKeys)
-exports("professionAdminList", professionAdminList)
-exports("professionAdminCreate", professionAdminCreate)
-exports("professionAdminUpdate", professionAdminUpdate)
-exports("professionAdminSetEnabled", professionAdminSetEnabled)
-exports("professionAdminDelete", professionAdminDelete)
-exports("professionAdminDeleteDryRun", professionAdminDeleteDryRun)
-exports("professionAdminDeleteApply", professionAdminDeleteApply)
-exports("professionAdminCleanupJobList", professionAdminCleanupJobList)
-exports("professionAdminCleanupJobGet", professionAdminCleanupJobGet)
-exports("professionAdminCleanupJobAbort", professionAdminCleanupJobAbort)
-exports("professionAdminCleanupJobResume", professionAdminCleanupJobResume)
-exports("professionAdminAuditList", professionAdminAuditList)
+exports("getProfessionRegistry", function(...)
+    if not professionsEnabled() then return disabledBool() end
+    return getProfessionRegistry(...)
+end)
+exports("isValidProfession", function(...)
+    if not professionsEnabled() then return disabledBool() end
+    return isValidProfession(...)
+end)
+exports("getProfessionDefaults", function(...)
+    if not professionsEnabled() then return disabledBool() end
+    return getProfessionDefaults(...)
+end)
+exports("getProfessionLevelProfile", function(...)
+    if not professionsEnabled() then return disabledBool() end
+    return getProfessionLevelProfile(...)
+end)
+exports("validateProfessionKeys", function(...)
+    if not professionsEnabled() then return disabledBool() end
+    return validateProfessionKeys(...)
+end)
+exports("professionAdminList", function(...)
+    if not professionsEnabled() then return disabledAdminResponse() end
+    return professionAdminList(...)
+end)
+exports("professionAdminCreate", function(...)
+    if not professionsEnabled() then return disabledAdminResponse() end
+    return professionAdminCreate(...)
+end)
+exports("professionAdminUpdate", function(...)
+    if not professionsEnabled() then return disabledAdminResponse() end
+    return professionAdminUpdate(...)
+end)
+exports("professionAdminSetEnabled", function(...)
+    if not professionsEnabled() then return disabledAdminResponse() end
+    return professionAdminSetEnabled(...)
+end)
+exports("professionAdminDelete", function(...)
+    if not professionsEnabled() then return disabledAdminResponse() end
+    return professionAdminDelete(...)
+end)
+exports("professionAdminDeleteDryRun", function(...)
+    if not professionsEnabled() then return disabledAdminResponse() end
+    return professionAdminDeleteDryRun(...)
+end)
+exports("professionAdminDeleteApply", function(...)
+    if not professionsEnabled() then return disabledAdminResponse() end
+    return professionAdminDeleteApply(...)
+end)
+exports("professionAdminCleanupJobList", function(...)
+    if not professionsEnabled() then return disabledAdminResponse() end
+    return professionAdminCleanupJobList(...)
+end)
+exports("professionAdminCleanupJobGet", function(...)
+    if not professionsEnabled() then return disabledAdminResponse() end
+    return professionAdminCleanupJobGet(...)
+end)
+exports("professionAdminCleanupJobAbort", function(...)
+    if not professionsEnabled() then return disabledAdminResponse() end
+    return professionAdminCleanupJobAbort(...)
+end)
+exports("professionAdminCleanupJobResume", function(...)
+    if not professionsEnabled() then return disabledAdminResponse() end
+    return professionAdminCleanupJobResume(...)
+end)
+exports("professionAdminAuditList", function(...)
+    if not professionsEnabled() then return disabledAdminResponse() end
+    return professionAdminAuditList(...)
+end)
 exports("adminDenied", adminDenied)
 exports("adminDeniedAuditList", adminDeniedAuditList)
 exports("adminDeniedAuditPurge", adminDeniedAuditPurge)

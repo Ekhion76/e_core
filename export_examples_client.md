@@ -10,8 +10,8 @@ After `exports.e_core:getCore()`, the same `eCore` table includes merged **non-b
 | `eCore.bridgeContract` | **0.1.9+:** `{ schemaVersion, resource, lifecycleMergedKeys }` — stable discovery of lifecycle-merged keys (not the full `eCore:` method list). Bump `schemaVersion` in core when this table’s shape changes. |
 | `eCore.framework` | Same value as `exports.e_core:getFrameWork()` (`'esx'`, `'qb'`, or `nil`). |
 | `eCore.config` | Reference to the live `Config` table (same as `getConfig()`). |
-| `eCore.i18n.translate` / `translateU` | Locale helpers (`src/imports/shared/locale.lua`). |
-| `eCore.util.cLog`, `print_r`, `createBlip`, `animDictLoader`, `modelLoader`, `fxLoader` | Shared utils (`src/imports/shared/utils.lua`). |
+| `eCore.i18n.translate` / `translateU` | Locale helpers (`src/imports/sdk/shared/locale.lua`). |
+| `eCore.util.cLog`, `print_r`, `createBlip`, `animDictLoader`, `modelLoader`, `fxLoader` | Shared utils (`src/imports/sdk/shared/utils.lua`). |
 
 `eCore.log.discord` exists **only on server** when the Discord module is loaded. See `docs/EXTENSION_CONTRACT_HU.md` and `docs/PUBLIC_API_HU.md` §1.
 
@@ -112,8 +112,8 @@ Register one HUD element to the e_core edit proxy and keep a central Svelte 5 ru
 ```lua
 -- consumer client bootstrap (manifest)
 -- shared_scripts {
---   '@e_core/src/imports/shared/core.lua',
---   '@e_core/src/imports/client/hud_drag.lua' -- optional, only for HUD edit preview sync
+--   '@e_core/src/imports/sdk/shared/core.lua',
+--   '@e_core/src/imports/sdk/client/hud_drag.lua' -- optional, only for HUD edit preview sync
 -- }
 
 local RegisteredElements = RegisteredElements or {}
@@ -165,7 +165,7 @@ Use the dedicated base helper export (`getHelperBase`) instead of relying on `ge
 
 ```lua
 -- manifest include (optional helper import)
--- shared_script '@e_core/src/imports/shared/helper_base.lua'
+-- shared_script '@e_core/src/imports/sdk/shared/helper_base.lua'
 
 -- after import:
 local value = hf.trim('  hello  ')

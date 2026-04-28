@@ -44,7 +44,7 @@ Ezt a sorrendet végigfuttatva a legtöbb „véletlen” hiba kiszűrhető **fu
 
 ## 3. `eCoreErr` táblázat – hol keresd a kódot
 
-Az `exports.e_core:*` **vékony réteg** (`client/exports.lua`, `server/exports.lua`, `bridge/main.lua` – lásd `docs/PUBLIC_API_HU.md` §1–§3) **nem** hoz létre új `reason` stringet; a második visszatérési érték mindig a mögöttes függvényből jön (pl. `server/meta.lua`, `client/main.lua`). A `getCore().Err` ugyanarra mutat, mint a globális `eCoreErr` (`bridge/main.lua`).
+Az `exports.e_core:*` **vékony réteg** (`runtime/exports/client.lua`, `runtime/exports/server.lua`, `bridge/main.lua` – lásd `docs/PUBLIC_API_HU.md` §1–§3) **nem** hoz létre új `reason` stringet; a második visszatérési érték mindig a mögöttes függvényből jön (pl. `server/meta.lua`, `runtime/bootstrap/client/main.lua`). A `getCore().Err` ugyanarra mutat, mint a globális `eCoreErr` (`bridge/main.lua`).
 
 | Kulcs (`eCoreErr.*`) | Visszaadott string (összehasonlításhoz) | Tipikus ok | Fő forrás |
 |----------------------|----------------------------------------|-------------|-----------|
@@ -69,15 +69,16 @@ Az `exports.e_core:*` **vékony réteg** (`client/exports.lua`, `server/exports.
 | `invalid_vehicle_plate` | ugyanaz | ESX / QB kliens: `vehicleKeys` — üres / nem tartalmas rendszám | `bridge/esx/client.lua`, `bridge/qb/client.lua` |
 | `invalid_vehicle_props` | ugyanaz | ESX / QB kliens: `setVehicleProperties` / `setVehiclePropertiesFromNetId` — üres vagy hiányzó `props` tábla; **szerver** `createVehicle`: `props` nem tábla és nem `nil` | `bridge/esx/client.lua`, `bridge/qb/client.lua`; `bridge/global/server.lua` |
 | `vehicle_network_timeout` | ugyanaz | ESX / QB kliens: `setVehiclePropertiesFromNetId` — `netId` nem oldódott fel a várakozási ciklusban | `bridge/esx/client.lua`, `bridge/qb/client.lua` |
-| `the_system_is_turned_off` | ugyanaz | `Config.systemMode` kikapcsolva | `server/labor.lua`, `client/main.lua` (`getLabor`) |
-| `not_found_metadata` | ugyanaz | Nincs `PlayerMetaStore.get(player)` sor / nincs kulcs / sync előtt (kliens: üres cache) | `server/meta.lua`, `server/labor.lua`, kliens `getLabor` |
-| `no_valid_meta_name` | ugyanaz | Nem string / üres név trim után | `server/meta.lua` (meta segédek); kliens `client/main.lua` (`getAbility`, `getMeta` param) |
-| `not_valid_amount` | ugyanaz | Labor: `addLabor` / `removeLabor` nem pozitív mennyiség (vagy NaN); jártasság `value` nem szám; **ESX / QB kliens** `setFuelLevel`: `amount` nem szám (`tonumber` nil) | `server/labor.lua`, `server/meta.lua` (`addAbility` / `removeAbility` / `setAbility`); `bridge/esx/client.lua`, `bridge/qb/client.lua` |
-| `not_enough_labor` | ugyanaz | `removeLabor`: kevesebb a egyenleg, mint a levonandó | `server/labor.lua` |
+| `feature_disabled` | ugyanaz | `Config.systemMode.*` kikapcsolva | `src/runtime/labor/logic.lua` + kliens `src/runtime/bootstrap/client/main.lua` (`getLabor`) |
+| `the_system_is_turned_off` | ugyanaz | legacy / régi consumer string összehasonlítások (kerüld új kódban) | (régi) |
+| `not_found_metadata` | ugyanaz | Nincs `PlayerMetaStore.get(player)` sor / nincs kulcs / sync előtt (kliens: üres cache) | `server/meta.lua`, `runtime/labor/logic.lua`, kliens `getLabor` |
+| `no_valid_meta_name` | ugyanaz | Nem string / üres név trim után | `server/meta.lua` (meta segédek); kliens `runtime/bootstrap/client/main.lua` (`getAbility`, `getMeta` param) |
+| `not_valid_amount` | ugyanaz | Labor: `addLabor` / `removeLabor` nem pozitív mennyiség (vagy NaN); jártasság `value` nem szám; **ESX / QB kliens** `setFuelLevel`: `amount` nem szám (`tonumber` nil) | `runtime/labor/logic.lua`, `server/meta.lua` (`addAbility` / `removeAbility` / `setAbility`); `bridge/esx/client.lua`, `bridge/qb/client.lua` |
+| `not_enough_labor` | ugyanaz | `removeLabor`: kevesebb a egyenleg, mint a levonandó | `runtime/labor/logic.lua` |
 | `not_levels_data` | ugyanaz | Hiányzó / üres `Config.levels` | `libs/meta.lua` (`getDiscounts`) |
-| `has_already_reached_the_limit` | ugyanaz | `abilityLimit` / labor plafon | `server/meta.lua`, `server/labor.lua` |
-| `category_does_not_exist` | ugyanaz | Kliens cache-ben nincs kategória | `client/main.lua` (`getAbility`) |
-| `meta_does_not_exist` | ugyanaz | Kliens: nincs ilyen jártasság név | `client/main.lua` |
+| `has_already_reached_the_limit` | ugyanaz | `abilityLimit` / labor plafon | `server/meta.lua`, `runtime/labor/logic.lua` |
+| `category_does_not_exist` | ugyanaz | Kliens cache-ben nincs kategória | `runtime/bootstrap/client/main.lua` (`getAbility`) |
+| `meta_does_not_exist` | ugyanaz | Kliens: nincs ilyen jártasság név | `runtime/bootstrap/client/main.lua` |
 | `reserved_meta_category` | ugyanaz | `login` / `logout` / `labor` tiltott írás / jártasság export | `server/meta.lua` |
 | `meta_default_must_be_table` | ugyanaz | `registerMeta` 3. param nem tábla és nem `nil` | `server/meta.lua` |
 | `meta_value_must_be_table` | ugyanaz | `setMeta` érték nem tábla | `server/meta.lua` |
@@ -120,11 +121,11 @@ Az `exports.e_core:*` **vékony réteg** (`client/exports.lua`, `server/exports.
 | | `not_found_metadata` | `registerMeta` / DB már létező kulcsok |
 | | `not_valid_amount` | `addAbility` / `removeAbility` / `setAbility`: a `value` param nem szám (`tonumber` hiány) |
 
-### 4.2 Labor (`server/labor.lua`)
+### 4.2 Labor (`runtime/labor/logic.lua`)
 
 | | |
 |--|--|
-| `the_system_is_turned_off` | `Config.systemMode.labor` |
+| `feature_disabled` | `Config.systemMode.labor` |
 | `not_found_metadata` | Nincs meta sor / nincs `labor` blokk |
 | `not_valid_amount` | `addLabor` / `removeLabor`: nem pozitív szám; `setLabor`: nem nem negatív szám / NaN |
 | `not_enough_labor` | `removeLabor`: `amount` nagyobb, mint `row.labor.val` |
@@ -138,7 +139,7 @@ Az `exports.e_core:*` **vékony réteg** (`client/exports.lua`, `server/exports.
 | QB kulcsok | `bridge/qb/server.lua` – `inventory_full`, `not_enough_items`, `removeItems` + `invalid_item_data` / `unknown_error` (lásd §3) |
 | ESX / ox / qs / avp | `there_are_no_items_to_remove` **string** eltér – óvatos összehasonlítás; **ESX alap `removeItems`:** rossz sor → `invalid_item_data`, belső hiba → `unknown_error`. **Override** ox/qs/avp `server.lua`: `removeItems` sor-szerződés és `xPlayer` / `pcall` ugyanilyen minta |
 
-### 4.4 Kliens cache (`client/main.lua`)
+### 4.4 Kliens cache (`runtime/bootstrap/client/main.lua`)
 
 | | |
 |--|--|

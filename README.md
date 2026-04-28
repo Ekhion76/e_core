@@ -81,10 +81,10 @@ flowchart LR
 
 | Pattern | What happens | Memory / cost |
 |--------|----------------|---------------|
-| **Minimal** | Manifest: `shared_script '@e_core/src/imports/shared/core.lua'` → `eCore = exports.e_core:getCore()` | Does **not** copy e_core’s full Lua into the consumer; references tables/functions already loaded inside `e_core`. |
-| **Full import** | Manifest: `shared_script '@e_core/src/imports/shared/full_import.lua'` → `LoadResourceFile('e_core', …)` + `load(..., _G)` for several files | Those chunks **execute again** in the consumer’s `_G`; the `e_core` resource **still** stays fully loaded. This does **not** shrink e_core’s own footprint; it trades a uniform bootstrap for extra consumer startup work. |
+| **Minimal** | Manifest: `shared_script '@e_core/src/imports/sdk/shared/core.lua'` → `eCore = exports.e_core:getCore()` | Does **not** copy e_core’s full Lua into the consumer; references tables/functions already loaded inside `e_core`. |
+| **Full import** | Manifest: `shared_script '@e_core/src/imports/sdk/shared/full_import.lua'` → `LoadResourceFile('e_core', …)` + `load(..., _G)` for several files | Those chunks **execute again** in the consumer’s `_G`; the `e_core` resource **still** stays fully loaded. This does **not** shrink e_core’s own footprint; it trades a uniform bootstrap for extra consumer startup work. |
 
-Paths loaded via `full_import` must be listed in e_core’s **`files { }`** (currently includes `src/imports/shared/*.lua` among others), otherwise `LoadResourceFile` returns empty.
+Paths loaded via `full_import` must be listed in e_core’s **`files { }`** (currently includes `src/imports/sdk/shared/*.lua` among others), otherwise `LoadResourceFile` returns empty.
 
 **Readiness:** `exports.e_core:isReady()` (0.1.7+: always a **boolean**—`false` at startup / while loading / on timeout / in IDLE; `true` only when the item registry is ready); on the client, also wait for item registry / init where applicable—not only that `getCore()` exists.
 

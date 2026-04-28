@@ -5,7 +5,7 @@ version '0.1.14'
 
 shared_scripts {
     '@ox_lib/init.lua',
-    'src/imports/shared/locale.lua',
+    'src/imports/sdk/shared/locale.lua',
 
     'src/bridge/esx/config_defaults.lua',
     'src/bridge/qb/config_defaults.lua',
@@ -15,7 +15,7 @@ shared_scripts {
     'src/config/levels.lua',
     'overrides/**/config.lua',
 
-    'src/imports/shared/utils.lua',
+    'src/imports/sdk/shared/utils.lua',
     'src/libs/helper.lua',
     'src/libs/helper_ecore.lua',
     'src/libs/file_event_logger.lua',
@@ -81,7 +81,7 @@ server_scripts {
     'src/bridge/esx/events/server.lua',
     'src/bridge/qb/events/server.lua',
 
-    'src/imports/server/discord_log.lua',
+    'src/imports/sdk/server/discord_log.lua',
 
     'src/bridge/main.lua',
 
@@ -91,12 +91,13 @@ server_scripts {
     'src/runtime/bootstrap/server/main.lua',
     'src/runtime/meta/server.lua',
     'src/runtime/hud/server/layout.lua',
-    'src/runtime/labor/server.lua',
+    'src/runtime/labor/init.lua',
     'src/runtime/quote/server.lua',
     'src/runtime/db/migrations.lua',
     'src/libs/profession_levels.lua',
     'src/runtime/admin/server_denied_audit.lua',
     'src/runtime/professions/server.lua',
+    'src/runtime/professions/init.lua',
     'src/runtime/db/server.lua',
     'src/runtime/exports/server.lua',
     'src/runtime/integrity/server.lua',
@@ -112,13 +113,13 @@ server_scripts {
 ui_page 'http://127.0.0.1:5173/'
 
 files {
-    'src/imports/shared/core.lua',
-    'src/imports/shared/full_import.lua',
-    'src/imports/shared/locale.lua',
-    'src/imports/shared/utils.lua',
-    'src/imports/shared/helper_base.lua',
-    'src/imports/client/hud_drag.lua',
-    'src/imports/server/discord_log.lua',
+    'src/imports/sdk/shared/core.lua',
+    'src/imports/sdk/shared/full_import.lua',
+    'src/imports/sdk/shared/locale.lua',
+    'src/imports/sdk/shared/utils.lua',
+    'src/imports/sdk/shared/helper_base.lua',
+    'src/imports/sdk/client/hud_drag.lua',
+    'src/imports/sdk/server/discord_log.lua',
     'src/web/dist/**'
 }
 

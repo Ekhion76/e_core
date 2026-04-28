@@ -80,19 +80,19 @@ Kapcsolódó fájlok a repóban
   (forgalom, kanonikus költség, „miért teljes tömb”, eco_crafting / eco_fishing
   minták). Az **AI_SUPPORT_REFERENCE** szekció **1.4** alatt tömör összefoglaló
   + erre a fájlra mutató hivatkozás; részletes narratíva a munkafájlban marad.
-- src/imports/shared/locale.lua        – translate / translateU (shared)
-- src/imports/shared/utils.lua         – print_r, blip, loader, cLog (shared;
+- src/imports/sdk/shared/locale.lua        – translate / translateU (shared)
+- src/imports/sdk/shared/utils.lua         – print_r, blip, loader, cLog (shared;
                                      severity mód: error / warning / info / debug)
-- src/imports/server/discord_log.lua   – createDiscordLog (server; webhook builder +
+- src/imports/sdk/server/discord_log.lua   – createDiscordLog (server; webhook builder +
                                      Discord limit, opts, callback; canonical consumer import)
-- src/imports/shared/core.lua          – consumer minimál bootstrap (`eCore` +
+- src/imports/sdk/shared/core.lua          – consumer minimál bootstrap (`eCore` +
   merge-elt `eCore.framework` / `config` / `i18n` / `util`; opcionális legacy
   globál alias `FRAMEWORK` / `eCoreConfig`)
-- src/imports/shared/helper_base.lua   – opcionális consumer helper import (`hf`)
-- src/imports/client/hud_drag.lua      – opcionális HUD drag preview proxy import
+- src/imports/sdk/shared/helper_base.lua   – opcionális consumer helper import (`hf`)
+- src/imports/sdk/client/hud_drag.lua      – opcionális HUD drag preview proxy import
   (`e_core:hud:clientPreview` -> `ECORE_HUD_SYNC`)
 - Legacy alias útvonalak kivezetve; canonical import útvonalak:
-  `src/imports/shared/*`, `src/imports/client/*`, `src/imports/server/*`.
+  `src/imports/sdk/shared/*`, `src/imports/sdk/client/*`, `src/imports/sdk/server/*`.
 - src/libs/helper.lua                  – hf általános része (consumer util)
 - src/libs/helper_ecore.lua            – ugyanarra a hf-re: e_core item/normalize,
                                      registry várakozás, mysqlAwait, indulási log,
@@ -125,7 +125,7 @@ Kapcsolódó fájlok a repóban
   labor exportok; részletek: „Client resource” szekció lent
 - src/web/dist/index.html, src/web/src/app.css, src/web/src/**/*, src/web/public/img/*.png – NUI felület;
   részletek: **1.5 NUI (html/)**
-- src/runtime/bootstrap/server/main.lua, src/runtime/meta/server.lua, src/runtime/labor/server.lua, src/runtime/db/server.lua,
+- src/runtime/bootstrap/server/main.lua, src/runtime/meta/server.lua, src/runtime/labor/logic.lua, src/runtime/labor/init.lua, src/runtime/db/server.lua,
   src/runtime/exports/server.lua, src/runtime/professions/server.lua, src/runtime/diagnostics/server.lua – szerver PlayerMetaStore,
   meta sync/mentés, labor, MySQL, profession registry, diagnostics; részletek:
   „Server resource (src/runtime/)” szekció **1.4**
@@ -187,7 +187,7 @@ Logika (rövid)
     exports("getFrameWork", function() return FRAMEWORK end)
 
 Consumer
-  src/imports/shared/core.lua: FRAMEWORK = exports.e_core:getFrameWork()
+  src/imports/sdk/shared/core.lua: FRAMEWORK = exports.e_core:getFrameWork()
   (Az e_core resource-nak a consumer előtt kell elindulnia; lásd README ensure
   sorrend.)
 
@@ -590,7 +590,7 @@ main.lua – meta / labor segédfüggvények (globálisok, exportnak)
     meta_does_not_exist.
   getMeta(meta?) – teljes vagy egy kulcs meta.
   getLabor() – Config.systemMode.labor kikapcsolva esetén false,
-    'the_system_is_turned_off'; egyébként a cache `labor.val` mezője.
+    'feature_disabled'; egyébként a cache `labor.val` mezője.
 
 main.lua – NUI (html/ui)
   Részletes **üzenet-szerződés** és frontfájlok: szekció **1.5 NUI (html/)**.
@@ -805,30 +805,30 @@ Cél
 
 Mérvadó forrásfájlok (fxmanifest.lua)
   shared_scripts (részleges sorrend):
-    src/imports/shared/locale.lua   – közvetlenül az ox_lib után; Config még
+    src/imports/sdk/shared/locale.lua   – közvetlenül az ox_lib után; Config még
                                   nincs minden override-mal felülírva, de a
                                   locale kulcs (Config.locale) a bridge config
                                   után áll; a tényleges szótár: src/locales/*.lua
-    src/imports/shared/utils.lua    – src/config + overrides config után,
+    src/imports/sdk/shared/utils.lua    – src/config + overrides config után,
                                   **közvetlenül a src/libs/helper.lua előtt**
                                   (a `hf` tábla a helper.lua + helper_ecore.lua
                                   után teljes más fájloknak).
   server_scripts:
-    src/imports/server/discord_log.lua
+    src/imports/sdk/server/discord_log.lua
                                   – kanonikus implementáció; e_core saját
                                   server_scripts listában töltődik.
   files:
-    src/imports/server/discord_log.lua
+    src/imports/sdk/server/discord_log.lua
                                   – consumer oldali canonical include útvonal
                                   (server-only wrapper import).
   files:
-    src/imports/shared/core.lua     – nem fut automatikusan az e_core-ban; más
+    src/imports/sdk/shared/core.lua     – nem fut automatikusan az e_core-ban; más
                                   resource `shared_scripts` / `client_scripts` /
                                   `server_scripts` sorában include-olható.
 
 ---
 
-src/imports/shared/locale.lua (shared)
+src/imports/sdk/shared/locale.lua (shared)
   Szerep
     Egységes **fordítás** a `locales` táblán (betöltés: `src/locales/*.lua`) és
     `Config.locale` alapján.
@@ -849,7 +849,7 @@ src/imports/shared/locale.lua (shared)
 
 ---
 
-src/imports/shared/utils.lua (shared)
+src/imports/sdk/shared/utils.lua (shared)
   Szerep
     Debug és kliens-oldali **kényelmi** segédek (blip, model/anim/ptfx load,
     feltételes console log).
@@ -884,11 +884,11 @@ src/imports/shared/utils.lua (shared)
 
 ---
 
-src/imports/server/discord_log.lua (server)
+src/imports/sdk/server/discord_log.lua (server)
   Szerep
     **Discord webhook** üzenet-építő: több embed, mezők, `PerformHttpRequest`
     POST JSON-nel. **Consumer** resource-ok a manifestben include-olhatják
-    (pl. `@e_core/src/imports/server/discord_log.lua` **server_scripts**-ben, az **e_core**
+    (pl. `@e_core/src/imports/sdk/server/discord_log.lua` **server_scripts**-ben, az **e_core**
     utáni ensure mellett). Belső e_core hívó a repóban opcionális; főleg külső
     eco szerverlog / admin értesítés.
   Függőség
@@ -964,7 +964,7 @@ src/imports/server/discord_log.lua (server)
       callback; **send** callback `ok == false`.
 
     Forrás
-      src/imports/server/discord_log.lua
+      src/imports/sdk/server/discord_log.lua
 
 ---
 
@@ -1003,7 +1003,7 @@ imports – consumer / eco resource ötletek (következő lépések, nem kötele
 
 ---
 
-src/imports/shared/core.lua (files – consumer include)
+src/imports/sdk/shared/core.lua (files – consumer include)
   Szerep
     **Minimális belépés** más resource-ból: egy `getCore()` hívás; a kurált
     mezők (`ecoreVersion`, `bridgeContract`, `framework`, `config`, `i18n`,
@@ -1017,12 +1017,12 @@ src/imports/shared/core.lua (files – consumer include)
     `eCoreConfig = eCore.config` – új kódban használd közvetlenül az
     `eCore.*` mezőket.
   Egy soros import
-    `shared_script '@e_core/src/imports/shared/full_import.lua'` – betölti a
+    `shared_script '@e_core/src/imports/sdk/shared/full_import.lua'` – betölti a
     `core.lua` + `locale.lua` + `utils.lua` sorrendet a **`e_core`** resource
     nevével (`LoadResourceFile('e_core', …)`).
   Oldal
     shared / client / server: attól függ, melyik manifest listába include-olod
-    a fájlt (tipikusan `shared_script '@e_core/src/imports/shared/core.lua'`).
+    a fájlt (tipikusan `shared_script '@e_core/src/imports/sdk/shared/core.lua'`).
   Megjegyzés
     **Ensure sorrend:** az `e_core` resource-nak el kell indulnia és exportot
     kell szolgálnia, mielőtt a consumer chunk lefut (lásd README ensure).
@@ -1032,13 +1032,13 @@ src/imports/shared/core.lua (files – consumer include)
     `setr e_core_dev "true"` mellett opcionális `exports.e_core:getInternal()` –
     csak debug; részlet: `docs/EXTENSION_CONTRACT_HU.md`.
 
-src/imports/shared/helper_base.lua (files – opcionális consumer include)
+src/imports/sdk/shared/helper_base.lua (files – opcionális consumer include)
   Szerep
     Base helper bootstrap: `hf = exports.e_core:getHelperBase()`.
   Mikor használd
     Ha a consumer script ténylegesen használ `hf.*` utility hívásokat.
 
-src/imports/client/hud_drag.lua (files – opcionális consumer include)
+src/imports/sdk/client/hud_drag.lua (files – opcionális consumer include)
   Szerep
     HUD preview proxy: `e_core:hud:clientPreview` esemény továbbítása
     `ECORE_HUD_SYNC` NUI üzenetté a `RegisteredElements[id]` guarddal.
@@ -1066,7 +1066,7 @@ Cél
   a gyakorlatban (`PlayerMetaStore.get(playerId)`).
 
 Mérvadó forrásfájlok (fxmanifest.lua, shared_scripts sorrend)
-  src/imports/shared/utils.lua után:
+  src/imports/sdk/shared/utils.lua után:
     src/libs/helper.lua       – globális `hf = { … }` + általános metódusok
     src/libs/helper_ecore.lua – ugyanarra a `hf`-re: e_core-specifikus metódusok
     src/libs/meta.lua         – globális `getLevel`, `getDiscounts`, stb.
@@ -1291,7 +1291,7 @@ src/standalone/usableitem.lua (server)
 
 Cél
   **`PlayerMetaStore`** szerverállapot (meta sor / lastSave / kötegelt sync), **exports.e_core**
-  szerver oldali implementáció (`meta.lua`, `labor.lua`), **MySQL** perzisztencia
+  szerver oldali implementáció (`meta.lua`, `labor/logic.lua`), **MySQL** perzisztencia
   (`db.lua`), indulási **REGISTERED_ITEMS** / `CORE_READY` szál (`main.lua`),
   export regisztráció (`exports.lua`).
 
@@ -1300,7 +1300,8 @@ Mérvadó forrásfájlok (fxmanifest.lua → server_scripts sorrend, releváns r
     src/runtime/meta/player_meta_store.lua – runtime meta tároló + `e_core:sync` envelope
     src/runtime/bootstrap/server/main.lua      – REGISTERED_ITEMS töltő ciklus, CORE_READY
     src/runtime/meta/server.lua      – meta CRUD, sync, játékos események, időzített mentés
-    src/runtime/labor/server.lua     – labor CRUD, automatikus / offline labor
+    src/runtime/labor/logic.lua     – labor CRUD (pure)
+    src/runtime/labor/init.lua      – labor automatikus tick (side effects)
     src/runtime/db/migrations.lua – `e_core_migrations` tábla + `e_core_run_db_migrations`
     src/runtime/professions/server.lua – profession registry bootstrap + read model export logika
     src/runtime/db/server.lua        – MySQL.ready → migrációk, majd saveMeta / loadMeta / saveAllMeta
@@ -1361,15 +1362,14 @@ src/runtime/meta/server.lua
 
 ---
 
-src/runtime/labor/server.lua
+src/runtime/labor/logic.lua + init.lua
   Szerep
     Labor olvasás/írás `PlayerMetaStore.get(playerId).labor` alatt; **automatikus online**
-    növelés (`laborIncrease` – `SetTimeout`, ha `systemMode.labor` és pozitív
-    `laborIncreaseTime` / `laborIncrease`); **offline** számítás `addOfflineLabor`
-    (loadMeta hívja).
-  Exportált függvények (definíció itt, export `src/runtime/exports/server.lua`)
+    növelés (init: `SetTimeout`, ha `systemMode.labor` és pozitív `laborIncreaseTime` /
+    `laborIncrease`); **offline** számítás `addOfflineLabor` (logic; loadMeta hívja).
+  Exportált függvények (definíció: `logic.lua`, export: `src/runtime/exports/server.lua`)
     `getLabor`, `setLabor`, `addLabor`, `removeLabor` – hibák: pl.
-    `the_system_is_turned_off`, `not_found_metadata`, `not_valid_amount`,
+    `feature_disabled`, `not_found_metadata`, `not_valid_amount`,
     `has_already_reached_the_limit` (labor limit / üres érték esetek).
 
 ---
@@ -1395,7 +1395,7 @@ Labor, meta sync, „laboros” consumer művelet – átfogó összefoglaló (s
       fejezete).
     4) **Kliens:** `e_core:sync` → `ClientMetaStore.applyServerSync`; ha `eCoreNui.isReady()`: egy
       `SendNUIMessage` UPDATE (page vagy hud), teljes `metadata`.
-    5) **Auto labor:** `src/runtime/labor/server.lua` `laborIncrease()` tick után
+    5) **Auto labor:** `src/runtime/labor/init.lua` tick után
       **`syncRequest(playerId)`** (ugyanaz a kötegelt útvonal, mint a meta
       írásnál); részletek: `docs/LABOR_KEZELES_MUNKAFIL_HU.md` fókuszlista.
     6) **Külső resource** (eco_crafting, eco_fishing stb.) saját eseményei,
@@ -1477,7 +1477,7 @@ src/runtime/diagnostics/server.lua
 src/runtime/exports/server.lua
   Szerep
     Csak **exports.e_core** név alatti regisztráció; a tényleges függvények
-    `src/runtime/meta/server.lua` és `src/runtime/labor/server.lua` (+ `src/libs/meta.lua` getLevel /
+    `src/runtime/meta/server.lua` és `src/runtime/labor/logic.lua` (+ `src/libs/meta.lua` getLevel /
     getDiscounts).
 
 Összefüggés más részekkel
@@ -1603,7 +1603,7 @@ getConfig()
 Megjegyzés (helper)
   Nincs `exports.e_core:getHelper()` export. A base helper elérése:
   `exports.e_core:getHelperBase()` (vagy consumer include:
-  `@e_core/src/imports/shared/helper_base.lua`), részletek: szekció **1.2**,
+  `@e_core/src/imports/sdk/shared/helper_base.lua`), részletek: szekció **1.2**,
   `src/bridge/main.lua`.
 
 --- Client (src/runtime/exports/client.lua) ---
@@ -1621,7 +1621,7 @@ getMeta(meta?)
 
 getLabor()
   Vissza: ha labor ki van kapcsolva Config.systemMode.labor alatt:
-          false, eCoreErr.the_system_is_turned_off
+          false, eCoreErr.feature_disabled
           ha még nincs labor blokk a kliens cache-ben (sync előtt / üres meta):
           false, eCoreErr.not_found_metadata
           egyébként: a kliens cache `labor.val` (szám).
@@ -1654,7 +1654,7 @@ removeAbility(playerId, category, name, value)
   Limit: Config.abilityLimit; lehet false, 'has_already_reached_the_limit'
 
 getLabor(playerId) / setLabor(playerId, amount) / addLabor / removeLabor
-  Labor kikapcsolva: false, 'the_system_is_turned_off'
+  Labor kikapcsolva: false, 'feature_disabled'
   Érvénytelen amount: false, 'not_valid_amount'
   Meta hiány: false, 'not_found_metadata'
 

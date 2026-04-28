@@ -1,5 +1,5 @@
 --- One-line consumer bootstrap: loads canonical import chunks from the **e_core** resource in order.
---- Add to your resource `fxmanifest.lua`: `shared_script '@e_core/src/imports/shared/full_import.lua'`
+--- Add to your resource `fxmanifest.lua`: `shared_script '@e_core/src/imports/sdk/shared/full_import.lua'`
 --- Requires: `ensure e_core` before your resource; resource name must stay `e_core` (or edit `ECORE_RES` below).
 -- luacheck: push ignore 131
 
@@ -19,7 +19,7 @@ local function runEcoreChunk(rel)
     chunk()
 end
 
-runEcoreChunk('src/imports/shared/core.lua')
-runEcoreChunk('src/imports/shared/locale.lua')
-runEcoreChunk('src/imports/shared/utils.lua')
+runEcoreChunk('src/imports/sdk/shared/core.lua')
+runEcoreChunk('src/imports/sdk/shared/locale.lua')
+runEcoreChunk('src/imports/sdk/shared/utils.lua')
 -- luacheck: pop

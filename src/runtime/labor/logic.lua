@@ -1,9 +1,14 @@
+--- Labor domain (server): pure module API (no event/thread registration).
+--- Side effects (timers) must live in `init.lua`.
+
+local M = {}
+
 --- Checks whether labor subsystem is enabled.
---- @return boolean|nil ok True when labor operations are allowed.
+--- @return boolean ok True when labor operations are allowed.
 --- @return string|nil err eCoreErr value when system is disabled.
-local function laborRequireSystem()
+local function requireLaborEnabled()
     if not Config.systemMode.labor then
-        return nil, eCoreErr.the_system_is_turned_off
+        return false, eCoreErr.feature_disabled
     end
     return true, nil
 end
@@ -12,7 +17,7 @@ end
 --- @param playerId number Player source id.
 --- @return table|nil row PlayerMetaStore row for `playerId`.
 --- @return string|nil err eCoreErr when metadata/labor is missing.
-local function laborPlayerRow(playerId)
+local function playerRow(playerId)
     local row = tonumber(playerId) and PlayerMetaStore.get(playerId) or nil
     if not row or not row.labor then
         return nil, eCoreErr.not_found_metadata
@@ -23,13 +28,13 @@ end
 --- @param playerId number (source)
 --- @return boolean ok Success flag.
 --- @return number|string second Labor points on success (can be 0); eCoreErr string on failure.
-function getLabor(playerId)
-    local ok, err = laborRequireSystem()
+function M.getLabor(playerId)
+    local ok, err = requireLaborEnabled()
     if not ok then
         return false, err
     end
 
-    local row, err2 = laborPlayerRow(playerId)
+    local row, err2 = playerRow(playerId)
     if not row then
         return false, err2
     end
@@ -38,16 +43,17 @@ end
 
 --- @param playerId number (source)
 --- @param amount number of labor points
---- @return boolean success and, in case of an error, the reason as well
-function setLabor(playerId, amount)
+--- @return boolean ok Success flag.
+--- @return string|nil err eCoreErr on failure.
+function M.setLabor(playerId, amount)
     amount = tonumber(amount)
 
-    local ok, err = laborRequireSystem()
+    local ok, err = requireLaborEnabled()
     if not ok then
         return false, err
     end
 
-    local row, err2 = laborPlayerRow(playerId)
+    local row, err2 = playerRow(playerId)
     if not row then
         return false, err2
     end
@@ -68,14 +74,15 @@ end
 
 --- @param playerId number (source)
 --- @param amount number of labor points to be removed
---- @return boolean success and, in case of an error, the reason as well
-function removeLabor(playerId, amount)
-    local ok, err = laborRequireSystem()
+--- @return boolean ok Success flag.
+--- @return string|nil err eCoreErr on failure.
+function M.removeLabor(playerId, amount)
+    local ok, err = requireLaborEnabled()
     if not ok then
         return false, err
     end
 
-    local row, err2 = laborPlayerRow(playerId)
+    local row, err2 = playerRow(playerId)
     if not row then
         return false, err2
     end
@@ -101,14 +108,15 @@ end
 
 --- @param playerId number (source)
 --- @param amount number of labor points to be added
---- @return boolean success and, in case of an error, the reason as well
-function addLabor(playerId, amount)
-    local ok, err = laborRequireSystem()
+--- @return boolean ok Success flag.
+--- @return string|nil err eCoreErr on failure.
+function M.addLabor(playerId, amount)
+    local ok, err = requireLaborEnabled()
     if not ok then
         return false, err
     end
 
-    local row, err2 = laborPlayerRow(playerId)
+    local row, err2 = playerRow(playerId)
     if not row then
         return false, err2
     end
@@ -132,13 +140,10 @@ function addLabor(playerId, amount)
     return true
 end
 
------------------------
---- AUTO LABOR INCREASE
------------------------
-
 --- Collects online player ids that currently have loaded `meta.labor`.
 --- Uses `GetPlayers()` to avoid scanning all in-memory meta rows.
-local function laborIncreaseCollectTargets()
+--- @return number[] ids
+function M.collectOnlineTargets()
     local ids = {}
     for _, sid in ipairs(GetPlayers()) do
         local playerId = tonumber(sid)
@@ -157,8 +162,8 @@ end
 --- @param timeStamp number Tick timestamp (`os.time()`).
 --- @param fromIdx number First index inside ids (1-based).
 --- @param chunkSize number <=0 means all at once; >0 means max players per chunk.
---- @param onDone fun() Callback that schedules next periodic `laborIncrease` cycle.
-local function laborIncreaseApplyChunks(ids, timeStamp, fromIdx, chunkSize, onDone)
+--- @param onDone fun() Callback that schedules next periodic cycle (provided by init).
+function M.applyIncreaseChunks(ids, timeStamp, fromIdx, chunkSize, onDone)
     local n = #ids
     local limit = Config.laborLimit
     local step = Config.laborIncrease
@@ -181,63 +186,24 @@ local function laborIncreaseApplyChunks(ids, timeStamp, fromIdx, chunkSize, onDo
 
     if endIdx < n and chunkSize > 0 then
         SetTimeout(0, function()
-            laborIncreaseApplyChunks(ids, timeStamp, endIdx + 1, chunkSize, onDone)
+            M.applyIncreaseChunks(ids, timeStamp, endIdx + 1, chunkSize, onDone)
         end)
     else
         onDone()
     end
 end
 
---- Schedules periodic labor regeneration for online players.
---- Tick interval is `Config.laborIncreaseTime` minutes and can be chunked via
---- convar `e_core:labor_tick_chunk`.
---- @return nil
-function laborIncrease()
-    SetTimeout(Config.laborIncreaseTime * 60000, function()
-        if not Config.systemMode.labor then
-            laborIncrease()
-            return
-        end
-
-        local timeStamp = os.time()
-        local chunkSize = GetConvarInt('e_core:labor_tick_chunk', 0)
-        if chunkSize < 0 then
-            chunkSize = 0
-        end
-
-        local ids = laborIncreaseCollectTargets()
-        if #ids == 0 then
-            laborIncrease()
-            return
-        end
-
-        laborIncreaseApplyChunks(ids, timeStamp, 1, chunkSize, laborIncrease)
-    end)
-end
-
-if Config.systemMode.labor and
-    tonumber(Config.laborIncreaseTime) and
-    Config.laborIncreaseTime > 0 and
-
-    tonumber(Config.laborIncrease) and
-    Config.laborIncrease > 0 then
-    laborIncrease()
-end
-
------------------
---- OFFLINE LABOR
------------------
 --- Applies offline labor regeneration based on elapsed time since last labor timestamp.
 --- @param playerId number Player source id.
 --- @return boolean ok True when operation completed/ignored successfully, false on validation failure.
-function addOfflineLabor(playerId)
+function M.addOfflineLabor(playerId)
     if not Config.systemMode.labor then
-        return false
+        return false, eCoreErr.feature_disabled
     end
 
-    local row, err = laborPlayerRow(playerId)
+    local row, err = playerRow(playerId)
     if not row then
-        return false
+        return false, err
     end
 
     local laborIncreaseOffline = tonumber(Config.laborIncreaseOffline)
@@ -245,7 +211,7 @@ function addOfflineLabor(playerId)
 
     if not laborIncreaseTime or laborIncreaseTime < 1 or
             not laborIncreaseOffline or laborIncreaseOffline < 1 then
-        return false
+        return false, eCoreErr.not_valid_amount
     end
 
     local timeStamp = os.time()
@@ -266,3 +232,6 @@ function addOfflineLabor(playerId)
     end
     return true
 end
+
+return M
+

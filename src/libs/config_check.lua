@@ -23,7 +23,7 @@ local function copyIdList(list)
     return out
 end
 
---- Discord webhook URL shape (aligned with `imports/server/discord_log.lua`).
+--- Discord webhook URL shape (aligned with `imports/sdk/server/discord_log.lua`).
 --- @param url any
 --- @return boolean ok True when URL looks like `https://…/api/webhooks/…`.
 local function is_e_core_discord_webhook_url(url)

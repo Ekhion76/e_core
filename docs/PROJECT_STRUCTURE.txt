@@ -39,6 +39,7 @@ src/bridge/
 src/runtime/
   Szerver/kliens runtime domain modulok (nem bridge):
   bootstrap/        server/main.lua, client/main.lua — indulás, CORE_READY.
+  labor/            logic.lua (pure) + init.lua (timerek) — `Config.systemMode.labor` gate.
   exports/          server.lua, client.lua — exports.e_core kötések.
   meta/             player_meta_store, server (meta CRUD), client (ClientMetaStore).
   hud/              server/layout.lua, client/registry.lua.

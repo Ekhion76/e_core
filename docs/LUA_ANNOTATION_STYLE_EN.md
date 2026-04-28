@@ -129,7 +129,7 @@ Weak:
 
 ## Rollout Strategy
 
-1. Start with `imports/`, `client/exports.lua`, `server/exports.lua`.
+1. Start with `imports/`, `src/runtime/exports/client.lua`, `src/runtime/exports/server.lua`.
 2. Continue with `bridge/global/*` and active override modules.
 3. Touch-up annotations opportunistically during refactors/bugfixes.
 

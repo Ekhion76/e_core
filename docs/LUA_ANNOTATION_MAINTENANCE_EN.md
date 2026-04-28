@@ -42,8 +42,8 @@ When touching annotations for a big change, prefer checking these areas first â€
 - `src/runtime/exports/server.lua`
 - `src/runtime/exports/client.lua`
 - `src/bridge/main.lua`
-- `src/imports/server/discord_log.lua`
-- `src/imports/shared/utils.lua`
+- `src/imports/sdk/server/discord_log.lua`
+- `src/imports/sdk/shared/utils.lua`
 
 ### B â€” Bridge + domain core
 
@@ -52,7 +52,8 @@ When touching annotations for a big change, prefer checking these areas first â€
 - `src/bridge/esx/server.lua`
 - `src/bridge/qb/server.lua`
 - `src/runtime/meta/server.lua`
-- `src/runtime/labor/server.lua`
+- `src/runtime/labor/logic.lua`
+- `src/runtime/labor/init.lua`
 - `src/runtime/db/server.lua`
 - `src/runtime/professions/server.lua`
 

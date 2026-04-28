@@ -34,9 +34,9 @@ Forrás: `bridge/main.lua` + `bridge/ecore_lifecycle.lua`. Exportok: **`getFrame
 
 ---
 
-## 2. Csak kliens (`client/exports.lua`)
+## 2. Csak kliens (`src/runtime/exports/client.lua`)
 
-A tábla névsora = a fájlban lévő `exports(...)` sorok sorrendje; közvetlen függvény-hivatkozás, nincs rejtett üzleti ág (a viselkedés a `client/main.lua` és a shared segédekben van).
+A tábla névsora = a fájlban lévő `exports(...)` sorok sorrendje; közvetlen függvény-hivatkozás, nincs rejtett üzleti ág (a viselkedés a `src/runtime/bootstrap/client/main.lua` és a shared segédekben van).
 
 | Export | Mire való | Paraméterek | Megjegyzés |
 |--------|-----------|-------------|------------|
@@ -128,11 +128,11 @@ eCore = exports.e_core:getCore()
 -- Szerver: opcionálisan eCore.log.discord.create(...) ha a Discord modul aktív
 ```
 
-`imports/shared/core.lua` – egy sor `getCore()`, és opcionálisan **deprecated** globál alias: `FRAMEWORK = eCore.framework`, `eCoreConfig = eCore.config` (fokozatos migrációhoz). **Egy soros bootstrap:** `imports/shared/full_import.lua` (`shared_script '@e_core/src/imports/shared/full_import.lua'`) – sorrend: `core` → `locale` → `utils`; a `full_import` a **`e_core` resource nevet** feltételezi (`LoadResourceFile('e_core', …)`).
+`imports/sdk/shared/core.lua` – egy sor `getCore()`, és opcionálisan **deprecated** globál alias: `FRAMEWORK = eCore.framework`, `eCoreConfig = eCore.config` (fokozatos migrációhoz). **Egy soros bootstrap:** `imports/sdk/shared/full_import.lua` (`shared_script '@e_core/src/imports/sdk/shared/full_import.lua'`) – sorrend: `core` → `locale` → `utils`; a `full_import` a **`e_core` resource nevet** feltételezi (`LoadResourceFile('e_core', …)`).
 
-`imports/shared/helper_base.lua`. Opcionális helper-import: globális `hf = exports.e_core:getHelperBase()` inicializálás consumer oldalon.
+`imports/sdk/shared/helper_base.lua`. Opcionális helper-import: globális `hf = exports.e_core:getHelperBase()` inicializálás consumer oldalon.
 
-`imports/client/hud_drag.lua`. Opcionális HUD drag preview proxy: az import réteg hallgatja az `e_core:hud:clientPreview` eseményt, és ha az `id` benne van a consumer oldali `RegisteredElements` map-ben, `SendNUIMessage({ action = 'ECORE_HUD_SYNC', id, pos })` üzenetet küld. Így a consumer oldali NUI üzenetkezelő egyetlen központi rune-state-ből (`.svelte.ts`) frissíthet minden komponenst.
+`imports/sdk/client/hud_drag.lua`. Opcionális HUD drag preview proxy: az import réteg hallgatja az `e_core:hud:clientPreview` eseményt, és ha az `id` benne van a consumer oldali `RegisteredElements` map-ben, `SendNUIMessage({ action = 'ECORE_HUD_SYNC', id, pos })` üzenetet küld. Így a consumer oldali NUI üzenetkezelő egyetlen központi rune-state-ből (`.svelte.ts`) frissíthet minden komponenst.
 
 **Megjegyzés:** **`eCore.helper`** = base **`hf`** (`libs/helper.lua`) – változatlan bridge viselkedés. **`eCore.GroupAccess:check(playerData, data)`**: `src/libs/group_access.lua` (job/gang whitelist–blacklist; lásd §6). **`eCore.Err`** = `libs/errors.lua` → **`eCoreErr`** (azonos kulcsok / string értékek); külső resource összehasonlíthat: `reason == exports.e_core:getCore().Err.inventory_full`.
 
@@ -146,7 +146,8 @@ Forrás: **`libs/errors.lua`**. Az e_core belső kódja **`eCoreErr.xyz`** form�
 |----------------------|-------------------|---------------|
 | `category_does_not_exist` | ugyanaz | kliens `getAbility` |
 | `meta_does_not_exist` | ugyanaz | kliens `getAbility` (név megadva) |
-| `the_system_is_turned_off` | ugyanaz | labor / kliens olvasók |
+| `feature_disabled` | ugyanaz | `Config.systemMode.*` kikapcsolva (pl. labor) |
+| `the_system_is_turned_off` | ugyanaz | legacy / régi consumer string összehasonlítások (kerüld új kódban) |
 | `not_found_metadata` | ugyanaz | szerver meta / labor |
 | `no_valid_meta_name` | ugyanaz | szerver meta; kliens `getAbility` / `getMeta` (érvénytelen vagy üres kulcs param) |
 | `not_valid_amount` | ugyanaz | szerver labor (`addLabor` / `removeLabor`: nem pozitív vagy NaN mennyiség; `setLabor`: hiányzó / negatív / NaN); szerver jártasság (`addAbility` / `removeAbility` / `setAbility`) ha a `value` nem **szám** (`tonumber` szerint); **ESX / QB kliens** `setFuelLevel`: `amount` nem szám (`tonumber` nil) |

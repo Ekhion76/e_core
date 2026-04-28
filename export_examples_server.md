@@ -4,7 +4,7 @@
 
 Same as on the client: `eCore.framework`, `eCore.config`, `eCore.i18n`, `eCore.util` are merged onto the object returned by `exports.e_core:getCore()`. **0.1.9+:** also `eCore.ecoreVersion` and `eCore.bridgeContract` (see `export_examples_client.md` table).
 
-Additionally, when `src/imports/server/discord_log.lua` is loaded by **e_core**, you can build webhooks via the thin wrapper:
+Additionally, when `src/imports/sdk/server/discord_log.lua` is loaded by **e_core**, you can build webhooks via the thin wrapper:
 
 ```lua
 local eCore = exports.e_core:getCore()

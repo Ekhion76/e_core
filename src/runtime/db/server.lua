@@ -1,6 +1,7 @@
 local UPDATE_META = 'UPDATE `users` SET `e_core` = ? WHERE `identifier` = ?'
 local SELECT_META = 'SELECT `e_core` FROM `users` WHERE `identifier` = ?'
 local hfe = hfe
+local labor = lib.require('src/runtime/labor/logic')
 
 if QB_CORE then
     UPDATE_META = 'UPDATE `players` SET `e_core` = ? WHERE `citizenid` = ?'
@@ -9,10 +10,6 @@ end
 
 MySQL.ready(function()
     e_core_run_db_migrations()
-    e_core_bootstrap_profession_registry()
-    if type(e_core_bootstrap_cleanup_jobs) == 'function' then
-        e_core_bootstrap_cleanup_jobs()
-    end
     if type(e_core_schedule_admin_denied_audit_purge) == 'function' then
         e_core_schedule_admin_denied_audit_purge()
     end
@@ -100,7 +97,7 @@ function loadMeta(xPlayer)
     end
 
     prepareMeta(playerId, meta)
-    addOfflineLabor(playerId)
+    labor.addOfflineLabor(playerId)
     PlayerMetaStore.setLastSave(playerId, os.time())
 
     PlayerMetaStore.pushFullSync(playerId)

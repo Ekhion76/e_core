@@ -84,7 +84,7 @@ end
 --- @return boolean|number ok, laborValue or false, eCoreErr
 function getLabor()
     if not Config.systemMode.labor then
-        return false, eCoreErr.the_system_is_turned_off
+        return false, eCoreErr.feature_disabled
     end
     local m = ClientMetaStore.getMeta()
     if not m or not m.labor then

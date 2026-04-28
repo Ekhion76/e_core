@@ -248,9 +248,9 @@ end
 
 **[Nyitott]** A bridge szorosan kötődik az `ESX` / `QBCore` globálokhoz és az `exports[resource]` hívásokhoz – unit teszt mock nélkül nehéz. Vékony „port” réteg (interface tábla), amit a bridge feltölt framework-specifikus implementációval; tesztben csak a port mockolódik.
 
-**[Bevált]** `imports/shared/core.lua` – egyértelmű consumer belépés: `getCore()` + kurált mezők.
+**[Bevált]** `imports/sdk/shared/core.lua` – egyértelmű consumer belépés: `getCore()` + kurált mezők.
 
-```1:8:src/imports/shared/core.lua
+```1:8:src/imports/sdk/shared/core.lua
 eCore = exports.e_core:getCore()
 FRAMEWORK = eCore.framework
 eCoreConfig = eCore.config
@@ -343,4 +343,4 @@ A QBox ökoszisztéma verziófüggő; tipikus **irányú** eltérések a klasszi
 | **[Dokumentálva 0.1.11]** | `Config` sekély merge — `SZERVER_OPERATOR` §1.1, `PUBLIC_API` §1, `BRIDGE_LAYER…` §3 (`fxmanifest` **0.1.11**). |
 | **[Részben 0.1.10]** | Globális `hasItem`, ESX `removeItems` pcall, ox/qs/avp szerver override inventory ágak — részletezett `eCoreErr` (`PUBLIC_API` §5). |
 | **[Nyitott]** | Bridge API / hibakód aszimmetria (további metódusok / `createVehicle` részletezés később); detektálás pillanatkép-alapú; QBox; NUI throttle; `IPlayerFacade`. |
-| **[Bevált]** | ConVar-alapú választás + két core + auto → kontrollált IDLE (`framework_config.lua`); explicit fw kényszerítés két core mellett; override sorrend teljes metóduscserehez (`fxmanifest.lua`); `example_custom_inventory` minta új inventoryhoz; `imports/shared/core.lua` consumer minta. |
+| **[Bevált]** | ConVar-alapú választás + két core + auto → kontrollált IDLE (`framework_config.lua`); explicit fw kényszerítés két core mellett; override sorrend teljes metóduscserehez (`fxmanifest.lua`); `example_custom_inventory` minta új inventoryhoz; `imports/sdk/shared/core.lua` consumer minta. |

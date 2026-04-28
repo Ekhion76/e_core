@@ -2,8 +2,17 @@
 --- Side effects (timers) must live in `init.lua`.
 
 local M = {}
-local quote = lib.require('src/runtime/quote/logic')
 local meta = lib.require('src/runtime/meta/logic')
+local quoteApi = nil
+
+--- Lazily resolves quote API to avoid load-time circular require.
+--- @return table
+local function quote()
+    if not quoteApi then
+        quoteApi = lib.require('src/runtime/quote/logic')
+    end
+    return quoteApi
+end
 
 --- Checks whether labor subsystem is enabled.
 --- @return boolean ok True when labor operations are allowed.
@@ -66,7 +75,7 @@ function M.setLabor(playerId, amount)
 
     row.labor.val = hf.clamp(amount, Config.laborLimit)
     row.labor.time = os.time()
-    quote.invalidateLaborQuoteCache(playerId)
+    quote().invalidateLaborQuoteCache(playerId)
 
     meta.syncRequest(playerId)
     return true
@@ -98,7 +107,7 @@ function M.removeLabor(playerId, amount)
 
     row.labor.val = hf.clamp(row.labor.val - amount, Config.laborLimit)
     row.labor.time = os.time()
-    quote.invalidateLaborQuoteCache(playerId)
+    quote().invalidateLaborQuoteCache(playerId)
 
     meta.syncRequest(playerId)
     return true
@@ -130,7 +139,7 @@ function M.addLabor(playerId, amount)
 
     row.labor.val = hf.clamp(row.labor.val + amount, Config.laborLimit)
     row.labor.time = os.time()
-    quote.invalidateLaborQuoteCache(playerId)
+    quote().invalidateLaborQuoteCache(playerId)
 
     meta.syncRequest(playerId)
     return true
@@ -172,7 +181,7 @@ function M.applyIncreaseChunks(ids, timeStamp, fromIdx, chunkSize, onDone)
             meta.labor.time = timeStamp
             if meta.labor.val < limit then
                 meta.labor.val = hf.clamp(meta.labor.val + step, limit)
-                quote.invalidateLaborQuoteCache(playerId)
+                quote().invalidateLaborQuoteCache(playerId)
                 meta.syncRequest(playerId)
             end
         end
@@ -221,7 +230,7 @@ function M.addOfflineLabor(playerId)
 
     row.labor.time = timeStamp
     row.labor.val = hf.clamp(row.labor.val + offlineLabor, Config.laborLimit)
-    quote.invalidateLaborQuoteCache(playerId)
+    quote().invalidateLaborQuoteCache(playerId)
     return true
 end
 

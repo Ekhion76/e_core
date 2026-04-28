@@ -1,5 +1,14 @@
-local quote = lib.require('src/runtime/quote/logic')
 local M = {}
+local quoteApi = nil
+
+--- Lazily resolves quote API to avoid load-time circular require.
+--- @return table
+local function quote()
+    if not quoteApi then
+        quoteApi = lib.require('src/runtime/quote/logic')
+    end
+    return quoteApi
+end
 
 --- Reserved root meta keys managed by lifecycle/save flow (`prepareMeta`, persistence).
 --- They are read-only for `registerMeta` / `setMeta` and excluded from ability APIs.
@@ -120,7 +129,7 @@ function M.setMeta(playerId, meta, value)
     end
 
     row[metaKey] = hf.shallowCopy(value)
-    quote.invalidateLaborQuoteCache(playerId)
+    quote().invalidateLaborQuoteCache(playerId)
     M.syncRequest(playerId)
 
     return true
@@ -175,7 +184,7 @@ function M.registerMeta(playerId, category, defaultValue)
     local slot = rawget(row, ck)
     if slot == nil then
         row[ck] = hf.shallowCopy(defaultValue)
-        quote.invalidateLaborQuoteCache(playerId)
+        quote().invalidateLaborQuoteCache(playerId)
         M.syncRequest(playerId)
         return true
     end
@@ -193,7 +202,7 @@ function M.registerMeta(playerId, category, defaultValue)
     end
 
     if dirty then
-        quote.invalidateLaborQuoteCache(playerId)
+        quote().invalidateLaborQuoteCache(playerId)
         M.syncRequest(playerId)
     end
 
@@ -279,7 +288,7 @@ function M.addAbility(playerId, category, name, value)
     if baseValue ~= newValue then
         row[ck][nk] = newValue
         messageIfLevelChange(playerId, ck, nk, baseValue, newValue)
-        quote.invalidateLaborQuoteCache(playerId)
+        quote().invalidateLaborQuoteCache(playerId)
         M.syncRequest(playerId)
     end
 
@@ -331,7 +340,7 @@ function M.removeAbility(playerId, category, name, value)
     if baseValue ~= newValue then
         row[ck][nk] = newValue
         messageIfLevelChange(playerId, ck, nk, baseValue, newValue)
-        quote.invalidateLaborQuoteCache(playerId)
+        quote().invalidateLaborQuoteCache(playerId)
         M.syncRequest(playerId)
     end
 

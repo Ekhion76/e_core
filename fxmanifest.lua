@@ -59,6 +59,7 @@ client_scripts {
     'src/runtime/web_bridge/client.lua',
     'src/runtime/admin/client_nui_logic.lua',
     'src/runtime/admin/client_nui_bridge.lua',
+    'src/runtime/diagnostics/client_nui_logic.lua',
     'src/runtime/diagnostics/client_nui_bridge.lua',
     'src/runtime/exports/client.lua',
 }

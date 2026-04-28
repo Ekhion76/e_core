@@ -1,5 +1,6 @@
 local HUD_LAYOUT_META_KEY = 'hudLayout'
 local HUD_LAYOUT_VERSION = 1
+local M = {}
 
 local ALLOWED_ANCHORS = {
     ['top-left'] = true,
@@ -103,10 +104,10 @@ local function applyHudLayout(playerId, layout)
 end
 
 --- Handles persistent HUD layout commits coming from client edit mode.
+--- @param playerId number source
 --- @param payload table|nil Expected `{ v = number, elements = table<string, table> }`.
 --- @return nil
-RegisterServerEvent('e_core:hud:commit', function(payload)
-    local playerId = source
+function M.commitLayout(playerId, payload)
     if not hf.isValidPlayerSource(playerId) then
         return
     end
@@ -139,5 +140,7 @@ RegisterServerEvent('e_core:hud:commit', function(payload)
         return
     end
     TriggerClientEvent('e_core:hud:applied', playerId, row[HUD_LAYOUT_META_KEY])
-end)
+end
+
+return M
 

@@ -93,6 +93,8 @@ server_scripts {
     'src/runtime/meta/logic.lua',
     'src/runtime/meta/init.lua',
     'src/runtime/hud/server/layout.lua',
+    'src/runtime/hud/server/logic.lua',
+    'src/runtime/hud/server/init.lua',
     'src/runtime/labor/init.lua',
     'src/runtime/quote/server.lua',
     'src/runtime/quote/logic.lua',

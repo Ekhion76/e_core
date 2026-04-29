@@ -1,6 +1,6 @@
 --- Server-side registry diagnostics admin (`diagnosticsAdmin*`, queued runs).
 --- Integrity checklist lives in `src/runtime/integrity/server.lua` (`e_core:integrityCheck:*`).
-local hf = hf
+local hf = lib.require('src/imports/sdk/helper_base/shared')
 local hfe = hfe
 local professions = lib.require('src/runtime/professions/logic')
 
@@ -16,8 +16,8 @@ local DIAGNOSTICS_ADMIN_TESTS = {
         severity = 'high',
         estimatedCost = 'low',
         docHints = {
-            { docId = 'PROFESSION_REGISTRY_ES_META_CLEANUP_TERV_HU', sectionKey = 'celallapot', confidence = 0.95 },
-            { docId = 'PUBLIC_API_HU', sectionKey = 'server-exportok', confidence = 0.75 },
+            { docId = 'PROFESSION_REGISTRY_ES_META_CLEANUP_TERV_HU', sectionKey = 'celallapot',      confidence = 0.95 },
+            { docId = 'PUBLIC_API_HU',                               sectionKey = 'server-exportok', confidence = 0.75 },
         },
     },
     ['profession-key-validation'] = {
@@ -27,7 +27,7 @@ local DIAGNOSTICS_ADMIN_TESTS = {
         estimatedCost = 'low',
         docHints = {
             { docId = 'PROFESSION_REGISTRY_ES_META_CLEANUP_TERV_HU', sectionKey = '2-consumer-oldali-atallas', confidence = 0.98 },
-            { docId = 'PUBLIC_API_HU', sectionKey = 'server-exportok', confidence = 0.85 },
+            { docId = 'PUBLIC_API_HU',                               sectionKey = 'server-exportok',           confidence = 0.85 },
         },
     },
 }
@@ -475,7 +475,8 @@ local function diagnosticsAdminRun(payload)
 
     local requested = payload.tests
     if type(requested) ~= 'table' or #requested == 0 then
-        return diagnostics_admin_response(false, eCoreErr.invalid_item_data, 'Legalább egy diagnostics test kulcs szükséges.')
+        return diagnostics_admin_response(false, eCoreErr.invalid_item_data,
+            'Legalább egy diagnostics test kulcs szükséges.')
     end
 
     local seen = {}
@@ -483,7 +484,8 @@ local function diagnosticsAdminRun(payload)
     for _, key in ipairs(requested) do
         local testKey = tostring(key)
         if DIAGNOSTICS_ADMIN_TESTS[testKey] == nil then
-            return diagnostics_admin_response(false, eCoreErr.invalid_item_data, ('Ismeretlen diagnostics test: %s'):format(testKey))
+            return diagnostics_admin_response(false, eCoreErr.invalid_item_data,
+                ('Ismeretlen diagnostics test: %s'):format(testKey))
         end
         if not seen[testKey] then
             seen[testKey] = true

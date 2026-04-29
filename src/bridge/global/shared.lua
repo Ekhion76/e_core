@@ -1,4 +1,4 @@
-local hf = hf
+local hf = lib.require('src/imports/sdk/helper_base/shared')
 -- if you want to rewrite a function, don't do it here!
 -- use `overrides/...` or `src/config/`; do not edit bridge files in place.
 -- this way, your changes will not be lost in future e_core updates
@@ -104,7 +104,7 @@ function eCore:canSwapItems(swappingItems, itemData, playerData)
         freeSlots = freeSlots,
         capacity = capacity,
         itemWeight = itemWeight
-    },4)
+    }, 4)
 
     if itemReg.isUnique then
         requiredSlot = itemData.amount

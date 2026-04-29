@@ -1,6 +1,6 @@
 --- Itemconvert console sink with cLog formatting and rate limit.
 
-local hf = hf
+local hf = lib.require('src/imports/sdk/helper_base/shared')
 
 hf.itemConvertConsoleSink = hf.itemConvertConsoleSink or {}
 hf.__itemConvertConsoleRate = hf.__itemConvertConsoleRate or {}

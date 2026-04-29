@@ -3,6 +3,7 @@
 
 local M = {}
 local meta = lib.require('src/runtime/meta/logic')
+local hf = lib.require('src/imports/sdk/helper_base/shared')
 local quoteApi = nil
 
 --- Lazily resolves quote API to avoid load-time circular require.
@@ -213,7 +214,7 @@ function M.addOfflineLabor(playerId)
     local laborIncreaseTime = tonumber(Config.laborIncreaseTime)
 
     if not laborIncreaseTime or laborIncreaseTime < 1 or
-            not laborIncreaseOffline or laborIncreaseOffline < 1 then
+        not laborIncreaseOffline or laborIncreaseOffline < 1 then
         return false, eCoreErr.not_valid_amount
     end
 
@@ -235,4 +236,3 @@ function M.addOfflineLabor(playerId)
 end
 
 return M
-

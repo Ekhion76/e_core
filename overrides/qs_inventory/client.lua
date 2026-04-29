@@ -3,7 +3,7 @@ if not QS_INVENTORY then return end
 -- these functions override the bridge/global/ and bridge/esx/qb/ functions
 -- if you want to rewrite any function, copy it here and modify it here
 
-local hf = hf
+local hf = lib.require('src/imports/sdk/helper_base/shared')
 local qs_inventory = exports['qs-inventory']
 
 local fallbackGetItemCount = eCore.getItemCount

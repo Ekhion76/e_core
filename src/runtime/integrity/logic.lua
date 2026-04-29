@@ -1,6 +1,6 @@
 --- Server-side integrity checklist (weight, registry, canCarry, optional add/remove) with client progress/NUI steps.
 --- Net scope: `e_core:integrityCheck:*` — keep separate from registry admin diagnostics exports (`server/diagnostics.lua`).
-local hf = hf
+local hf = lib.require('src/imports/sdk/helper_base/shared')
 local hfe = hfe
 
 local lastRun = {}
@@ -411,11 +411,11 @@ local function buildIntegrityChecklistItems(io)
     local testItem = io.testItem
     local testAmt = io.testItemAmount
     local items = {
-        { id = 'env', label = 'Környezet (resource, framework, isReady)' },
+        { id = 'env',      label = 'Környezet (resource, framework, isReady)' },
         { id = 'registry', label = 'Profession registry konzisztencia' },
-        { id = 'weight', label = 'Aktuális súly (getInventoryWeight)' },
-        { id = 'maxw', label = 'Max súly (getPlayerMaxWeight / Config)' },
-        { id = 'carry', label = ('canCarryItem (%s x%s)'):format(testItem, testAmt) },
+        { id = 'weight',   label = 'Aktuális súly (getInventoryWeight)' },
+        { id = 'maxw',     label = 'Max súly (getPlayerMaxWeight / Config)' },
+        { id = 'carry',    label = ('canCarryItem (%s x%s)'):format(testItem, testAmt) },
     }
     if io.tryAddRemove then
         items[#items + 1] = { id = 'mutate', label = 'addItem → removeItem teszt' }
@@ -555,7 +555,8 @@ local function runIntegrityOnlyStep(runSrc, xPlayer, io)
             pause()
             if not ready then
                 appendLine(lines, 'addItem/removeItem: kihagyva (item registry még nem ready).')
-                push({ action = 'DIAGNOSTICS_CHECKLIST_SET', id = 'mutate', status = 'skipped', detail = 'registry nem ready' })
+                push({ action = 'DIAGNOSTICS_CHECKLIST_SET', id = 'mutate', status = 'skipped', detail =
+                'registry nem ready' })
             else
                 local addRes, addReason = eCore:addItem(xPlayer, testItem, testAmt, nil, nil)
                 if addRes then
@@ -566,11 +567,13 @@ local function runIntegrityOnlyStep(runSrc, xPlayer, io)
                         push({ action = 'DIAGNOSTICS_CHECKLIST_SET', id = 'mutate', status = 'ok', detail = 'OK' })
                     else
                         appendLine(lines, ('removeItem: HIBA %s (nézd kézzel az inventoryt)'):format(tostring(remReason)))
-                        push({ action = 'DIAGNOSTICS_CHECKLIST_SET', id = 'mutate', status = 'fail', detail = tostring(remReason) })
+                        push({ action = 'DIAGNOSTICS_CHECKLIST_SET', id = 'mutate', status = 'fail', detail = tostring(
+                        remReason) })
                     end
                 else
                     appendLine(lines, ('addItem(%s x%s): NEM, ok=%s'):format(testItem, testAmt, tostring(addReason)))
-                    push({ action = 'DIAGNOSTICS_CHECKLIST_SET', id = 'mutate', status = 'fail', detail = tostring(addReason) })
+                    push({ action = 'DIAGNOSTICS_CHECKLIST_SET', id = 'mutate', status = 'fail', detail = tostring(
+                    addReason) })
                 end
             end
             pause()
@@ -665,8 +668,8 @@ local function runIntegrityServerSequence(src, xPlayer)
             return
         end
 
-        push( { action = 'DIAGNOSTICS_LIVE_HINT', text = 'Környezet ellenőrzése…' })
-        push( { action = 'DIAGNOSTICS_CHECKLIST_SET', id = 'env', status = 'running' })
+        push({ action = 'DIAGNOSTICS_LIVE_HINT', text = 'Környezet ellenőrzése…' })
+        push({ action = 'DIAGNOSTICS_CHECKLIST_SET', id = 'env', status = 'running' })
         pause()
 
         appendLine(lines, ('Resource: %s'):format(GetCurrentResourceName()))
@@ -675,7 +678,7 @@ local function runIntegrityServerSequence(src, xPlayer)
         local ready = eCore:isReady() == true
         appendLine(lines, ('isReady (szerver): %s'):format(tostring(ready)))
         appendItemConvertDiagnostics(lines)
-        push( {
+        push({
             action = 'DIAGNOSTICS_CHECKLIST_SET',
             id = 'env',
             status = 'ok',
@@ -683,12 +686,12 @@ local function runIntegrityServerSequence(src, xPlayer)
         })
         pause()
 
-        push( { action = 'DIAGNOSTICS_LIVE_HINT', text = 'Profession registry ellenőrzése…' })
-        push( { action = 'DIAGNOSTICS_CHECKLIST_SET', id = 'registry', status = 'running' })
+        push({ action = 'DIAGNOSTICS_LIVE_HINT', text = 'Profession registry ellenőrzése…' })
+        push({ action = 'DIAGNOSTICS_CHECKLIST_SET', id = 'registry', status = 'running' })
         pause()
 
         local registryOk = runProfessionRegistryChecks(lines)
-        push( {
+        push({
             action = 'DIAGNOSTICS_CHECKLIST_SET',
             id = 'registry',
             status = registryOk and 'ok' or 'fail',
@@ -696,8 +699,8 @@ local function runIntegrityServerSequence(src, xPlayer)
         })
         pause()
 
-        push( { action = 'DIAGNOSTICS_LIVE_HINT', text = 'Súly lekérése (aktuális)…' })
-        push( { action = 'DIAGNOSTICS_CHECKLIST_SET', id = 'weight', status = 'running' })
+        push({ action = 'DIAGNOSTICS_LIVE_HINT', text = 'Súly lekérése (aktuális)…' })
+        push({ action = 'DIAGNOSTICS_CHECKLIST_SET', id = 'weight', status = 'running' })
         pause()
 
         local wOk, curW = pcall(function()
@@ -705,7 +708,7 @@ local function runIntegrityServerSequence(src, xPlayer)
         end)
         if not wOk then
             appendLine(lines, ('Súly olvasás: HIBA (%s)'):format(tostring(curW)))
-            push( {
+            push({
                 action = 'DIAGNOSTICS_CHECKLIST_SET',
                 id = 'weight',
                 status = 'fail',
@@ -713,7 +716,7 @@ local function runIntegrityServerSequence(src, xPlayer)
             })
         else
             appendLine(lines, ('Aktuális súly (getInventoryWeight): %s'):format(tostring(curW)))
-            push( {
+            push({
                 action = 'DIAGNOSTICS_CHECKLIST_SET',
                 id = 'weight',
                 status = 'ok',
@@ -727,8 +730,8 @@ local function runIntegrityServerSequence(src, xPlayer)
             return
         end
 
-        push( { action = 'DIAGNOSTICS_LIVE_HINT', text = 'Max súly lekérése…' })
-        push( { action = 'DIAGNOSTICS_CHECKLIST_SET', id = 'maxw', status = 'running' })
+        push({ action = 'DIAGNOSTICS_LIVE_HINT', text = 'Max súly lekérése…' })
+        push({ action = 'DIAGNOSTICS_CHECKLIST_SET', id = 'maxw', status = 'running' })
         pause()
 
         local mOk, maxW = pcall(function()
@@ -736,7 +739,7 @@ local function runIntegrityServerSequence(src, xPlayer)
         end)
         if not mOk then
             appendLine(lines, ('Max súly olvasás: HIBA (%s)'):format(tostring(maxW)))
-            push( {
+            push({
                 action = 'DIAGNOSTICS_CHECKLIST_SET',
                 id = 'maxw',
                 status = 'fail',
@@ -744,7 +747,7 @@ local function runIntegrityServerSequence(src, xPlayer)
             })
         else
             appendLine(lines, ('Max súly (getPlayerMaxWeight / Config): %s'):format(tostring(maxW)))
-            push( {
+            push({
                 action = 'DIAGNOSTICS_CHECKLIST_SET',
                 id = 'maxw',
                 status = 'ok',
@@ -758,13 +761,13 @@ local function runIntegrityServerSequence(src, xPlayer)
             return
         end
 
-        push( { action = 'DIAGNOSTICS_LIVE_HINT', text = 'canCarryItem szimuláció…' })
-        push( { action = 'DIAGNOSTICS_CHECKLIST_SET', id = 'carry', status = 'running' })
+        push({ action = 'DIAGNOSTICS_LIVE_HINT', text = 'canCarryItem szimuláció…' })
+        push({ action = 'DIAGNOSTICS_CHECKLIST_SET', id = 'carry', status = 'running' })
         pause()
 
         if not ready then
             appendLine(lines, 'canCarry: kihagyva (item registry még nem ready).')
-            push( {
+            push({
                 action = 'DIAGNOSTICS_CHECKLIST_SET',
                 id = 'carry',
                 status = 'skipped',
@@ -780,7 +783,7 @@ local function runIntegrityServerSequence(src, xPlayer)
             end)
             if not cOk then
                 appendLine(lines, ('canCarryItem(%s x%s): HIBA %s'):format(testItem, testAmt, tostring(cRes)))
-                push( {
+                push({
                     action = 'DIAGNOSTICS_CHECKLIST_SET',
                     id = 'carry',
                     status = 'fail',
@@ -788,7 +791,7 @@ local function runIntegrityServerSequence(src, xPlayer)
                 })
             elseif cRes then
                 appendLine(lines, ('canCarryItem(%s x%s): OK'):format(testItem, testAmt))
-                push( {
+                push({
                     action = 'DIAGNOSTICS_CHECKLIST_SET',
                     id = 'carry',
                     status = 'ok',
@@ -796,7 +799,7 @@ local function runIntegrityServerSequence(src, xPlayer)
                 })
             else
                 appendLine(lines, ('canCarryItem(%s x%s): NEM, ok=%s'):format(testItem, testAmt, tostring(cReason)))
-                push( {
+                push({
                     action = 'DIAGNOSTICS_CHECKLIST_SET',
                     id = 'carry',
                     status = 'fail',
@@ -812,13 +815,13 @@ local function runIntegrityServerSequence(src, xPlayer)
         end
 
         if io.tryAddRemove then
-            push( { action = 'DIAGNOSTICS_LIVE_HINT', text = 'addItem / removeItem…' })
-            push( { action = 'DIAGNOSTICS_CHECKLIST_SET', id = 'mutate', status = 'running' })
+            push({ action = 'DIAGNOSTICS_LIVE_HINT', text = 'addItem / removeItem…' })
+            push({ action = 'DIAGNOSTICS_CHECKLIST_SET', id = 'mutate', status = 'running' })
             pause()
 
             if not ready then
                 appendLine(lines, 'addItem/removeItem: kihagyva (item registry még nem ready).')
-                push( {
+                push({
                     action = 'DIAGNOSTICS_CHECKLIST_SET',
                     id = 'mutate',
                     status = 'skipped',
@@ -831,7 +834,7 @@ local function runIntegrityServerSequence(src, xPlayer)
                     local remRes, remReason = eCore:removeItem(xPlayer, testItem, testAmt, nil, nil)
                     if remRes then
                         appendLine(lines, ('removeItem(%s x%s): OK'):format(testItem, testAmt))
-                        push( {
+                        push({
                             action = 'DIAGNOSTICS_CHECKLIST_SET',
                             id = 'mutate',
                             status = 'ok',
@@ -839,7 +842,7 @@ local function runIntegrityServerSequence(src, xPlayer)
                         })
                     else
                         appendLine(lines, ('removeItem: HIBA %s (nézd kézzel az inventoryt)'):format(tostring(remReason)))
-                        push( {
+                        push({
                             action = 'DIAGNOSTICS_CHECKLIST_SET',
                             id = 'mutate',
                             status = 'fail',
@@ -848,7 +851,7 @@ local function runIntegrityServerSequence(src, xPlayer)
                     end
                 else
                     appendLine(lines, ('addItem(%s x%s): NEM, ok=%s'):format(testItem, testAmt, tostring(addReason)))
-                    push( {
+                    push({
                         action = 'DIAGNOSTICS_CHECKLIST_SET',
                         id = 'mutate',
                         status = 'fail',
@@ -864,8 +867,8 @@ local function runIntegrityServerSequence(src, xPlayer)
             return
         end
 
-        push( { action = 'DIAGNOSTICS_LOG_SET', lines = lines })
-        push( {
+        push({ action = 'DIAGNOSTICS_LOG_SET', lines = lines })
+        push({
             action = 'DIAGNOSTICS_LIVE_HINT',
             text = 'Szerver kész – nézd a játékot: megjelenik a progress sáv (vagy szakítsd meg).',
         })
@@ -877,8 +880,8 @@ local function runIntegrityServerSequence(src, xPlayer)
             eCore:sendMessage(
                 runSrc,
                 io.inlineAdmin
-                    and '[e_core] Integritás: részletek az admin Integritás fülön. A progress sáv a játék UI-ban indul.'
-                    or '[e_core] Integritás: checklist a modálban. A progress sáv a játék UI-ban indul.',
+                and '[e_core] Integritás: részletek az admin Integritás fülön. A progress sáv a játék UI-ban indul.'
+                or '[e_core] Integritás: checklist a modálban. A progress sáv a játék UI-ban indul.',
                 'info',
                 7000
             )
@@ -910,7 +913,6 @@ end
 --- @param opts table|nil Optional integrity run overrides.
 --- @return nil
 local function onIntegrityRequest(src, opts)
-
     --- Auto-generated annotation. Refine behavior details if needed.
     --- @return any result
     local function clearOpts()

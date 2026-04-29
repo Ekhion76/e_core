@@ -3,7 +3,7 @@
 --- Add new migration by extending `ECORE_DB_MIGRATIONS` and bumping `ECORE_DB_SCHEMA_TARGET` (export/docs).
 
 ECORE_DB_SCHEMA_TARGET = 4
-local hf = hf
+local hf = lib.require('src/imports/sdk/helper_base/shared')
 local hfe = hfe
 
 local MIGRATIONS_DDL = [[
@@ -200,7 +200,8 @@ function e_core_get_applied_migration_id()
     local maxId = tonumber(rows[1].m) or 0
     if maxId < ECORE_DB_SCHEMA_TARGET then
         hf.cLog(
-            ('[e_core] DB migrációk elmaradva: alkalmazott_max=%d, repó_cél=%d (indítsd újra az e_core-t / nézd a migrációs hibákat).'):format(
+            ('[e_core] DB migrációk elmaradva: alkalmazott_max=%d, repó_cél=%d (indítsd újra az e_core-t / nézd a migrációs hibákat).')
+            :format(
                 maxId,
                 ECORE_DB_SCHEMA_TARGET
             ),
@@ -232,8 +233,8 @@ function e_core_run_db_migrations()
 end
 
 ECORE_DB_MIGRATIONS = {
-    { id = 1, name = 'add_e_core_longtext_column', run = migration_001_add_e_core_column },
+    { id = 1, name = 'add_e_core_longtext_column',        run = migration_001_add_e_core_column },
     { id = 2, name = 'create_profession_registry_tables', run = migration_002_create_profession_registry_tables },
-    { id = 3, name = 'create_cleanup_jobs_table', run = migration_003_create_cleanup_jobs_table },
-    { id = 4, name = 'create_admin_denied_audit_table', run = migration_004_create_admin_denied_audit_table },
+    { id = 3, name = 'create_cleanup_jobs_table',         run = migration_003_create_cleanup_jobs_table },
+    { id = 4, name = 'create_admin_denied_audit_table',   run = migration_004_create_admin_denied_audit_table },
 }

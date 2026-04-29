@@ -1,0 +1,57 @@
+
+1.
+
+C:\FX_ESX_ox\ESX\resources\[eco]\e_core\src\bridge\ecore_lifecycle.lua
+util = {
+            cLog = utilsSdk.cLog,
+            print_r = utilsSdk.print_r,
+            createBlip = utilsSdk.createBlip,
+            animDictLoader = utilsSdk.animDictLoader,
+            modelLoader = utilsSdk.modelLoader,
+            fxLoader = utilsSdk.fxLoader,
+        },
+
+        A cLog már a helperben van.
+        Lehet, hogy a print_r-t is a helperbe kellene tenni.
+
+
+3.
+
+bridge fáklokban látom ezeket:
+
+local hfe = hfe
+
+Gondolom már nem kellene global-nak lenniük
+
+4.
+
+C:\FX_ESX_ox\ESX\resources\[eco]\e_core\src\bridge\framework_config.lua
+_ECORE_INIT_FAILED = true
+FRAMEWORK = nil -- megszüntetve
+eCore = {}
+Config = {}
+ESX_CORE = false -- ez kellenek globálisan?
+QB_CORE = false -- ez kellenek globálisan?
+
+
+5.
+
+C:\FX_ESX_ox\ESX\resources\[eco]\e_core\src\libs\errors.lua
+Magyarul fogalmazott hibaüzenetek.
+
+
+6. 
+
+Van locale mappa és abban a nyelvi fájlok.
+Eddig azért nem foglalkoztunk velük, mert még nem volt könyvtárstruktúra. (Még mindig nem fix)
+Később bevezetjuk a translate() fordítást.
+
+
+8.
+
+C:\FX_ESX_ox\ESX\resources\[eco]\e_core\src\libs\file_event_logger.lua
+
+A loggernek értelmet kell találni.
+
+
+

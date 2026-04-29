@@ -1,6 +1,6 @@
 --- Admin NUI: raw inventory row samples for `Config.fields` mapping (bridge + optional ox_inventory).
 --- Used by `nui_admin_bridge.lua` action `getInventorySamples`.
-local hf = hf
+local hf = lib.require('src/imports/sdk/helper_base/shared')
 
 --- @param t table
 --- @return boolean
@@ -258,7 +258,8 @@ function adminNuiGetInventorySamples(adminSrc, payload)
         end
     end
 
-    local hint = 'Hasznald a minta kulcsokat az overrides/**/config.lua Config.fields mezoben (count vs amount vs quantity).'
+    local hint =
+    'Hasznald a minta kulcsokat az overrides/**/config.lua Config.fields mezoben (count vs amount vs quantity).'
     if #bridgeSamples == 0 and #oxRows == 0 then
         hint = hint .. ' Ures inventory vagy nem ismert sorforma — tegyel targyat a cel jatekos zsebebe.'
     end

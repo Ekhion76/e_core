@@ -1,6 +1,6 @@
 --- Centralized item-convert pipeline with profile-based field mapping.
 --- Purpose: keep inventory overrides thin and make diagnostics mandatory.
-local hf = hf
+local hf = lib.require('src/imports/sdk/helper_base/shared')
 
 hf.__itemConvertPipeline = hf.__itemConvertPipeline or {}
 
@@ -262,7 +262,8 @@ function hf.itemConvertWarnCustomConvertItems(sourceTag)
     end
     pipeline.warned[key] = true
     hf.cLog(
-        ('[e_core][itemconvert] custom override convertItems detected (%s). Recommended migration: use hf.convertItemsWithProfile(...) in getRegisteredItems only.'):format(
+        ('[e_core][itemconvert] custom override convertItems detected (%s). Recommended migration: use hf.convertItemsWithProfile(...) in getRegisteredItems only.')
+        :format(
             key
         ),
         'warning',
@@ -288,7 +289,8 @@ function hf.convertItemsWithProfile(items, profileName, options)
         selected = profiles.default or defaultProfile
         usingFallback = true
     end
-    local sourceTag = tostring(options.sourceTag or (selected.source and (selected.source .. '.convertItems')) or 'itemconvert')
+    local sourceTag = tostring(options.sourceTag or (selected.source and (selected.source .. '.convertItems')) or
+    'itemconvert')
     local sourceName = tostring(selected.source or profileName or 'default')
     local beforeEach = options.beforeEach
     local afterEach = options.afterEach
@@ -383,7 +385,8 @@ function hf.convertItemsWithProfile(items, profileName, options)
             end
 
             if debugEnabled then
-                hf.cLog(('[e_core][itemconvert] converted %s via profile %s'):format(name, tostring(profileName or 'default')), 2)
+                hf.cLog(
+                ('[e_core][itemconvert] converted %s via profile %s'):format(name, tostring(profileName or 'default')), 2)
             end
         end)
         if not okConv then

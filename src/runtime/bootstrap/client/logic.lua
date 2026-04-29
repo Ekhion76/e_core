@@ -1,4 +1,4 @@
-local hf = hf
+local hf = lib.require('src/imports/sdk/helper_base/shared')
 local hfe = hfe
 local localeSdk = lib.require('src/imports/sdk/locale/shared')
 
@@ -116,14 +116,15 @@ function nuiInit()
 
     local meta = ClientMetaStore.getMeta()
     -- INIT MESSAGE
-    SendNUIMessage({ action = 'INIT',
-                     metadata = meta,
-                     levels = Config.levels,
-                     locale = localeSdk.locales[Config.locale],
-                     laborLimit = Config.laborLimit,
-                     abilityLimit = Config.abilityLimit,
-                     displayComponent = Config.displayComponent,
-                   })
+    SendNUIMessage({
+        action = 'INIT',
+        metadata = meta,
+        levels = Config.levels,
+        locale = localeSdk.locales[Config.locale],
+        laborLimit = Config.laborLimit,
+        abilityLimit = Config.abilityLimit,
+        displayComponent = Config.displayComponent,
+    })
 
     hf.cLog('NUI INIT', 'Loaded...', 2)
 
@@ -163,7 +164,6 @@ local function onPauseMenuActive(isPaused)
         SetNuiFocus(false, false)
         SendNUIMessage({ action = 'CLOSE', subject = 'all' })
     else
-
         if eCoreClientReady() and eCore:isLoggedIn() and Config.systemMode.labor and Config.displayComponent.laborHud then
             SendNUIMessage({ action = 'OPEN', subject = 'hud' })
         end

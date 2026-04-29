@@ -1,5 +1,5 @@
 --- NUI -> server diagnostics admin bridge (`eCoreDiagnosticsApi`), guarded by `hf.webConsoleAccess`.
-local hf = hf
+local hf = lib.require('src/imports/sdk/helper_base/shared')
 local hfe = hfe
 local diagnostics = lib.require('src/runtime/diagnostics/logic')
 

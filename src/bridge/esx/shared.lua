@@ -3,7 +3,7 @@ if ESX_CORE then
     -- use `overrides/...` or `src/config/`; do not edit bridge files in place.
     -- this way, your changes will not be lost in future e_core updates
 
-    local hf = hf
+    local hf = lib.require('src/imports/sdk/helper_base/shared')
     local hfe = hfe
 
     --- Maps ESX player / xPlayer tables to the same e_core facade fields as QB (`job` / `gang`
@@ -25,7 +25,7 @@ if ESX_CORE then
         return playerData
     end
 
----@return table<string, {name: string, originalName: string, label: string, weight: number, isUnique: boolean, isWeapon: boolean, image: string, ammoname: string|nil, _source: string}>
+    ---@return table<string, {name: string, originalName: string, label: string, weight: number, isUnique: boolean, isWeapon: boolean, image: string, ammoname: string|nil, _source: string}>
     function eCore:convertItems(items)
         return hf.convertItemsWithProfile(items, 'esx', {
             sourceTag = 'esx.convertItems',

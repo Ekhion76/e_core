@@ -1,4 +1,4 @@
-local hf = hf
+local hf = lib.require('src/imports/sdk/helper_base/shared')
 
 --- ESX kliens item bootstrap: a szerveren már megbízható `eCore:getRegisteredItems()` (ESX.Items / cache); a kliens nem használhat játékos inventoryt katalógusként.
 --- @param source number

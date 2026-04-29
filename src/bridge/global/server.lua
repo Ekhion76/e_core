@@ -1,4 +1,4 @@
-local hf = hf
+local hf = lib.require('src/imports/sdk/helper_base/shared')
 
 --- Auto-generated annotation. Refine behavior details if needed.
 --- @param name string

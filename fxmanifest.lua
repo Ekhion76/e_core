@@ -16,7 +16,6 @@ shared_scripts {
     'overrides/**/config.lua',
 
     'src/imports/sdk/utils/shared.lua',
-    'src/libs/helper.lua',
     'src/libs/helper_ecore.lua',
     'src/libs/file_event_logger.lua',
     'src/libs/itemconvert_console_sink.lua',

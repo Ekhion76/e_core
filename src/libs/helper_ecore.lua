@@ -6,7 +6,7 @@
 --- - `hf`: base generic helper table from `libs/helper.lua`
 --- - `hfe`: e_core-specific helper table from this file
 
-local hf = hf
+local hf = lib.require('src/imports/sdk/helper_base/shared')
 hfe = hfe or {}
 
 --- Shared weight-key contract for REGISTERED_ITEMS / getItemWeight / canCarryItem
@@ -402,7 +402,8 @@ function hfe.awaitItemRegistryReady(logTag)
         if elapsed >= timeout then
             CORE_READY = false
             hf.cLog(logTag,
-                ('TIMEOUT after %d ms (%d polls). Item registry still empty; increase convar e_core:items_ready_timeout_ms (max 600000) if inventory starts late.'):format(
+                ('TIMEOUT after %d ms (%d polls). Item registry still empty; increase convar e_core:items_ready_timeout_ms (max 600000) if inventory starts late.')
+                :format(
                     elapsed, attempt), 1)
             return false
         end
@@ -497,8 +498,10 @@ function hfe.logEcoreStartupSummary(side)
     if caps.hasItem then capList[#capList + 1] = 'hasItem' end
     local capSummary = table.concat(capList, ',')
 
-    print(('[^2e_core^7] [%s] v%s | state=%s | framework=%s | inventory_mode=%s | inventory_profile=%s | inventory_flags=%s | inventory_caps=%s | items=%s'):format(
-        side, ver, state, fw, inv.mode, inv.profile, tostring(inv.flagCount), capSummary ~= '' and capSummary or 'none', items))
+    print(('[^2e_core^7] [%s] v%s | state=%s | framework=%s | inventory_mode=%s | inventory_profile=%s | inventory_flags=%s | inventory_caps=%s | items=%s')
+    :format(
+        side, ver, state, fw, inv.mode, inv.profile, tostring(inv.flagCount), capSummary ~= '' and capSummary or 'none',
+        items))
 end
 
 --- Wraps oxmysql **.await** calls with `pcall` and `cLog` on failure.

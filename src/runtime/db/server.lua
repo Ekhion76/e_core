@@ -1,6 +1,6 @@
 local UPDATE_META = 'UPDATE `users` SET `e_core` = ? WHERE `identifier` = ?'
 local SELECT_META = 'SELECT `e_core` FROM `users` WHERE `identifier` = ?'
-local hf = hf
+local hf = lib.require('src/imports/sdk/helper_base/shared')
 local hfe = hfe
 local labor = lib.require('src/runtime/labor/logic')
 local metaLogic = lib.require('src/runtime/meta/logic')
@@ -81,7 +81,8 @@ function M.loadMeta(xPlayer)
         local decodeOk, decoded = pcall(json.decode, result)
         if not decodeOk or type(decoded) ~= 'table' then
             hf.cLog(
-                ('[e_core] loadMeta: az e_core oszlop nem érvényes JSON objektum (%s); meta nem állítódik be (DB javítás, különben mentéskor felülírás veszélye)'):format(
+                ('[e_core] loadMeta: az e_core oszlop nem érvényes JSON objektum (%s); meta nem állítódik be (DB javítás, különben mentéskor felülírás veszélye)')
+                :format(
                     xPlayer.identifier
                 ),
                 'error',

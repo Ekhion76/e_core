@@ -1,4 +1,4 @@
-local hf = hf
+local hf = lib.require('src/imports/sdk/helper_base/shared')
 local hfe = hfe
 
 -- `false` indulásig / hiba után; `true` csak sikeres registry után (lásd kliens `main.lua` ugyanilyen komment).

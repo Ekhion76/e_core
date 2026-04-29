@@ -1,7 +1,7 @@
 --- Generic JSONL file event logger (server-side write, client no-op).
 --- Keeps file naming/append concerns reusable across subsystems.
 
-local hf = hf
+local hf = lib.require('src/imports/sdk/helper_base/shared')
 
 hf.fileEventLogger = hf.fileEventLogger or {}
 
@@ -80,7 +80,8 @@ function hf.fileEventLogger.writeJsonLine(opts, payload)
         return true, path
     end
 
-    local fallback = tostring(opts.fallbackPath or ('%s.%s'):format(tostring(opts.prefix or 'events'), tostring(opts.ext or 'jsonl')))
+    local fallback = tostring(opts.fallbackPath or
+    ('%s.%s'):format(tostring(opts.prefix or 'events'), tostring(opts.ext or 'jsonl')))
     local fbOk = appendLine(fallback, line)
     return fbOk, fbOk and fallback or path
 end

@@ -3,7 +3,7 @@ if not AVP_GRID_INVENTORY then return end
 -- these functions override the bridge/global/ and bridge/esx/qb/ functions
 -- if you want to rewrite any function, copy it here and modify it here
 
-local hf = hf
+local hf = lib.require('src/imports/sdk/helper_base/shared')
 
 --- AVP may return custom reason strings; if not an `eCoreErr` value,
 --- normalize to `unknown_error` and log via `cLog`.

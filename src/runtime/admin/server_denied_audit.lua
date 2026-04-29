@@ -1,5 +1,6 @@
 --- Operator permission-denied audit: config (`Config.adminApi.deniedAudit`), DB ring buffer, optional Discord sink, NUI/export surface.
 local hfe = hfe
+local hf = lib.require('src/imports/sdk/helper_base/shared')
 
 --- @param ok boolean|any
 --- @param code string|any
@@ -334,14 +335,16 @@ function adminDeniedAuditPurge(payload)
     end
 
     if denied_audit_config().storage == 'discord' then
-        return admin_response(false, eCoreErr.invalid_item_data, 'Purge csak storage=mysql mellett értelmes (discord módban nincs DB retention).')
+        return admin_response(false, eCoreErr.invalid_item_data,
+            'Purge csak storage=mysql mellett értelmes (discord módban nincs DB retention).')
     end
 
     local dryRun = p.dryRun == true
     if dryRun then
         local okCount, candidates = e_core_count_admin_denied_audit_candidates()
         if not okCount then
-            return admin_response(false, eCoreErr.profession_registry_unavailable, 'Admin denied audit dry-run count sikertelen.')
+            return admin_response(false, eCoreErr.profession_registry_unavailable,
+                'Admin denied audit dry-run count sikertelen.')
         end
         return admin_response(true, eCoreErr.ok, 'Admin denied audit purge dry-run lefutott.', {
             dryRun = true,

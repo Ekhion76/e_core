@@ -2,7 +2,7 @@ if ESX_CORE then
     -- if you want to rewrite a function, don't do it here!
     -- use `overrides/...` or `src/config/`; do not edit bridge files in place.
     -- this way, your changes will not be lost in future e_core updates
-    local hf = hf
+    local hf = lib.require('src/imports/sdk/helper_base/shared')
 
     --- Auto-generated annotation. Refine behavior details if needed.
     --- @param message any
@@ -124,12 +124,12 @@ if ESX_CORE then
         -- currentWeapon
 
         return not IsPedCuffed(_PlayerPedId)
-                and not IsPauseMenuActive()
-                and not IsPedFatallyInjured(_PlayerPedId) -- ??
-                and not IsEntityDead(_PlayerPedId) -- ??
-                and not IsPedInAnyVehicle(_PlayerPedId, true)
-                and not IsPedSwimming(_PlayerPedId)
-                and IsPedOnFoot(_PlayerPedId)
+            and not IsPauseMenuActive()
+            and not IsPedFatallyInjured(_PlayerPedId)     -- ??
+            and not IsEntityDead(_PlayerPedId)            -- ??
+            and not IsPedInAnyVehicle(_PlayerPedId, true)
+            and not IsPedSwimming(_PlayerPedId)
+            and IsPedOnFoot(_PlayerPedId)
     end
 
     --- Sets local fuel level when validation passes (integrate `LegacyFuel` or stack export in overrides if needed).

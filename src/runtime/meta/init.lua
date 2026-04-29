@@ -2,6 +2,7 @@
 
 local meta = lib.require('src/runtime/meta/logic')
 local db = lib.require('src/runtime/db/logic')
+local hf = lib.require('src/imports/sdk/helper_base/shared')
 
 RegisterServerEvent('e_core:loadMeta', function()
     local playerId = source

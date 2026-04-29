@@ -1,4 +1,4 @@
-local hf = hf
+local hf = lib.require('src/imports/sdk/helper_base/shared')
 
 --- Auto-generated annotation. Refine behavior details if needed.
 --- @param playerId number
@@ -33,18 +33,14 @@ end
 --- @param value number of points achieved in profession
 --- @return number returns the player's level achieved in the profession
 function getLevel(value)
-
     local levels = Config.levels
 
     if not hf.hasEntries(levels) or not tonumber(value) or value < 1 then
-
         return 0
     end
 
     for i = 1, #levels do
-
         if levels[i].limit and levels[i].limit > value then
-
             --local p = levels[i - 1] or { limit = 0 }
             --local c = levels[i]
             --local progress = (value - p.limit) / (c.limit - p.limit)
@@ -109,12 +105,10 @@ end
 --- @param value number of points achieved in profession
 --- @return table returns the discounts corresponding to the level
 function getDiscounts(value)
-
     value = tonumber(value) or 0
     local levels = Config.levels
 
     if not hf.hasEntries(levels) then
-
         return false, eCoreErr.not_levels_data
     end
 
@@ -122,7 +116,6 @@ function getDiscounts(value)
     local numberOfLevels = #levels
 
     if value < levels[1].limit then
-
         discount = hf.shallowCopy(levels[1])
         discount.level = 0
         discount.progress = value > 0 and math.floor(value / levels[1].limit * 100) or 0
@@ -131,16 +124,13 @@ function getDiscounts(value)
     end
 
     for i = 2, numberOfLevels do
-
         local c = levels[i] -- current
 
         if c.limit and c.limit > value then
-
             local p = levels[i - 1] -- previous
             local progress = (value - p.limit) / (c.limit - p.limit)
 
             for k in pairs(c) do
-
                 discount[k] = math.floor(p[k] + (c[k] - p[k]) * progress)
             end
 

@@ -1,5 +1,5 @@
 sharedEvents = {}
-local hf = hf
+local hf = lib.require('src/imports/sdk/helper_base/shared')
 
 --- Only these methods are callable through `TriggerClientEvent('e_core:methodCaller', ...)` (client side).
 local methodCallerAllowed = {
@@ -18,6 +18,6 @@ table.insert(sharedEvents, {
             return
         end
 
-        eCore[method](eCore, table.unpack({...} or {}))
+        eCore[method](eCore, table.unpack({ ... } or {}))
     end
 })

@@ -3,7 +3,7 @@ if ESX_CORE then
     -- use `overrides/...` or `src/config/`; do not edit bridge files in place.
     -- this way, your changes will not be lost in future e_core updates
 
-    local hf = hf
+    local hf = lib.require('src/imports/sdk/helper_base/shared')
 
     --- Auto-generated annotation. Refine behavior details if needed.
     --- @param item table
@@ -176,7 +176,7 @@ if ESX_CORE then
             return false, eCoreErr.invalid_player
         end
 
-        hf.cLog('eCore:removeItem', {item = item, count = count}, 4)
+        hf.cLog('eCore:removeItem', { item = item, count = count }, 4)
         xPlayer.removeInventoryItem(item, count, metadata, slot)
         return true
     end
@@ -266,5 +266,4 @@ if ESX_CORE then
     function eCore:addCommands(name, help, arguments, argsrequired, callback, permission, ...)
         ESX.RegisterCommand(name, permission, callback, false, arguments)
     end
-
 end

@@ -71,7 +71,7 @@ function eCoreLifecycle_registerExtensions()
         },
         util = {
             cLog = utilsSdk.cLog,
-            print_r = utilsSdk.print_r,
+            print_r = hf.print_r,
             createBlip = utilsSdk.createBlip,
             animDictLoader = utilsSdk.animDictLoader,
             modelLoader = utilsSdk.modelLoader,

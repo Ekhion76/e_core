@@ -4,7 +4,7 @@
 --- If `whitelist` is populated, it wins (blacklist ignored). Otherwise `blacklist` applies.
 --- List shapes: array-like table of names or map `{ [groupName] = gradeArray|{} }`.
 --- Empty grade array `{}` means any grade for that group.
-local hf = hf
+local hf = lib.require('src/imports/sdk/helper_base/shared')
 
 GroupAccess = GroupAccess or {}
 

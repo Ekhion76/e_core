@@ -1,6 +1,6 @@
 --- Integrity NUI/progress client side (`Config.integrityCheck`);
 --- net events: `e_core:integrityCheck:*` (run from admin Integrity tab -> `integrityDiagnosticsRun`).
-local hf = hf
+local hf = lib.require('src/imports/sdk/helper_base/shared')
 
 --- Returns true when integrity checks should use NUI output.
 --- @return boolean result

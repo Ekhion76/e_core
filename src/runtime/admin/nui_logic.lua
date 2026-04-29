@@ -1,6 +1,6 @@
 --- Profession / level-profile admin bridge from in-game NUI (`eCoreAdminApi` callback), guarded by `hf.webConsoleAccess`.
 --- Replaces legacy `SetHttpHandler` / `Config.adminHttp` flow (no external HTTP endpoint).
-local hf = hf
+local hf = lib.require('src/imports/sdk/helper_base/shared')
 local hfe = hfe
 
 --- Auto-generated annotation. Refine behavior details if needed.

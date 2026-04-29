@@ -1,5 +1,5 @@
 --- Opens in-game admin NUI (`Config.web`, default command `ecore_admin`).
-local hf = hf
+local hf = lib.require('src/imports/sdk/helper_base/shared')
 local pendingWebOpen = false
 
 --- Handles server-authorized web admin open event.

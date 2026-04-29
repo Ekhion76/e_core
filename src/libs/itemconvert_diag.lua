@@ -1,7 +1,7 @@
 --- Item-convert diagnostics helper (`convertItems` + normalization fallback visibility).
 --- Domain orchestration: run summary + fan-out to console/file sinks.
 
-local hf = hf
+local hf = lib.require('src/imports/sdk/helper_base/shared')
 
 hf.__itemConvertDiag = hf.__itemConvertDiag or {
     current = {

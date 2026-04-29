@@ -2,6 +2,8 @@
 -- `Config.operator` -> synthesized `Config.web` (admin NUI),
 -- `Config.integrityCheck` (integrity/admin Integrity tab), and `Config.adminApi`.
 
+local hf = lib.require('src/imports/sdk/helper_base/shared')
+
 --- Cooldown between two **full** integrity runs (without `onlyStep`);
 --- can be overridden by `operator.integrityCheck.cooldownMs`.
 local INTEGRITY_COOLDOWN_MIN_MS = 1500
@@ -84,7 +86,8 @@ local function applyOperatorConfig()
     local diagApi = hf.hasEntries(op.registryDiagnostics) and op.registryDiagnostics
         or hf.hasEntries(api.diagnostics) and api.diagnostics
         or {}
-    local denied = hf.hasEntries(op.deniedAudit) and op.deniedAudit or hf.hasEntries(api.deniedAudit) and api.deniedAudit or {}
+    local denied = hf.hasEntries(op.deniedAudit) and op.deniedAudit or hf.hasEntries(api.deniedAudit) and api
+    .deniedAudit or {}
 
     Config.adminApi = {
         cleanup = {
@@ -105,7 +108,8 @@ local function applyOperatorConfig()
             local webhookUrl = hf.trim(tostring(denied.webhookUrl or ''))
             if storage == 'discord' and not is_e_core_discord_webhook_url(webhookUrl) then
                 storage = 'mysql'
-                hf.cLog('[e_core] Config.operator.deniedAudit: storage=discord but webhookUrl invalid — using mysql.', 'warning', 1)
+                hf.cLog('[e_core] Config.operator.deniedAudit: storage=discord but webhookUrl invalid — using mysql.',
+                    'warning', 1)
             end
             local discordBotName = hf.trim(tostring(denied.discordBotName or ''))
             return {
@@ -183,9 +187,10 @@ function configCheck()
         --- Legacy `command` (e.g. ecore_diag) no longer registers a command;
         --- execution moved to admin NUI Integrity tab.
         Config.integrityCheck.command = nil
-        Config.integrityCheck.acePermission = type(Config.integrityCheck.acePermission) == 'string' and Config.integrityCheck.acePermission or ''
+        Config.integrityCheck.acePermission = type(Config.integrityCheck.acePermission) == 'string' and
+        Config.integrityCheck.acePermission or ''
         Config.integrityCheck.allowedIdentifiers = hf.hasEntries(Config.integrityCheck.allowedIdentifiers)
-                and Config.integrityCheck.allowedIdentifiers
+            and Config.integrityCheck.allowedIdentifiers
             or {}
         Config.integrityCheck.enabled = Config.integrityCheck.enabled == true
 
@@ -215,7 +220,8 @@ function configCheck()
         da.discordBotName = hf.trim(tostring(da.discordBotName or ''))
         if da.storage == 'discord' and not is_e_core_discord_webhook_url(da.webhookUrl) then
             da.storage = 'mysql'
-            hf.cLog('[e_core] Config.adminApi.deniedAudit: storage=discord but webhookUrl invalid — using mysql.', 'warning', 1)
+            hf.cLog('[e_core] Config.adminApi.deniedAudit: storage=discord but webhookUrl invalid — using mysql.',
+                'warning', 1)
         end
     end
 

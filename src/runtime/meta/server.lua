@@ -1,6 +1,6 @@
 local M = {}
 local quoteApi = nil
-local hf = hf
+local hf = lib.require('src/imports/sdk/helper_base/shared')
 
 --- Lazily resolves quote API to avoid load-time circular require.
 --- @return table

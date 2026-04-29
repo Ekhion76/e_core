@@ -28,9 +28,46 @@
 --- hf.getKeys              → hf.keys
 --- hf.removeNonAlphaNumeric → hf.alphaNum
 
-local M = {}
-M.stringCharset = {}
-M.numberCharset = {}
+local M = {
+
+--- Recursively prints table/function values to console for debug sessions.
+--- @param t table|function|any Value to dump.
+--- @return nil
+function M.print_r(t)
+    local visited = {}
+
+    local function walk(val, indent)
+        local id = tostring(val)
+
+        if visited[id] then
+            print(indent .. "* " .. id)
+            return
+        end
+
+        if type(val) ~= "table" then
+            print(indent .. id)
+            return
+        end
+
+        visited[id] = true
+
+        for k, v in pairs(val) do
+            local key_str  = tostring(k)
+            local child_indent = indent .. string.rep(" ", #key_str + 8)
+
+            if type(v) == "table" then
+                print(indent .. "[" .. key_str .. "] => " .. tostring(val) .. " {")
+                walk(v, child_indent)
+                print(indent .. string.rep(" ", #key_str + 6) .. "}")
+            else
+                print(indent .. "[" .. key_str .. "] => " .. tostring(v))
+            end
+        end
+    end
+
+    walk(t, "  ")
+end
+
 
 local debugLevelOverride = nil
 
@@ -51,7 +88,7 @@ function M.setDebugLevel(level)
     debugLevelOverride = math.max(0, math.floor(n))
 end
 
-TODO: Debuglevel átadása problémára megoldás kell
+-- TODO: Debuglevel átadása problémára megoldás kell
 --- Returns effective logger verbosity.
 --- Priority: module override -> `Config.debugLevel` -> 0.
 --- @return number
@@ -66,6 +103,9 @@ function M.getDebugLevel()
     end
     return math.max(0, math.floor(n))
 end
+
+M.numberCharset = {}
+M.stringCharset = {}
 
 for i = 48, 57 do
     M.numberCharset[#M.numberCharset + 1] = string.char(i)

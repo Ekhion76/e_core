@@ -3,7 +3,7 @@ if not OX_INVENTORY then return end
 -- these functions override the bridge/global/ and bridge/esx/qb/ functions
 -- if you want to rewrite any function, copy it here and modify it here
 
-local hf = hf
+local hf = lib.require('src/imports/sdk/helper_base/shared')
 local ox_inventory = exports.ox_inventory
 
 local fallbackGetPlayerMaxWeight = eCore.getPlayerMaxWeight
@@ -11,15 +11,15 @@ local fallbackGetInventoryWeight = eCore.getInventoryWeight
 
 --- Client-side, ox exports (when available) provide live max/weight values;
 --- otherwise fallback to bridge and `playerData.weight`.
-function eCore:getPlayerMaxWeight(playerData)
-    local ok, mw = pcall(function()
-        return ox_inventory:GetPlayerMaxWeight()
-    end)
-    if ok and type(mw) == 'number' and mw > 0 then
-        return mw
-    end
-    return fallbackGetPlayerMaxWeight(self, playerData)
-end
+-- function eCore:getPlayerMaxWeight(playerData)
+--     local ok, mw = pcall(function()
+--         return ox_inventory:GetPlayerMaxWeight()
+--     end)
+--     if ok and type(mw) == 'number' and mw > 0 then
+--         return mw
+--     end
+--     return fallbackGetPlayerMaxWeight(self, playerData)
+-- end
 
 --- Auto-generated annotation. Refine behavior details if needed.
 --- @param playerData any

@@ -1,5 +1,5 @@
 --- Admin NUI open permission gate (`Config.web` + `hf.webConsoleAccess`).
-local hf = hf
+local hf = lib.require('src/imports/sdk/helper_base/shared')
 local hfe = hfe
 
 --- Handles web admin open requests and emits allow/deny events.
